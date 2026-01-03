@@ -17,12 +17,17 @@ const tasksRouter = require('./routes/tasks');
 const calendarRouter = require('./routes/calendar');
 const settingsRouter = require('./routes/settings');
 const googleRouter = require('./routes/google');
+const paprikaRouter = require('./routes/paprika');
+const mealsRouter = require('./routes/meals');
 
 app.use('/api/recipes', recipesRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/google', googleRouter);
+app.use('/api/paprika', paprikaRouter);
+app.use('/api/meals', mealsRouter);
+app.use('/api/sonos', require('./routes/sonos'));
 
 // Health check
 app.get('/', (req, res) => {

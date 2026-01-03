@@ -47,12 +47,14 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Dinner Slots
+-- Dinner Slots (Meal Planning)
 CREATE TABLE IF NOT EXISTS dinner_slots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT UNIQUE NOT NULL, -- YYYY-MM-DD
     recipe_id INTEGER REFERENCES recipes(id),
     recipe_title TEXT,
+    recipe_emoji TEXT DEFAULT '🍽️',
+    recipe_photo TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

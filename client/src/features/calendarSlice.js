@@ -3,12 +3,15 @@ import api from '../lib/api';
 
 // Async thunks
 export const fetchCalendarData = createAsyncThunk('calendar/fetchData', async () => {
-    const [events, familyMembers, dinnerSlots] = await Promise.all([
+    const [events, familyMembers, dinnerSlots, googleEvents] = await Promise.all([
         api.getEvents(),
         api.getFamilyMembers(),
         api.getDinnerSlots(),
+        api.getGoogleCalendarEvents(),
     ]);
-    return { events, familyMembers, dinnerSlots };
+    // Merge local and Google events
+    const allEvents = [...events, ...googleEvents];
+    return { events: allEvents, familyMembers, dinnerSlots };
 });
 
 const initialState = {

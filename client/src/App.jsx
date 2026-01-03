@@ -5,8 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Calendar from './pages/Calendar';
 import Tasks from './pages/Tasks';
 import Recipes from './pages/Recipes';
+import MealPlanning from './pages/MealPlanning';
 import Settings from './pages/Settings';
-import { Photos } from './pages/Placeholders';
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/recipes" element={<Recipes />} />
-        <Route path="/photos" element={<Photos />} />
+        <Route path="/meals" element={<MealPlanning />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </Layout>

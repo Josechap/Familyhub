@@ -65,7 +65,7 @@ router.post('/', (req, res) => {
         const result = db.prepare(`
             INSERT INTO chores (title, points, assigned_to, recurring)
             VALUES (?, ?, ?, ?)
-        `).run(title, points || 10, member?.id, recurring || 'none');
+        `).run(title, points || 1, member?.id, recurring || 'none');
 
         res.status(201).json({ id: result.lastInsertRowid });
     } catch (error) {

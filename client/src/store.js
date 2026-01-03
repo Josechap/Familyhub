@@ -5,6 +5,7 @@ import calendarReducer from './features/calendarSlice';
 import tasksReducer from './features/tasksSlice';
 import recipesReducer from './features/recipesSlice';
 import settingsReducer from './features/settingsSlice';
+import sonosReducer from './features/sonosSlice';
 
 export const store = configureStore({
     reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
         tasks: tasksReducer,
         recipes: recipesReducer,
         settings: settingsReducer,
+        sonos: sonosReducer,
     },
 });

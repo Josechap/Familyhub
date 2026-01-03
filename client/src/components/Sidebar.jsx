@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, CheckSquare, Utensils, Image as ImageIcon, Settings, Home } from 'lucide-react';
+import { Calendar, CheckSquare, Utensils, UtensilsCrossed, Settings, Home } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { setActiveTab } from '../features/appSlice';
@@ -11,10 +11,10 @@ const Sidebar = () => {
     const navigate = useNavigate();
 
     const navItems = [
-        { id: 'calendar', icon: LayoutGrid, path: '/calendar' },
+        { id: 'calendar', icon: Calendar, path: '/calendar' },
         { id: 'tasks', icon: CheckSquare, path: '/tasks' },
         { id: 'recipes', icon: Utensils, path: '/recipes' },
-        { id: 'photos', icon: ImageIcon, path: '/photos' },
+        { id: 'meals', icon: UtensilsCrossed, path: '/meals' },
     ];
 
     const handleNav = (id, path) => {

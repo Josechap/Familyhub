@@ -3,7 +3,34 @@ import api from '../lib/api';
 
 // Async thunks
 export const fetchRecipes = createAsyncThunk('recipes/fetchRecipes', async () => {
-    return api.getRecipes();
+    // Fetch local recipes
+    const localRecipes = await api.getRecipes();
+
+    // Fetch Paprika recipes
+    let paprikaRecipes = [];
+    try {
+        const paprikaData = await api.getPaprikaRecipes();
+        paprikaRecipes = (paprikaData.recipes || []).map(r => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            emoji: null, // No emoji for Paprika - use photo instead
+            photoUrl: r.photoUrl || null,
+            hasPhoto: r.hasPhoto || false,
+            prepTime: r.prepTime ? parseInt(r.prepTime) || 0 : 0,
+            cookTime: r.cookTime ? parseInt(r.cookTime) || 0 : 0,
+            servings: r.servings ? parseInt(r.servings) || 4 : 4,
+            category: r.categories?.[0] || 'Paprika',
+            ingredients: r.ingredients ? r.ingredients.split('\n').filter(i => i.trim()) : [],
+            steps: r.directions ? r.directions.split('\n').filter(s => s.trim()) : [],
+            isFavorite: r.isFavorite || false,
+            paprikaSource: true,
+        }));
+    } catch (error) {
+        console.log('Paprika recipes not available');
+    }
+
+    return [...localRecipes, ...paprikaRecipes];
 });
 
 export const toggleFavoriteAsync = createAsyncThunk('recipes/toggleFavorite', async (recipeId) => {

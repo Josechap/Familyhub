@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Palette, Moon, Clock, Target, Cloud, Trash2, Edit2, Plus, X, Check, Loader2, Link, Unlink, RefreshCw } from 'lucide-react';
+import { User, Palette, Moon, Clock, Target, Cloud, Trash2, Edit2, Plus, X, Check, Loader2, Link, Unlink, RefreshCw, BookOpen } from 'lucide-react';
 import {
     fetchSettings,
     updateSettings,
@@ -247,6 +247,349 @@ const GoogleIntegration = () => {
     );
 };
 
+// Paprika Integration Component
+const PaprikaIntegration = () => {
+    const [status, setStatus] = useState({ connected: false, email: null, loading: true });
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [connecting, setConnecting] = useState(false);
+    const [error, setError] = useState('');
+    const [syncing, setSyncing] = useState(false);
+    const [recipeCount, setRecipeCount] = useState(0);
+
+    const checkStatus = async () => {
+        try {
+            const res = await fetch('http://localhost:3001/api/paprika/status');
+            const data = await res.json();
+            setStatus({ ...data, loading: false });
+        } catch (err) {
+            setStatus({ connected: false, loading: false });
+        }
+    };
+
+    useEffect(() => {
+        checkStatus();
+    }, []);
+
+    const handleConnect = async () => {
+        if (!email || !password) {
+            setError('Email and password required');
+            return;
+        }
+        setConnecting(true);
+        setError('');
+        try {
+            const res = await fetch('http://localhost:3001/api/paprika/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.error || 'Failed to connect');
+            } else {
+                checkStatus();
+                setEmail('');
+                setPassword('');
+            }
+        } catch (err) {
+            setError('Connection failed');
+        }
+        setConnecting(false);
+    };
+
+    const handleDisconnect = async () => {
+        if (confirm('Disconnect Paprika? Your recipes will no longer sync.')) {
+            await fetch('http://localhost:3001/api/paprika/disconnect', { method: 'POST' });
+            setStatus({ connected: false, email: null, loading: false });
+        }
+    };
+
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            const res = await fetch('http://localhost:3001/api/paprika/recipes');
+            const data = await res.json();
+            setRecipeCount(data.fetched || 0);
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    if (status.loading) {
+        return (
+            <div className="flex items-center justify-center p-4">
+                <Loader2 className="animate-spin text-gray-400" size={24} />
+            </div>
+        );
+    }
+
+    if (status.connected) {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <Check className="text-green-600" size={20} />
+                    </div>
+                    <div className="flex-1">
+                        <div className="font-medium text-green-800">Connected</div>
+                        <div className="text-sm text-green-600">{status.email}</div>
+                    </div>
+                </div>
+                {recipeCount > 0 && (
+                    <p className="text-sm text-gray-500">{recipeCount} recipes synced</p>
+                )}
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="flex-1 py-3 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                        Sync Recipes
+                    </button>
+                    <button
+                        onClick={handleDisconnect}
+                        className="py-3 px-4 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+                    >
+                        <Unlink size={18} />
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+                Connect your Paprika account to sync your recipes.
+            </p>
+            {error && (
+                <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">{error}</p>
+            )}
+            <input
+                type="email"
+                placeholder="Paprika email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 border border-gray-200"
+            />
+            <input
+                type="password"
+                placeholder="Paprika password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 border border-gray-200"
+            />
+            <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="w-full py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+            >
+                {connecting ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
+                Connect Paprika
+            </button>
+        </div>
+    );
+};
+
+// Task List Mapping Component
+const TaskListMapping = ({ familyMembers }) => {
+    const [taskLists, setTaskLists] = useState([]);
+    const [mappings, setMappings] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch task lists
+                const listsRes = await fetch('http://localhost:3001/api/google/tasks/lists');
+                if (listsRes.ok) {
+                    const lists = await listsRes.json();
+                    setTaskLists(lists);
+
+                    // Auto-map based on name matching
+                    const autoMappings = {};
+                    lists.forEach(list => {
+                        const matchedMember = familyMembers.find(m =>
+                            list.title.toLowerCase().includes(m.name.toLowerCase()) ||
+                            m.name.toLowerCase().includes(list.title.toLowerCase())
+                        );
+                        if (matchedMember) {
+                            autoMappings[list.id] = matchedMember.id;
+                        }
+                    });
+                    setMappings(autoMappings);
+                }
+            } catch (error) {
+                console.error('Failed to fetch task lists:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [familyMembers]);
+
+    const handleMappingChange = (listId, memberId) => {
+        setMappings(prev => ({
+            ...prev,
+            [listId]: memberId || null,
+        }));
+        // Save to settings
+        fetch('http://localhost:3001/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [`taskListMapping_${listId}`]: memberId || '' }),
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-4">
+                <Loader2 className="animate-spin text-gray-400" size={24} />
+            </div>
+        );
+    }
+
+    if (taskLists.length === 0) {
+        return (
+            <p className="text-sm text-gray-500">
+                No Google Task lists found. Connect Google to see your task lists.
+            </p>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            <p className="text-sm text-gray-500 mb-4">
+                Map each Google Task list to a family member.
+            </p>
+            {taskLists.map(list => (
+                <div key={list.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <div className="flex-1 font-medium">{list.title}</div>
+                    <select
+                        value={mappings[list.id] || ''}
+                        onChange={(e) => handleMappingChange(list.id, e.target.value)}
+                        className="px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-blue"
+                    >
+                        <option value="">Not assigned</option>
+                        {familyMembers.map(member => (
+                            <option key={member.id} value={member.id}>
+                                {member.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// Calendar Event Mapping Component
+const CalendarEventMapping = ({ familyMembers }) => {
+    const [events, setEvents] = useState([]);
+    const [mappings, setMappings] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch calendar events
+                const eventsRes = await fetch('http://localhost:3001/api/google/calendar/events');
+                if (eventsRes.ok) {
+                    const eventsData = await eventsRes.json();
+                    setEvents(eventsData);
+
+                    // Load existing mappings from events
+                    const existingMappings = {};
+                    eventsData.forEach(event => {
+                        if (event.member && event.member !== 'Family') {
+                            existingMappings[event.googleEventId] = event.member;
+                        }
+                    });
+                    setMappings(existingMappings);
+                }
+            } catch (error) {
+                console.error('Failed to fetch calendar events:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const handleMappingChange = async (eventId, memberName) => {
+        setMappings(prev => ({
+            ...prev,
+            [eventId]: memberName || null,
+        }));
+        // Save to settings
+        await fetch('http://localhost:3001/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [`calendarEventMapping_${eventId}`]: memberName || '' }),
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-4">
+                <Loader2 className="animate-spin text-gray-400" size={24} />
+            </div>
+        );
+    }
+
+    if (events.length === 0) {
+        return (
+            <p className="text-sm text-gray-500">
+                No upcoming calendar events. Connect Google to see your events.
+            </p>
+        );
+    }
+
+    // Group events by date
+    const eventsByDate = events.reduce((acc, event) => {
+        if (!acc[event.date]) acc[event.date] = [];
+        acc[event.date].push(event);
+        return acc;
+    }, {});
+
+    return (
+        <div className="space-y-3 max-h-64 overflow-y-auto">
+            <p className="text-sm text-gray-500 mb-4">
+                Assign events to family members (or use [Name] prefix in event title).
+            </p>
+            {Object.entries(eventsByDate).slice(0, 7).map(([date, dateEvents]) => (
+                <div key={date} className="space-y-2">
+                    <div className="text-xs text-gray-400 uppercase font-medium">
+                        {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                    {dateEvents.map(event => (
+                        <div key={event.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                            <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">{event.title}</div>
+                            </div>
+                            <select
+                                value={mappings[event.googleEventId] || event.member || ''}
+                                onChange={(e) => handleMappingChange(event.googleEventId, e.target.value)}
+                                className="px-2 py-1 text-sm bg-white border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-pastel-blue"
+                            >
+                                <option value="">Family</option>
+                                {familyMembers.map(member => (
+                                    <option key={member.id} value={member.name}>
+                                        {member.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 const Settings = () => {
     const dispatch = useDispatch();
     const { darkMode, use24Hour, weeklyGoal, weatherApiKey, location, familyMembers, loading } = useSelector((state) => state.settings);
@@ -353,6 +696,33 @@ const Settings = () => {
                             <h2 className="text-xl font-serif">Google Calendar</h2>
                         </div>
                         <GoogleIntegration />
+                    </div>
+
+                    {/* Task List Mapping */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Check className="text-pastel-green" size={24} />
+                            <h2 className="text-xl font-serif">Task Lists</h2>
+                        </div>
+                        <TaskListMapping familyMembers={familyMembers} />
+                    </div>
+
+                    {/* Calendar Event Mapping */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Clock className="text-pastel-purple" size={24} />
+                            <h2 className="text-xl font-serif">Event Assignments</h2>
+                        </div>
+                        <CalendarEventMapping familyMembers={familyMembers} />
+                    </div>
+
+                    {/* Paprika Recipes */}
+                    <div className="bg-white rounded-3xl p-6 shadow-sm">
+                        <div className="flex items-center gap-3 mb-6">
+                            <BookOpen className="text-orange-500" size={24} />
+                            <h2 className="text-xl font-serif">Paprika Recipes</h2>
+                        </div>
+                        <PaprikaIntegration />
                     </div>
 
                     {/* Display Settings */}

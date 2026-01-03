@@ -21,64 +21,64 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
     const progress = ((currentStep + 1) / recipe.steps.length) * 100;
 
     return (
-        <div className="fixed inset-0 bg-editorial-bg z-50 flex flex-col p-8">
+        <div className="fixed inset-0 bg-editorial-bg z-50 flex flex-col p-4 sm:p-6 lg:p-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-4 sm:mb-6 lg:mb-8">
                 <button
                     onClick={onExit}
-                    className="flex items-center gap-2 text-gray-500 hover:text-editorial-text transition-colors"
+                    className="flex items-center gap-1 sm:gap-2 text-gray-500 hover:text-editorial-text transition-colors"
                 >
-                    <X size={24} />
-                    <span className="font-medium">Exit Cooking Mode</span>
+                    <X size={20} className="sm:w-6 sm:h-6" />
+                    <span className="font-medium text-sm sm:text-base hidden sm:inline">Exit Cooking Mode</span>
                 </button>
-                <div className="text-center">
-                    <div className="text-2xl font-serif">{recipe.emoji} {recipe.title}</div>
-                    <div className="text-sm text-gray-500">Step {currentStep + 1} of {recipe.steps.length}</div>
+                <div className="text-center flex-1 mx-2">
+                    <div className="text-base sm:text-xl lg:text-2xl font-serif truncate">{recipe.title}</div>
+                    <div className="text-xs sm:text-sm text-gray-500">Step {currentStep + 1} of {recipe.steps.length}</div>
                 </div>
-                <div className="w-32" /> {/* Spacer for centering */}
+                <div className="w-8 sm:w-20 lg:w-32" /> {/* Spacer for centering */}
             </div>
 
             {/* Progress bar */}
-            <div className="h-2 bg-gray-200 rounded-full mb-8 overflow-hidden">
+            <div className="h-1.5 sm:h-2 bg-gray-200 rounded-full mb-4 sm:mb-6 lg:mb-8 overflow-hidden">
                 <div
                     className="h-full bg-gradient-to-r from-pastel-green to-pastel-blue transition-all duration-300"
                     style={{ width: `${progress}%` }}
                 />
             </div>
 
-            {/* Main content */}
-            <div className="flex-1 flex items-center justify-center">
+            {/* Main content - Responsive text sizing */}
+            <div className="flex-1 flex items-center justify-center overflow-y-auto px-2 sm:px-4">
                 <div className="max-w-4xl text-center">
-                    <div className="text-6xl font-serif leading-tight text-editorial-text mb-8">
+                    <div className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-serif leading-snug sm:leading-tight text-editorial-text">
                         {step}
                     </div>
                 </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-4 sm:mt-6 lg:mt-8 gap-2 sm:gap-4">
                 <button
                     onClick={onPrev}
                     disabled={currentStep === 0}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-4 rounded-2xl text-lg font-medium transition-all",
+                        "flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base lg:text-lg font-medium transition-all",
                         currentStep === 0
                             ? "text-gray-300 cursor-not-allowed"
                             : "bg-white shadow-sm hover:shadow-md text-editorial-text"
                     )}
                 >
-                    <ChevronLeft size={24} />
-                    Previous
+                    <ChevronLeft size={18} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
+                    <span className="hidden sm:inline">Previous</span>
                 </button>
 
-                {/* Step indicators */}
-                <div className="flex gap-2">
+                {/* Step indicators - Hide on very small screens, show limited on mobile */}
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-[40%] sm:max-w-none">
                     {recipe.steps.map((_, idx) => (
                         <button
                             key={idx}
                             onClick={() => onGoTo(idx)}
                             className={cn(
-                                "w-3 h-3 rounded-full transition-all",
+                                "w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 rounded-full transition-all flex-shrink-0",
                                 idx === currentStep
                                     ? "bg-editorial-text scale-125"
                                     : idx < currentStep
@@ -91,10 +91,10 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
 
                 <button
                     onClick={currentStep === recipe.steps.length - 1 ? onExit : onNext}
-                    className="flex items-center gap-2 px-6 py-4 rounded-2xl text-lg font-medium bg-editorial-text text-white hover:bg-gray-800 transition-all shadow-sm hover:shadow-md"
+                    className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base lg:text-lg font-medium bg-editorial-text text-white hover:bg-gray-800 transition-all shadow-sm hover:shadow-md"
                 >
-                    {currentStep === recipe.steps.length - 1 ? 'Finish' : 'Next'}
-                    <ChevronRight size={24} />
+                    <span>{currentStep === recipe.steps.length - 1 ? 'Finish' : 'Next'}</span>
+                    <ChevronRight size={18} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                 </button>
             </div>
         </div>
@@ -211,8 +211,16 @@ const Recipes = () => {
 
     const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
 
-    // Get unique categories
-    const categories = ['all', ...new Set(recipes.map(r => r.category))];
+    // Get unique categories (filter out UUID-like strings and empty values)
+    const isValidCategory = (cat) => {
+        if (!cat || cat === 'Paprika') return false;
+        // Filter out UUID patterns (contains mostly hex characters and dashes)
+        if (/^[A-F0-9-]{8,}/i.test(cat)) return false;
+        // Filter out very long strings (likely UIDs)
+        if (cat.length > 20) return false;
+        return true;
+    };
+    const categories = ['all', ...new Set(recipes.map(r => r.category).filter(isValidCategory))];
 
     // Filter recipes
     const filteredRecipes = recipes.filter(r => {
@@ -293,36 +301,64 @@ const Recipes = () => {
                         <div
                             key={recipe.id}
                             onClick={() => dispatch(selectRecipe(recipe.id))}
-                            className="bg-white rounded-3xl p-6 shadow-sm cursor-pointer hover:shadow-md transition-all group"
+                            className="bg-white rounded-3xl overflow-hidden shadow-sm cursor-pointer hover:shadow-lg transition-all group"
                         >
-                            {/* Emoji */}
-                            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">
-                                {recipe.emoji}
-                            </div>
-
-                            {/* Title */}
-                            <h3 className="text-lg font-serif mb-2">{recipe.title}</h3>
-
-                            {/* Meta */}
-                            <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
-                                <span className="flex items-center gap-1">
-                                    <Clock size={14} />
-                                    {recipe.prepTime + recipe.cookTime}m
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Users size={14} />
-                                    {recipe.servings}
-                                </span>
-                            </div>
-
-                            {/* Category badge */}
-                            <div className="flex items-center justify-between">
-                                <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                                    {recipe.category}
-                                </span>
-                                {recipe.isFavorite && (
-                                    <Heart size={16} className="text-red-500 fill-current" />
+                            {/* Photo or Placeholder */}
+                            <div className="h-40 relative overflow-hidden bg-gradient-to-br from-pastel-blue to-pastel-purple">
+                                {recipe.photoUrl ? (
+                                    <img
+                                        src={recipe.photoUrl}
+                                        alt={recipe.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        onError={(e) => e.target.style.display = 'none'}
+                                    />
+                                ) : recipe.emoji ? (
+                                    <div className="w-full h-full flex items-center justify-center text-6xl group-hover:scale-110 transition-transform">
+                                        {recipe.emoji}
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <div className="text-white/30 text-6xl">🍽️</div>
+                                    </div>
                                 )}
+                                {recipe.paprikaSource && (
+                                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-orange-600 flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                        Paprika
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-5">
+                                {/* Title */}
+                                <h3 className="text-lg font-serif mb-2 line-clamp-2">{recipe.title}</h3>
+
+                                {/* Meta */}
+                                <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
+                                    <span className="flex items-center gap-1">
+                                        <Clock size={14} />
+                                        {recipe.prepTime + recipe.cookTime}m
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <Users size={14} />
+                                        {recipe.servings}
+                                    </span>
+                                </div>
+
+                                {/* Category badge */}
+                                <div className="flex items-center justify-between">
+                                    {isValidCategory(recipe.category) ? (
+                                        <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
+                                            {recipe.category}
+                                        </span>
+                                    ) : (
+                                        <span></span>
+                                    )}
+                                    {recipe.isFavorite && (
+                                        <Heart size={16} className="text-red-500 fill-current" />
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))}

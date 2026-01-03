@@ -3,11 +3,28 @@ import api from '../lib/api';
 
 // Async thunks
 export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
-    const [chores, familyMembers] = await Promise.all([
+    const [chores, familyMembers, googleTasks, settings] = await Promise.all([
         api.getTasks(),
         api.getFamilyMembers(),
+        api.getGoogleTasks(),
+        fetch('http://localhost:3001/api/settings').then(r => r.json()),
     ]);
-    return { chores, familyMembers };
+
+    // Map Google tasks to family members based on task list mappings
+    const mappedGoogleTasks = googleTasks.map(task => {
+        // Find the mapping for this task's list
+        const mappingKey = `taskListMapping_${task.listId}`;
+        const memberId = settings[mappingKey];
+        const member = familyMembers.find(m => m.id === memberId);
+
+        return {
+            ...task,
+            assignedTo: member?.name || task.listName,
+            assignedMemberId: memberId,
+        };
+    });
+
+    return { chores, familyMembers, googleTasks: mappedGoogleTasks };
 });
 
 export const toggleChoreAsync = createAsyncThunk('tasks/toggleChore', async (choreId, { getState }) => {
@@ -23,6 +40,7 @@ export const toggleChoreAsync = createAsyncThunk('tasks/toggleChore', async (cho
 const initialState = {
     chores: [],
     familyMembers: [],
+    googleTasks: [],
     showConfetti: false,
     lastCompletedChore: null,
     loading: false,
@@ -47,6 +65,7 @@ export const tasksSlice = createSlice({
                 state.loading = false;
                 state.chores = action.payload.chores;
                 state.familyMembers = action.payload.familyMembers;
+                state.googleTasks = action.payload.googleTasks;
             })
             .addCase(fetchTasks.rejected, (state, action) => {
                 state.loading = false;
