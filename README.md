@@ -74,3 +74,69 @@ The "Client" is what you see on the screen (the dashboard, calendar, etc.).
 *   **White screen?**: Check the terminal windows for any red error messages.
 
 Need help? Ask the developer!
+
+---
+
+## 🍓 Raspberry Pi Installation
+
+Run Familyhub as a dedicated family dashboard on a Raspberry Pi!
+
+### Requirements
+- Raspberry Pi 3B+ or newer (4 recommended)
+- Raspberry Pi OS (Lite or Desktop)
+- Internet connection for setup
+
+### Quick Install
+
+SSH into your Pi and run:
+
+```bash
+git clone https://github.com/Josechap/Familyhub.git
+cd Familyhub
+./install.sh
+```
+
+Or one-liner:
+```bash
+curl -sSL https://raw.githubusercontent.com/Josechap/Familyhub/main/install.sh | bash
+```
+
+The installer will:
+- Install Node.js 20 LTS
+- Install build tools for native modules
+- Build the client for production
+- Set up auto-start on boot via systemd
+
+### Access Your Dashboard
+
+After installation, access from any device on your network:
+```
+http://<raspberry-pi-ip>:3001
+```
+
+Find your Pi's IP with: `hostname -I`
+
+### Configure Google Calendar
+
+1. Get credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Edit `~/Familyhub/server/.env` with your credentials
+3. Restart: `sudo systemctl restart familyhub`
+
+### Manage the Service
+
+```bash
+sudo systemctl status familyhub    # Check status
+sudo systemctl restart familyhub   # Restart
+sudo systemctl stop familyhub      # Stop
+sudo journalctl -u familyhub -f    # View logs
+```
+
+### Update
+
+```bash
+cd ~/Familyhub
+git pull
+cd client && npm run build
+sudo systemctl restart familyhub
+```
+

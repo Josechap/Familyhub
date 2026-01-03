@@ -1,11 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Middleware
 app.use(cors());
@@ -30,8 +32,18 @@ app.use('/api/meals', mealsRouter);
 app.use('/api/sonos', require('./routes/sonos'));
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({ status: 'Familyhub OS Server Running', version: '1.0.0' });
+});
+
+// Serve static files from the React app build
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientDistPath));
+
+// SPA fallback - serve index.html for any non-API route
+// Express 5 requires named parameters instead of bare '*'
+app.get('/{*splat}', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 // Error handling middleware
@@ -40,12 +52,15 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log('Available routes:');
-    console.log('  GET    /api/recipes');
-    console.log('  GET    /api/tasks');
-    console.log('  GET    /api/tasks/family');
-    console.log('  GET    /api/calendar/events');
-    console.log('  GET    /api/calendar/dinner');
+app.listen(PORT, HOST, () => {
+    console.log(`🏠 Familyhub OS Server running on http://${HOST}:${PORT}`);
+    console.log(`   Access locally: http://localhost:${PORT}`);
+    if (HOST === '0.0.0.0') {
+        console.log(`   Access from network: http://<your-ip>:${PORT}`);
+    }
+    console.log('');
+    console.log('API routes:');
+    console.log('  /api/recipes     /api/tasks      /api/calendar');
+    console.log('  /api/settings    /api/google     /api/paprika');
+    console.log('  /api/meals       /api/sonos      /api/health');
 });
