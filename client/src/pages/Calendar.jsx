@@ -144,19 +144,18 @@ const Calendar = () => {
     const { events, dinnerSlots, selectedDate, familyMembers, loading } = useSelector((state) => state.calendar);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-    const [view8Day, setView8Day] = useState(false);
+    const [multiDayView, setMultiDayView] = useState(false);
 
     // Fetch calendar data on mount
     useEffect(() => {
         dispatch(fetchCalendarData());
     }, [dispatch]);
 
-    // Generate array of dates (7 or 8 days)
+    // Generate array of dates (7 days for multi-day view)
     const getDates = () => {
         const dates = [];
         const today = new Date();
-        const numDays = view8Day ? 8 : 7;
-        for (let i = 0; i < numDays; i++) {
+        for (let i = 0; i < 7; i++) {
             const date = new Date(today);
             date.setDate(today.getDate() + i);
             dates.push({
@@ -196,7 +195,6 @@ const Calendar = () => {
     const selectedDateData = dates[selectedDayIndex];
     const dayEvents = getEventsForDate(selectedDateData.date);
     const dinner = getDinner(selectedDateData.date);
-    const maxDayIndex = view8Day ? 7 : 6;
 
     // Loading state
     if (loading && events.length === 0) {
@@ -214,83 +212,89 @@ const Calendar = () => {
                 <h1 className="text-2xl font-semibold">Calendar</h1>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setView8Day(!view8Day)}
+                        onClick={() => setMultiDayView(!multiDayView)}
                         className={cn(
                             "px-3 py-2 rounded-xl text-sm font-medium transition-all touch-target",
-                            view8Day
+                            multiDayView
                                 ? "bg-primary text-white"
                                 : "bg-white/10 text-white/60 hover:bg-white/20"
                         )}
                     >
-                        {view8Day ? '8 Days' : '7 Days'}
+                        {multiDayView ? 'Week' : 'Day'}
                     </button>
-                    <button
-                        onClick={() => setSelectedDayIndex(Math.max(0, selectedDayIndex - 1))}
-                        disabled={selectedDayIndex === 0}
-                        className={cn(
-                            "p-2 rounded-xl transition-colors touch-target",
-                            selectedDayIndex === 0
-                                ? "text-white/20 cursor-not-allowed"
-                                : "hover:bg-white/10 text-white"
-                        )}
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-                    <button
-                        onClick={() => setSelectedDayIndex(Math.min(maxDayIndex, selectedDayIndex + 1))}
-                        disabled={selectedDayIndex === maxDayIndex}
-                        className={cn(
-                            "p-2 rounded-xl transition-colors touch-target",
-                            selectedDayIndex === maxDayIndex
-                                ? "text-white/20 cursor-not-allowed"
-                                : "hover:bg-white/10 text-white"
-                        )}
-                    >
-                        <ChevronRight size={24} />
-                    </button>
+                    {!multiDayView && (
+                        <>
+                            <button
+                                onClick={() => setSelectedDayIndex(Math.max(0, selectedDayIndex - 1))}
+                                disabled={selectedDayIndex === 0}
+                                className={cn(
+                                    "p-2 rounded-xl transition-colors touch-target",
+                                    selectedDayIndex === 0
+                                        ? "text-white/20 cursor-not-allowed"
+                                        : "hover:bg-white/10 text-white"
+                                )}
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
+                            <button
+                                onClick={() => setSelectedDayIndex(Math.min(6, selectedDayIndex + 1))}
+                                disabled={selectedDayIndex === 6}
+                                className={cn(
+                                    "p-2 rounded-xl transition-colors touch-target",
+                                    selectedDayIndex === 6
+                                        ? "text-white/20 cursor-not-allowed"
+                                        : "hover:bg-white/10 text-white"
+                                )}
+                            >
+                                <ChevronRight size={24} />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Day Selector Pills */}
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                {dates.map((d, idx) => (
-                    <button
-                        key={d.date}
-                        onClick={() => setSelectedDayIndex(idx)}
-                        className={cn(
-                            "flex flex-col items-center px-4 py-3 rounded-2xl transition-all min-w-[70px] touch-target",
-                            idx === selectedDayIndex
-                                ? "bg-primary text-white"
-                                : d.isToday
-                                    ? "bg-primary/20 text-primary"
-                                    : "bg-white/5 text-white/60 hover:bg-white/10"
-                        )}
-                    >
-                        <span className="text-xs font-medium opacity-80">{d.dayName}</span>
-                        <span className="text-xl font-bold">{d.dayNum}</span>
-                    </button>
-                ))}
-            </div>
+            {!multiDayView ? (
+                <>
+                    {/* Day Selector Pills - Single Day View */}
+                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                        {dates.map((d, idx) => (
+                            <button
+                                key={d.date}
+                                onClick={() => setSelectedDayIndex(idx)}
+                                className={cn(
+                                    "flex flex-col items-center px-4 py-3 rounded-2xl transition-all min-w-[70px] touch-target",
+                                    idx === selectedDayIndex
+                                        ? "bg-primary text-white"
+                                        : d.isToday
+                                            ? "bg-primary/20 text-primary"
+                                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                                )}
+                            >
+                                <span className="text-xs font-medium opacity-80">{d.dayName}</span>
+                                <span className="text-xl font-bold">{d.dayNum}</span>
+                            </button>
+                        ))}
+                    </div>
 
-            {/* Selected Day Header */}
-            <div className="flex items-center gap-3">
-                <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center",
-                    selectedDateData.isToday ? "bg-primary" : "bg-white/10"
-                )}>
-                    <CalendarIcon size={24} className={selectedDateData.isToday ? "text-white" : "text-white/60"} />
-                </div>
-                <div>
-                    <h2 className="text-lg font-semibold">{selectedDateData.fullDay}</h2>
-                    <p className="text-white/50 text-sm">
-                        {selectedDateData.month} {selectedDateData.dayNum}
-                        {selectedDateData.isToday && <span className="text-primary ml-2">Today</span>}
-                    </p>
-                </div>
-            </div>
+                    {/* Selected Day Header */}
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center",
+                            selectedDateData.isToday ? "bg-primary" : "bg-white/10"
+                        )}>
+                            <CalendarIcon size={24} className={selectedDateData.isToday ? "text-white" : "text-white/60"} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-semibold">{selectedDateData.fullDay}</h2>
+                            <p className="text-white/50 text-sm">
+                                {selectedDateData.month} {selectedDateData.dayNum}
+                                {selectedDateData.isToday && <span className="text-primary ml-2">Today</span>}
+                            </p>
+                        </div>
+                    </div>
 
-            {/* Agenda View */}
-            <div className="flex-1 overflow-y-auto space-y-3 touch-scroll hide-scrollbar">
+                    {/* Agenda View */}
+                    <div className="flex-1 overflow-y-auto space-y-3 touch-scroll hide-scrollbar">
                 {/* Dinner Card */}
                 {dinner && (
                     <div className="card bg-success/10 border border-success/20 animate-slide-up">
@@ -369,21 +373,88 @@ const Calendar = () => {
                             </div>
                         );
                     })
-                )}
-            </div>
+                    )}
+                    </div>
 
-            {/* Family Legend */}
-            <div className="flex gap-3 justify-center py-2 flex-wrap">
-                {familyMembers.map((member) => {
-                    const colors = familyColors[member.color] || familyColors['pastel-blue'];
-                    return (
-                        <div key={member.id} className="flex items-center gap-2">
-                            <div className={cn("w-3 h-3 rounded-full", colors.bg)} />
-                            <span className="text-sm text-white/50">{member.name}</span>
-                        </div>
-                    );
-                })}
-            </div>
+                    {/* Family Legend */}
+                    <div className="flex gap-3 justify-center py-2 flex-wrap">
+                        {familyMembers.map((member) => {
+                            const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                            return (
+                                <div key={member.id} className="flex items-center gap-2">
+                                    <div className={cn("w-3 h-3 rounded-full", colors.bg)} />
+                                    <span className="text-sm text-white/50">{member.name}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </>
+            ) : (
+                // Multi-Day Grid View
+                <div className="flex-1 overflow-x-auto overflow-y-hidden touch-scroll">
+                    <div className="grid gap-3 auto-cols-min" style={{ gridAutoFlow: 'column', minWidth: 'max-content' }}>
+                        {dates.map((day, idx) => {
+                            const dayEventsData = getEventsForDate(day.date);
+                            const dayDinner = getDinner(day.date);
+
+                            return (
+                                <div key={day.date} className="flex flex-col gap-3 min-w-[140px]">
+                                    {/* Day Header */}
+                                    <div className={cn(
+                                        "card text-center py-3",
+                                        day.isToday ? "ring-2 ring-primary" : ""
+                                    )}>
+                                        <p className="text-xs font-medium text-white/50">{day.dayName}</p>
+                                        <p className={cn(
+                                            "text-2xl font-bold",
+                                            day.isToday ? "text-primary" : "text-white"
+                                        )}>
+                                            {day.dayNum}
+                                        </p>
+                                    </div>
+
+                                    {/* Dinner */}
+                                    {dayDinner && (
+                                        <div className="card bg-success/10 border border-success/20 p-3 text-center text-sm">
+                                            <p className="text-xs text-success font-medium mb-1">Dinner</p>
+                                            <p className="text-xs truncate">{dayDinner.recipe}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Events */}
+                                    <div className="space-y-2 flex-1 overflow-y-auto max-h-[300px]">
+                                        {dayEventsData.length === 0 ? (
+                                            <p className="text-xs text-white/30 text-center py-2">No events</p>
+                                        ) : (
+                                            dayEventsData.slice(0, 4).map((event) => {
+                                                const colorKey = event.colors?.[0] || event.color || 'pastel-blue';
+                                                const colors = familyColors[colorKey] || familyColors['pastel-blue'];
+
+                                                return (
+                                                    <div
+                                                        key={event.id}
+                                                        onClick={() => setSelectedEvent(event)}
+                                                        className={cn(
+                                                            "card p-2 cursor-pointer hover:bg-white/10 transition-all border-l-2",
+                                                            colors.border
+                                                        )}
+                                                    >
+                                                        <p className="text-xs font-semibold truncate">{event.title}</p>
+                                                        <p className="text-xs text-white/50">{formatTime(event.startHour).split(' ')[0]}</p>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                        {dayEventsData.length > 4 && (
+                                            <p className="text-xs text-white/30 text-center">+{dayEventsData.length - 4} more</p>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Event Detail Modal */}
             {selectedEvent && (
