@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../lib/config';
 
 // Async thunks
 export const fetchSettings = createAsyncThunk('settings/fetch', async () => {

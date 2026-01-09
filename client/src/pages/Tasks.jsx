@@ -1,545 +1,262 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Check, Star, Trophy, Sparkles, Loader2, X, Calendar, Plus, Trash2, Edit3 } from 'lucide-react';
+import { Star, Check, Trophy, Plus, X, Loader2 } from 'lucide-react';
 import { fetchTasks, toggleChoreAsync, hideConfetti } from '../features/tasksSlice';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
 
-// Color mapping
-const colorMap = {
-    'pastel-blue': '#A7C7E7',
-    'pastel-pink': '#F4C2C2',
-    'pastel-green': '#C1E1C1',
-    'pastel-yellow': '#FFFACD',
-    'pastel-purple': '#E6E6FA',
-};
-
-// Task Modal Component
-const TaskModal = ({ task, onClose, onRefresh, isNew = false, defaultListId = null, familyMembers = [] }) => {
-    const [title, setTitle] = useState(task?.title || '');
-    const [dueDate, setDueDate] = useState(task?.dueDate || '');
-    const [notes, setNotes] = useState(task?.notes || '');
-    const [saving, setSaving] = useState(false);
-    const [deleting, setDeleting] = useState(false);
-    const [transferring, setTransferring] = useState(false);
-    const [transferTarget, setTransferTarget] = useState('');
-
-    const handleComplete = async () => {
-        if (!task) return;
-        setSaving(true);
-        try {
-            await api.completeGoogleTask(task.listId, task.googleTaskId);
-            onRefresh();
-            onClose();
-        } catch (error) {
-            console.error('Failed to complete task:', error);
-        }
-        setSaving(false);
-    };
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            if (isNew) {
-                await api.createGoogleTask(defaultListId, { title, dueDate, notes });
-            } else {
-                await api.updateGoogleTask(task.listId, task.googleTaskId, { title, dueDate, notes });
-            }
-            onRefresh();
-            onClose();
-        } catch (error) {
-            console.error('Failed to save task:', error);
-        }
-        setSaving(false);
-    };
-
-    const handleDelete = async () => {
-        if (!task || !confirm('Delete this task?')) return;
-        setDeleting(true);
-        try {
-            await api.deleteGoogleTask(task.listId, task.googleTaskId);
-            onRefresh();
-            onClose();
-        } catch (error) {
-            console.error('Failed to delete task:', error);
-        }
-        setDeleting(false);
-    };
-
-    const handleTransfer = async () => {
-        if (!task || !transferTarget) return;
-        setTransferring(true);
-        try {
-            // Find list ID for the target member
-            // We need to find the list ID that maps to this member.
-            // This is a bit tricky since we only have the member ID/Name here.
-            // Ideally we should pass available lists to the modal.
-            // For now, let's assume we can find it from the task list mapping in the store or similar.
-            // Actually, let's look at how we map members.
-            // We can iterate over familyMembers and find the one that matches transferTarget.
-            // But we need the Google Task List ID. 
-            // We should probably pass the available task lists to the modal.
-            // Let's assume we pass `googleTaskLists` to the modal.
-
-            await api.transferGoogleTask(task.listId, task.googleTaskId, transferTarget);
-            onRefresh();
-            onClose();
-        } catch (error) {
-            console.error('Failed to transfer task:', error);
-        }
-        setTransferring(false);
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-8" onClick={onClose}>
-            <div
-                className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                    <h2 className="text-xl font-serif font-bold text-editorial-text">
-                        {isNew ? 'New Task' : 'Edit Task'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Form */}
-                <div className="space-y-4">
-                    {/* Title */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Title</label>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Task title..."
-                            className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-pastel-blue border border-gray-200"
-                        />
-                    </div>
-
-                    {/* Due Date */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">
-                            <Calendar size={14} className="inline mr-1" />
-                            Due Date
-                        </label>
-                        <input
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-pastel-blue border border-gray-200"
-                        />
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Notes</label>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add notes..."
-                            rows={3}
-                            className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-pastel-blue border border-gray-200 resize-none"
-                        />
-                    </div>
-
-                    {/* List info */}
-                    {!isNew && task?.listName && (
-                        <div className="text-sm text-gray-500">
-                            List: <span className="font-medium">{task.listName}</span>
-                        </div>
-                    )}
-
-                    {/* Transfer */}
-                    {!isNew && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Transfer to</label>
-                            <select
-                                value={transferTarget}
-                                onChange={(e) => setTransferTarget(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-pastel-blue border border-gray-200"
-                            >
-                                <option value="">Select member...</option>
-                                {familyMembers.map(m => {
-                                    // We need to find the list ID for this member.
-                                    // This requires passing the map of memberId -> listId or similar.
-                                    // Or we can just pass the listId if we have it.
-                                    // Let's assume we pass `availableLists` prop which contains { id, title, memberId }.
-                                    return (
-                                        <option key={m.id} value={m.defaultListId}>{m.name}</option>
-                                    );
-                                })}
-                            </select>
-                            {transferTarget && (
-                                <button
-                                    onClick={handleTransfer}
-                                    disabled={transferring}
-                                    className="mt-2 w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-                                >
-                                    {transferring ? 'Transferring...' : 'Transfer Task'}
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 mt-6">
-                    {!isNew && (
-                        <>
-                            <button
-                                onClick={handleComplete}
-                                disabled={saving}
-                                className="flex-1 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Check size={18} />
-                                Complete
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                disabled={deleting}
-                                className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                        </>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        disabled={saving || !title.trim()}
-                        className={cn(
-                            "py-3 px-6 rounded-xl font-medium transition-colors flex items-center justify-center gap-2",
-                            isNew ? "flex-1 bg-editorial-text text-white hover:bg-gray-800" : "bg-gray-100 hover:bg-gray-200"
-                        )}
-                    >
-                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Edit3 size={18} />}
-                        {isNew ? 'Create' : 'Save'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Confetti component
-const Confetti = ({ show, onHide }) => {
-    useEffect(() => {
-        if (show) {
-            const timer = setTimeout(onHide, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [show, onHide]);
-
-    if (!show) return null;
-
-    return (
-        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-            {[...Array(50)].map((_, i) => (
-                <div
-                    key={i}
-                    className="absolute animate-confetti"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: '-20px',
-                        animationDelay: `${Math.random() * 0.5}s`,
-                        backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'][Math.floor(Math.random() * 6)],
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: Math.random() > 0.5 ? '50%' : '0',
-                    }}
-                />
-            ))}
-        </div>
-    );
+// Family member colors mapping
+const familyColors = {
+    'pastel-blue': { bg: 'bg-family-blue', text: 'text-family-blue', light: 'bg-family-blue/20', border: 'border-family-blue' },
+    'pastel-pink': { bg: 'bg-family-pink', text: 'text-family-pink', light: 'bg-family-pink/20', border: 'border-family-pink' },
+    'pastel-green': { bg: 'bg-family-green', text: 'text-family-green', light: 'bg-family-green/20', border: 'border-family-green' },
+    'pastel-purple': { bg: 'bg-family-purple', text: 'text-family-purple', light: 'bg-family-purple/20', border: 'border-family-purple' },
+    'pastel-yellow': { bg: 'bg-family-orange', text: 'text-family-orange', light: 'bg-family-orange/20', border: 'border-family-orange' },
+    'pastel-orange': { bg: 'bg-family-orange', text: 'text-family-orange', light: 'bg-family-orange/20', border: 'border-family-orange' },
 };
 
 const Tasks = () => {
     const dispatch = useDispatch();
-    const { chores, familyMembers, googleTasks, showConfetti, loading } = useSelector((state) => state.tasks);
-    const [selectedTask, setSelectedTask] = useState(null);
-    const [newTaskListId, setNewTaskListId] = useState(null);
+    const { chores, familyMembers, googleTasks, confettiVisible, loading } = useSelector((state) => state.tasks);
+    const [selectedMember, setSelectedMember] = useState(null);
+    const [completingTask, setCompletingTask] = useState(null);
 
-    // Fetch data on mount
     useEffect(() => {
         dispatch(fetchTasks());
     }, [dispatch]);
 
-    const handleRefresh = () => {
-        dispatch(fetchTasks());
+    // Combine all tasks
+    const allTasks = [...chores, ...googleTasks];
+
+    const getTasksByMember = (memberName) => {
+        return allTasks.filter(task =>
+            task.assignedTo === memberName || task.listName === memberName
+        );
     };
 
-    const handleCompleteGoogleTask = async (task, e) => {
-        e.stopPropagation(); // Prevent modal from opening
+    const getMemberStats = (memberName) => {
+        const tasks = getTasksByMember(memberName);
+        const completed = tasks.filter(t => t.completed || t.status === 'completed').length;
+        const total = tasks.length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { completed, total, percent };
+    };
+
+    const handleCompleteTask = async (task, e) => {
+        e?.stopPropagation();
+        setCompletingTask(task.id);
         try {
-            await api.completeGoogleTask(task.listId, task.googleTaskId);
-            handleRefresh();
+            if (task.googleTaskId) {
+                await api.completeGoogleTask(task.listId, task.googleTaskId);
+            } else {
+                await dispatch(toggleChoreAsync(task.id));
+            }
+            dispatch(fetchTasks());
         } catch (error) {
             console.error('Failed to complete task:', error);
         }
+        setCompletingTask(null);
     };
 
-    // Sort members by points (descending) for leaderboard
-    const leaderboard = [...familyMembers].sort((a, b) => b.points - a.points);
-
-    // Group chores by assignee, including Google Tasks
-    const choresByMember = familyMembers.map(member => {
-        const memberChores = chores.filter(c => c.assignedTo === member.name);
-
-        // Get today's date in YYYY-MM-DD format
-        const today = new Date();
-        const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-
-        const memberGoogleTasks = googleTasks.filter(t =>
-            (t.assignedTo === member.name || t.listName === member.name) &&
-            t.dueDate && t.dueDate <= todayStr
-        );
-
-        return {
-            ...member,
-            chores: memberChores,
-            googleTasks: memberGoogleTasks,
-            pending: memberChores.filter(c => !c.completed).length + memberGoogleTasks.length,
-            completed: memberChores.filter(c => c.completed).length,
-        };
-    });
-
-    const handleToggle = (choreId) => {
-        dispatch(toggleChoreAsync(choreId));
-    };
+    // Filter members to show
+    const displayMembers = selectedMember
+        ? familyMembers.filter(m => m.id === selectedMember)
+        : familyMembers;
 
     // Loading state
-    if (loading && chores.length === 0) {
+    if (loading && chores.length === 0 && googleTasks.length === 0) {
         return (
             <div className="h-full w-full flex items-center justify-center">
-                <Loader2 className="animate-spin text-gray-400" size={48} />
+                <Loader2 className="animate-spin text-white/40" size={48} />
             </div>
         );
     }
 
     return (
-        <div className="h-full w-full flex flex-col">
-            <Confetti show={showConfetti} onHide={() => dispatch(hideConfetti())} />
+        <div className="h-full w-full flex flex-col gap-3 animate-fade-in">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3">
+                <h1 className="text-2xl font-semibold">Tasks</h1>
+            </div>
 
-            {/* Header with leaderboard summary */}
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-serif">Tasks</h1>
-                <div className="flex items-center gap-4 bg-white rounded-2xl px-4 py-2 shadow-sm">
-                    <Trophy className="text-yellow-500" size={20} />
-                    {leaderboard.map((member, index) => (
-                        <div key={member.id} className="flex items-center gap-2">
-                            <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                                style={{ backgroundColor: colorMap[member.color] }}
-                            >
-                                {member.name[0]}
+            {/* Member Filter Pills - Compact */}
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                <button
+                    onClick={() => setSelectedMember(null)}
+                    className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
+                        !selectedMember
+                            ? "bg-primary text-white"
+                            : "bg-white/10 text-white/60 hover:bg-white/20"
+                    )}
+                >
+                    All
+                </button>
+                {familyMembers.map((member) => {
+                    const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                    const isSelected = selectedMember === member.id;
+                    return (
+                        <button
+                            key={member.id}
+                            onClick={() => setSelectedMember(isSelected ? null : member.id)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
+                                isSelected
+                                    ? `${colors.bg} text-white`
+                                    : `${colors.light} ${colors.text} hover:opacity-80`
+                            )}
+                        >
+                            {member.name}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Member Cards - Horizontal scroll for all personas to fit on screen */}
+            <div className="flex-1 overflow-x-auto overflow-y-hidden gap-3 touch-scroll hide-scrollbar flex">
+                {displayMembers.map((member, idx) => {
+                    const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                    const stats = getMemberStats(member.name);
+                    const tasks = getTasksByMember(member.name);
+                    const pendingTasks = tasks.filter(t => !t.completed && t.status !== 'completed');
+                    const completedTasks = tasks.filter(t => t.completed || t.status === 'completed');
+
+                    return (
+                        <div
+                            key={member.id}
+                            className="card animate-slide-up flex-shrink-0 w-64 flex flex-col"
+                            style={{ animationDelay: `${idx * 50}ms` }}
+                        >
+                            {/* Member Header - Compact */}
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className={cn(
+                                    "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg",
+                                    colors.bg
+                                )}>
+                                    {member.name[0]}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h2 className="text-base font-semibold truncate">{member.name}</h2>
+                                        <div className="flex items-center gap-0.5 bg-warning/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                                            <Star size={14} className="text-warning fill-warning" />
+                                            <span className="font-bold text-warning text-xs">{member.points}</span>
+                                        </div>
+                                    </div>
+                                    {/* Progress bar */}
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex-1 progress-bar h-1">
+                                            <div
+                                                className="progress-bar-fill h-1"
+                                                style={{ width: `${stats.percent}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-white/50 text-xs whitespace-nowrap">
+                                            {stats.completed}/{stats.total}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <span className="text-sm font-medium">
-                                {member.points}
-                                {index === 0 && <span className="ml-1">👑</span>}
-                            </span>
+
+                            {/* Pending Tasks - Compact */}
+                            <div className="space-y-1 flex-1 overflow-y-auto">
+                                {pendingTasks.length === 0 && completedTasks.length === 0 ? (
+                                    <p className="text-white/40 text-center text-xs py-4">No tasks</p>
+                                ) : (
+                                    <>
+                                        {pendingTasks.slice(0, 2).map((task) => {
+                                            const isCompleting = completingTask === task.id;
+                                            const points = task.points || 1;
+
+                                            return (
+                                                <div
+                                                    key={task.id}
+                                                    className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all group"
+                                                >
+                                                    {/* Checkbox */}
+                                                    <button
+                                                        onClick={(e) => handleCompleteTask(task, e)}
+                                                        disabled={isCompleting}
+                                                        className={cn(
+                                                            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all touch-target flex-shrink-0",
+                                                            colors.border,
+                                                            "hover:bg-success/20 hover:border-success",
+                                                            isCompleting && "animate-pulse border-success bg-success/20"
+                                                        )}
+                                                    >
+                                                        <Check
+                                                            size={12}
+                                                            className={cn(
+                                                                "transition-all",
+                                                                isCompleting ? "text-success" : "text-transparent group-hover:text-success"
+                                                            )}
+                                                        />
+                                                    </button>
+
+                                                    {/* Task info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-xs truncate">{task.title}</p>
+                                                    </div>
+
+                                                    {/* Points */}
+                                                    <div className="text-warning/80 flex-shrink-0">
+                                                        <Star size={10} className="fill-current inline" />
+                                                        <span className="text-xs font-semibold ml-0.5">+{points}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {pendingTasks.length > 2 && (
+                                            <p className="text-center text-white/30 text-xs py-1">
+                                                +{pendingTasks.length - 2} more
+                                            </p>
+                                        )}
+
+                                        {/* Completed Tasks - Show count only */}
+                                        {completedTasks.length > 0 && (
+                                            <div className="flex items-center justify-center gap-1 py-1 mt-1 border-t border-white/10">
+                                                <Check size={12} className="text-success" />
+                                                <span className="text-xs text-white/50">{completedTasks.length} completed</span>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* 100% completion badge - Compact */}
+                            {stats.percent === 100 && stats.total > 0 && (
+                                <div className="mt-2 flex items-center justify-center gap-1 py-2 bg-success/20 rounded-lg text-success text-xs">
+                                    <Trophy size={14} />
+                                    <span className="font-semibold">Perfect!</span>
+                                </div>
+                            )}
                         </div>
+                    );
+                })}
+            </div>
+
+            {/* Confetti Effect */}
+            {confettiVisible && (
+                <div className="fixed inset-0 pointer-events-none z-50">
+                    {[...Array(50)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute animate-confetti"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: '-20px',
+                                animationDelay: `${Math.random() * 0.5}s`,
+                                backgroundColor: ['#6366F1', '#10B981', '#F59E0B', '#EC4899', '#3B82F6'][
+                                    Math.floor(Math.random() * 5)
+                                ],
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                            }}
+                        />
                     ))}
                 </div>
-            </div>
-
-            {/* Chore columns by assignee */}
-            <div className="flex-1 grid gap-6 overflow-hidden" style={{ gridTemplateColumns: `repeat(${familyMembers.length}, 1fr)` }}>
-                {choresByMember.map((member) => (
-                    <div
-                        key={member.id}
-                        className="bg-white rounded-3xl p-6 shadow-sm overflow-hidden flex flex-col"
-                    >
-                        {/* Member header */}
-                        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                            <div
-                                className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white"
-                                style={{ backgroundColor: colorMap[member.color] }}
-                            >
-                                {member.name[0]}
-                            </div>
-                            <div className="flex-1">
-                                <div className="font-bold text-editorial-text text-lg">{member.name}</div>
-                                <div className="text-sm text-gray-500">
-                                    {member.pending} pending · {member.completed} done
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                                <Star size={16} fill="currentColor" />
-                                {member.points}
-                            </div>
-                        </div>
-
-                        {/* Chores list */}
-                        <div className="flex-1 overflow-y-auto space-y-2">
-                            {/* Pending chores */}
-                            {member.chores
-                                .filter(c => !c.completed)
-                                .map((chore) => (
-                                    <div
-                                        key={chore.id}
-                                        onClick={() => handleToggle(chore.id)}
-                                        className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all group"
-                                    >
-                                        <div
-                                            className="w-8 h-8 rounded-full border-2 flex items-center justify-center group-hover:border-green-400 group-hover:bg-green-50 transition-colors"
-                                            style={{ borderColor: colorMap[member.color] }}
-                                        >
-                                            <Check className="text-transparent group-hover:text-green-400 transition-colors" size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-editorial-text truncate">{chore.title}</div>
-                                        </div>
-                                        <div className="text-xs text-yellow-500 font-bold whitespace-nowrap">
-                                            +{chore.points}
-                                        </div>
-                                    </div>
-                                ))}
-
-                            {/* Google Tasks */}
-                            {member.googleTasks && member.googleTasks.length > 0 && (
-                                <>
-                                    <div className="flex items-center gap-2 py-1">
-                                        <div className="flex-1 h-px bg-blue-200" />
-                                        <span className="text-xs text-blue-400">Google Tasks</span>
-                                        <div className="flex-1 h-px bg-blue-200" />
-                                    </div>
-                                    {member.googleTasks.filter(t => t.title).map((task) => (
-                                        <div
-                                            key={task.id}
-                                            onClick={() => setSelectedTask(task)}
-                                            className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors group"
-                                        >
-                                            <div
-                                                onClick={(e) => handleCompleteGoogleTask(task, e)}
-                                                className="w-8 h-8 rounded-full border-2 border-blue-300 flex items-center justify-center hover:border-green-400 hover:bg-green-50 transition-colors"
-                                            >
-                                                <Check className="text-transparent group-hover:text-green-400 transition-colors" size={16} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-editorial-text truncate">{task.title}</div>
-                                                {task.dueDate && (
-                                                    <div className="text-xs text-gray-500">{task.dueDate}</div>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (confirm('Mark as not completed? This will remove the task without awarding points.')) {
-                                                        api.deleteGoogleTask(task.listId, task.googleTaskId).then(handleRefresh);
-                                                    }
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-
-                            {/* Add Task Button */}
-                            {member.googleTasks && (
-                                <button
-                                    onClick={() => {
-                                        const listId = member.googleTasks[0]?.listId || googleTasks.find(t => t.listName === member.name)?.listId;
-                                        if (listId) setNewTaskListId(listId);
-                                    }}
-                                    className="w-full py-2 mt-2 border-2 border-dashed border-blue-200 rounded-xl text-blue-400 hover:border-blue-400 hover:text-blue-500 transition-colors flex items-center justify-center gap-2 text-sm"
-                                >
-                                    <Plus size={16} />
-                                    Add Task
-                                </button>
-                            )}
-
-                            {/* Completed divider */}
-                            {member.completed > 0 && member.pending > 0 && (
-                                <div className="flex items-center gap-2 py-2">
-                                    <div className="flex-1 h-px bg-gray-200" />
-                                    <span className="text-xs text-gray-400">Done</span>
-                                    <div className="flex-1 h-px bg-gray-200" />
-                                </div>
-                            )}
-
-                            {/* Completed chores */}
-                            {member.chores
-                                .filter(c => c.completed)
-                                .map((chore) => (
-                                    <div
-                                        key={chore.id}
-                                        onClick={() => handleToggle(chore.id)}
-                                        className="flex items-center gap-3 p-3 rounded-xl bg-green-50 cursor-pointer transition-all opacity-60 hover:opacity-80"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-green-400 flex items-center justify-center">
-                                            <Check className="text-white" size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-medium text-editorial-text line-through truncate">{chore.title}</div>
-                                        </div>
-                                        <div className="text-xs text-green-500 font-bold whitespace-nowrap">
-                                            +{chore.points}
-                                        </div>
-                                    </div>
-                                ))}
-
-                            {/* Empty state */}
-                            {member.chores.length === 0 && (
-                                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-                                    No tasks assigned
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Weekly goal progress */}
-            <div className="mt-4 bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600">Weekly Family Goal</span>
-                    <span className="text-sm font-bold text-editorial-text">
-                        {leaderboard.reduce((sum, m) => sum + m.points, 0)} / 500 pts
-                    </span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (leaderboard.reduce((sum, m) => sum + m.points, 0) / 500) * 100)}%` }}
-                    />
-                </div>
-            </div>
-
-            {/* Task Modal - Edit existing task */}
-            {selectedTask && (
-                <TaskModal
-                    task={selectedTask}
-                    onClose={() => setSelectedTask(null)}
-                    onRefresh={handleRefresh}
-                    familyMembers={familyMembers.map(m => ({
-                        ...m,
-                        defaultListId: googleTasks.find(t => t.assignedTo === m.name)?.listId
-                    }))}
-                />
-            )}
-
-            {/* Task Modal - Create new task */}
-            {newTaskListId && (
-                <TaskModal
-                    task={null}
-                    isNew={true}
-                    defaultListId={newTaskListId}
-                    onClose={() => setNewTaskListId(null)}
-                    onRefresh={handleRefresh}
-                    familyMembers={familyMembers.map(m => ({
-                        ...m,
-                        defaultListId: googleTasks.find(t => t.assignedTo === m.name)?.listId
-                    }))}
-                />
             )}
         </div>
     );

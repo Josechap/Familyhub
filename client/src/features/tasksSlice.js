@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../lib/api';
+import { API_BASE } from '../lib/config';
 
 // Async thunks
 export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
@@ -7,7 +8,7 @@ export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
         api.getTasks(),
         api.getFamilyMembers(),
         api.getGoogleTasks(),
-        fetch('http://localhost:3001/api/settings').then(r => r.json()),
+        fetch(`${API_BASE}/settings`).then(r => r.json()),
     ]);
 
     // Map Google tasks to family members based on task list mappings

@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API_BASE } from '../lib/config';
 
 // Fetch dashboard data (today's events, tasks, and dinner)
 export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async () => {
@@ -8,7 +9,7 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
     // Fetch Google Calendar events
     let events = [];
     try {
-        const eventsRes = await fetch('http://localhost:3001/api/google/calendar/events');
+        const eventsRes = await fetch(`${API_BASE}/google/calendar/events`);
         if (eventsRes.ok) {
             const allEvents = await eventsRes.json();
             // Filter to today's events
@@ -27,7 +28,7 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
     // Fetch Google Tasks
     let tasks = [];
     try {
-        const tasksRes = await fetch('http://localhost:3001/api/google/tasks');
+        const tasksRes = await fetch(`${API_BASE}/google/tasks`);
         if (tasksRes.ok) {
             const allTasks = await tasksRes.json();
             // Filter to tasks due today and assigned to a family member
@@ -54,7 +55,7 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
     // Fetch today's dinner
     let dinner = { title: 'Plan Dinner', emoji: '🍽️' };
     try {
-        const dinnerRes = await fetch('http://localhost:3001/api/meals/today');
+        const dinnerRes = await fetch(`${API_BASE}/meals/today`);
         if (dinnerRes.ok) {
             const dinnerData = await dinnerRes.json();
             if (dinnerData) {

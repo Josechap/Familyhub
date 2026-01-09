@@ -1,18 +1,148 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* Custom styles for Familyhub OS */
-body {
-  @apply bg-editorial-bg text-editorial-text font-sans;
+/* Modern Familyhub Design System */
+
+/* Base styles */
+:root {
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @apply font-serif font-bold;
+html {
+  @apply scroll-smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-dark-bg text-white font-sans antialiased;
+  @apply selection:bg-primary/30;
+}
+
+/* Dark mode is default, light mode when class applied */
+body.light {
+  @apply bg-light-bg text-slate-900;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-display font-semibold tracking-tight;
+}
+
+/* Touch-friendly defaults */
+button, a, [role="button"] {
+  @apply touch-manipulation;
+}
+
+/* Custom scrollbar (minimal) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/20;
+}
+
+/* Card styles */
+.card {
+  @apply bg-dark-card rounded-3xl p-5 shadow-card transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-card-hover;
+}
+
+.card:active {
+  @apply scale-[0.98];
+}
+
+body.light .card {
+  @apply bg-light-card;
+}
+
+/* Glass morphism effect */
+.glass {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10;
+}
+
+body.light .glass {
+  @apply bg-black/5 border-black/5;
+}
+
+/* Touch targets (minimum 44x44) */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* Prevent text selection on UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Smooth touch scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  @apply h-2 rounded-full overflow-hidden bg-white/10;
+}
+
+.progress-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+  background: linear-gradient(90deg, #6366F1, #8B5CF6);
+}
+
+/* Glow effect for active elements */
+.glow {
+  @apply shadow-glow;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply bg-white/5 animate-pulse rounded-xl;
+}
+
+body.light .skeleton {
+  @apply bg-black/5;
+}
+
+/* Task completion animation */
+@keyframes strikethrough {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.task-complete::after {
+  content: '';
+  @apply absolute left-0 top-1/2 h-0.5 bg-white/50;
+  animation: strikethrough 0.3s ease-out forwards;
 }
 
 /* Confetti animation */
@@ -21,7 +151,6 @@ h6 {
     transform: translateY(0) rotate(0deg);
     opacity: 1;
   }
-
   100% {
     transform: translateY(100vh) rotate(720deg);
     opacity: 0;
@@ -30,4 +159,18 @@ h6 {
 
 .animate-confetti {
   animation: confetti 2s ease-out forwards;
+}
+
+/* Safe area for bottom navigation */
+.pb-safe {
+  padding-bottom: calc(80px + var(--safe-area-bottom));
+}
+
+/* Kiosk mode (hide cursor when idle) */
+.kiosk-mode {
+  cursor: none;
+}
+
+.kiosk-mode * {
+  cursor: none !important;
 }

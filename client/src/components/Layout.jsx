@@ -1,13 +1,13 @@
 import React from 'react';
-import Sidebar from './Sidebar';
+import BottomNav from './BottomNav';
 
 const Layout = ({ children }) => {
     return (
-        <div className="min-h-screen bg-editorial-bg flex">
-            <Sidebar />
-            <main className="flex-1 ml-[80px] p-8 h-screen overflow-hidden">
+        <div className="min-h-screen bg-dark-bg text-white">
+            <main className="h-screen overflow-y-auto touch-scroll pb-safe px-4 pt-4">
                 {children}
             </main>
+            <BottomNav />
         </div>
     );
 };
