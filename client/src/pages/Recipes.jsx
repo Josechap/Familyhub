@@ -15,70 +15,70 @@ import {
 } from '../features/recipesSlice';
 import { cn } from '../lib/utils';
 
-// Cooking Mode Component - Full screen immersive experience
+// Cooking Mode Component - Fully responsive immersive experience
 const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) => {
     const step = recipe.steps[currentStep];
     const progress = ((currentStep + 1) / recipe.steps.length) * 100;
 
     return (
-        <div className="fixed inset-0 bg-dark-bg z-50 flex flex-col p-4 sm:p-6 lg:p-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="fixed inset-0 bg-dark-bg z-50 flex flex-col p-3 sm:p-4 md:p-6 max-h-screen">
+            {/* Header - Compact */}
+            <div className="flex items-center justify-between mb-3 flex-shrink-0">
                 <button
                     onClick={onExit}
-                    className="flex items-center gap-2 text-white/50 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 touch-target"
+                    className="flex items-center gap-1 text-white/50 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/10 touch-target"
                 >
-                    <X size={24} />
-                    <span className="font-medium hidden sm:inline">Exit</span>
+                    <X size={20} />
+                    <span className="font-medium text-sm hidden sm:inline">Exit</span>
                 </button>
-                <div className="text-center flex-1 mx-4">
-                    <div className="text-lg sm:text-xl font-semibold truncate">{recipe.title}</div>
-                    <div className="text-sm text-white/50">Step {currentStep + 1} of {recipe.steps.length}</div>
+                <div className="text-center flex-1 mx-2">
+                    <div className="text-sm sm:text-base md:text-lg font-semibold truncate">{recipe.title}</div>
+                    <div className="text-xs text-white/50">Step {currentStep + 1} of {recipe.steps.length}</div>
                 </div>
-                <div className="w-12 sm:w-20" />
+                <div className="w-10 sm:w-16" />
             </div>
 
-            {/* Progress bar */}
-            <div className="progress-bar mb-6 sm:mb-8">
+            {/* Progress bar - Compact */}
+            <div className="progress-bar mb-3 sm:mb-4 flex-shrink-0">
                 <div
                     className="progress-bar-fill"
                     style={{ width: `${progress}%` }}
                 />
             </div>
 
-            {/* Main content - Large readable text */}
-            <div className="flex-1 flex items-center justify-center overflow-y-auto px-4 sm:px-8">
-                <div className="max-w-4xl text-center">
-                    <div className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-snug text-white">
+            {/* Main content - Responsive text with scroll */}
+            <div className="flex-1 flex items-center justify-center overflow-y-auto px-2 sm:px-4 md:px-8 min-h-0">
+                <div className="w-full max-w-4xl text-center py-4">
+                    <p className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold leading-relaxed text-white break-words">
                         {step}
-                    </div>
+                    </p>
                 </div>
             </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-6 gap-4">
+            {/* Navigation - Compact and responsive */}
+            <div className="flex items-center justify-between gap-2 sm:gap-4 mt-3 flex-shrink-0">
                 <button
                     onClick={onPrev}
                     disabled={currentStep === 0}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-4 rounded-2xl font-medium transition-all touch-target",
+                        "flex items-center gap-1 px-3 sm:px-4 md:px-6 py-3 rounded-xl font-medium transition-all touch-target text-sm sm:text-base",
                         currentStep === 0
                             ? "text-white/20 cursor-not-allowed"
                             : "bg-white/10 hover:bg-white/20 text-white"
                     )}
                 >
-                    <ChevronLeft size={24} />
-                    <span className="hidden sm:inline">Previous</span>
+                    <ChevronLeft size={20} />
+                    <span className="hidden sm:inline">Prev</span>
                 </button>
 
-                {/* Step indicators */}
-                <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+                {/* Step indicators - Scrollable */}
+                <div className="flex gap-1.5 overflow-x-auto hide-scrollbar px-2 max-w-[200px] sm:max-w-none">
                     {recipe.steps.map((_, idx) => (
                         <button
                             key={idx}
                             onClick={() => onGoTo(idx)}
                             className={cn(
-                                "w-3 h-3 rounded-full transition-all flex-shrink-0",
+                                "w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all flex-shrink-0 touch-target",
                                 idx === currentStep
                                     ? "bg-primary scale-125"
                                     : idx < currentStep
@@ -91,10 +91,10 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
 
                 <button
                     onClick={currentStep === recipe.steps.length - 1 ? onExit : onNext}
-                    className="flex items-center gap-2 px-6 py-4 rounded-2xl font-medium bg-primary text-white hover:bg-primary/80 transition-all touch-target"
+                    className="flex items-center gap-1 px-3 sm:px-4 md:px-6 py-3 rounded-xl font-medium bg-primary text-white hover:bg-primary/80 transition-all touch-target text-sm sm:text-base"
                 >
-                    <span>{currentStep === recipe.steps.length - 1 ? 'Finish' : 'Next'}</span>
-                    <ChevronRight size={24} />
+                    <span>{currentStep === recipe.steps.length - 1 ? 'Done' : 'Next'}</span>
+                    <ChevronRight size={20} />
                 </button>
             </div>
         </div>
