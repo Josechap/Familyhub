@@ -24,3 +24,15 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Database files (contain user data)
+*.db
+*.db-shm
+*.db-wal
+server/db/familyhub.db*
+
+# Backup files
+backups/
+
+# Sample photos (may contain personal photos)
+server/sample-photos/

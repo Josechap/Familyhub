@@ -21,7 +21,7 @@ await db.set('paprika_credentials', credentials);
 **Current exposure** (`/api/settings` response):
 ```json
 {
-  "paprika_credentials": "{\"email\":\"joschapa@gmail.com\",\"password\":\"nyrSyf-bowba4-tusmyq\",\"token\":\"...\"}"
+  "paprika_credentials": "{\"email\":\"user@example.com\",\"password\":\"EXPOSED_PASSWORD\",\"token\":\"...\"}"
 }
 ```
 

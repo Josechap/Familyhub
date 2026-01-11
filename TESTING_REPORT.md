@@ -162,7 +162,7 @@ Completed systematic testing of all Familyhub features through API endpoint test
 **🚨 CRITICAL SECURITY ISSUE**:
 ```json
 {
-  "paprika_credentials": "{\"email\":\"joschapa@gmail.com\",\"password\":\"nyrSyf-bowba4-tusmyq\",\"token\":\"eyJ...\"}"
+  "paprika_credentials": "{\"email\":\"user@example.com\",\"password\":\"EXPOSED_PASSWORD\",\"token\":\"eyJ...\"}"
 }
 ```
 
@@ -243,7 +243,7 @@ Completed systematic testing of all Familyhub features through API endpoint test
 4. **Paprika Credentials Security**
    - ❌ Credentials stored in PLAINTEXT in database
    - ❌ Exposed via `/api/settings` endpoint
-   - ❌ Password visible: `"password":"nyrSyf-bowba4-tusmyq"`
+   - ❌ Password visible: `"password":"YOUR_ACTUAL_PASSWORD"`
    - **Risk**: Anyone with network access can steal credentials
    - **Required**: Encrypt credentials at rest using crypto library
 
