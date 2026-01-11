@@ -15,6 +15,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Error handler
+error_exit() {
+    echo -e "${RED}❌ Error: $1${NC}" >&2
+    exit 1
+}
+
+# Check if running as root (we need sudo, but not root)
+if [ "$EUID" -eq 0 ]; then
+    echo -e "${YELLOW}⚠️  Please run as a regular user, not root${NC}"
+    echo "   The script will use sudo when needed"
+    exit 1
+fi
+
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="${FAMILYHUB_DIR:-$SCRIPT_DIR}"
@@ -22,12 +35,20 @@ INSTALL_DIR="${FAMILYHUB_DIR:-$SCRIPT_DIR}"
 # If running via curl pipe, clone the repo
 if [[ "$SCRIPT_DIR" == "/dev/fd" ]] || [[ ! -f "$SCRIPT_DIR/server/package.json" ]]; then
     INSTALL_DIR="$HOME/Familyhub"
+    
+    # Check for git
+    if ! command -v git &> /dev/null; then
+        echo -e "${YELLOW}📦 Installing git...${NC}"
+        sudo apt-get update
+        sudo apt-get install -y git || error_exit "Failed to install git"
+    fi
+    
     echo -e "${YELLOW}📥 Cloning Familyhub repository...${NC}"
     if [ -d "$INSTALL_DIR" ]; then
         echo "   Directory exists, pulling latest..."
-        cd "$INSTALL_DIR" && git pull
+        cd "$INSTALL_DIR" && git pull || error_exit "Failed to pull updates"
     else
-        git clone https://github.com/Josechap/Familyhub.git "$INSTALL_DIR"
+        git clone https://github.com/Josechap/Familyhub.git "$INSTALL_DIR" || error_exit "Failed to clone repository"
     fi
     cd "$INSTALL_DIR"
 else
@@ -37,58 +58,97 @@ fi
 echo -e "${GREEN}📂 Installing in: $INSTALL_DIR${NC}"
 echo ""
 
-# Check if running on Raspberry Pi (ARM)
+# Check architecture
 ARCH=$(uname -m)
 echo "🔍 Detected architecture: $ARCH"
+
+# Determine sharp platform flags
+SHARP_PLATFORM=""
+if [[ "$ARCH" == "aarch64" ]]; then
+    SHARP_PLATFORM="--os=linux --cpu=arm64"
+elif [[ "$ARCH" == "armv7l" ]]; then
+    SHARP_PLATFORM="--os=linux --cpu=arm"
+fi
 
 # Check for Node.js
 if command -v node &> /dev/null; then
     NODE_VERSION=$(node -v)
     echo -e "${GREEN}✓ Node.js found: $NODE_VERSION${NC}"
+    
+    # Check if version is sufficient (20+)
+    NODE_MAJOR=$(echo "$NODE_VERSION" | cut -d'.' -f1 | tr -d 'v')
+    if [ "$NODE_MAJOR" -lt 18 ]; then
+        echo -e "${YELLOW}⚠️  Node.js $NODE_VERSION is outdated, upgrading...${NC}"
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - || error_exit "Failed to add Node.js repository"
+        sudo apt-get install -y nodejs || error_exit "Failed to install Node.js"
+    fi
 else
     echo -e "${YELLOW}📦 Installing Node.js 20 LTS...${NC}"
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - || error_exit "Failed to add Node.js repository"
+    sudo apt-get install -y nodejs || error_exit "Failed to install Node.js"
     echo -e "${GREEN}✓ Node.js installed: $(node -v)${NC}"
 fi
 
-# Install build tools for native modules (better-sqlite3) and nginx
+# Install build tools for native modules (better-sqlite3, sharp) and nginx
 echo ""
 echo -e "${YELLOW}📦 Installing build dependencies...${NC}"
 sudo apt-get update
-sudo apt-get install -y build-essential python3 nginx sqlite3
+sudo apt-get install -y build-essential python3 nginx sqlite3 || error_exit "Failed to install dependencies"
 
 # Install server dependencies
 echo ""
 echo -e "${YELLOW}📦 Installing server dependencies...${NC}"
 cd "$INSTALL_DIR/server"
-npm install
+npm install || error_exit "Failed to install server dependencies"
+
+# Install sharp with platform-specific binaries if on ARM
+if [ -n "$SHARP_PLATFORM" ]; then
+    echo -e "${YELLOW}📦 Installing sharp for $ARCH...${NC}"
+    npm install $SHARP_PLATFORM sharp || echo -e "${YELLOW}⚠️  Sharp install warning (HEIC may not work)${NC}"
+fi
 
 # Install client dependencies and build
 echo ""
 echo -e "${YELLOW}📦 Installing client dependencies...${NC}"
 cd "$INSTALL_DIR/client"
-npm install
+npm install || error_exit "Failed to install client dependencies"
 
 echo ""
 echo -e "${YELLOW}🔨 Building client for production...${NC}"
-npm run build
+npm run build || error_exit "Failed to build client"
 
 # Create .env if it doesn't exist
 if [ ! -f "$INSTALL_DIR/server/.env" ]; then
     echo ""
     echo -e "${YELLOW}📝 Creating .env from template...${NC}"
-    cp "$INSTALL_DIR/server/.env.example" "$INSTALL_DIR/server/.env" 2>/dev/null || \
-    cat > "$INSTALL_DIR/server/.env" << 'EOF'
-# Google OAuth credentials (for calendar integration)
+    
+    # Generate encryption key
+    ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+    
+    if [ -f "$INSTALL_DIR/server/.env.example" ]; then
+        cp "$INSTALL_DIR/server/.env.example" "$INSTALL_DIR/server/.env"
+        # Update encryption key in .env
+        sed -i "s/your_64_character_hex_key_here/$ENCRYPTION_KEY/" "$INSTALL_DIR/server/.env" 2>/dev/null || true
+    else
+        cat > "$INSTALL_DIR/server/.env" << EOF
+# Familyhub OS Configuration
+# Generated by install.sh
+
+# Google OAuth credentials (optional - for calendar integration)
+# Get these from: https://console.cloud.google.com/apis/credentials
 GOOGLE_CLIENT_ID=your_client_id_here
 GOOGLE_CLIENT_SECRET=your_client_secret_here
 
 # Server configuration
 PORT=3001
 HOST=0.0.0.0
+
+# Encryption key for sensitive data (auto-generated)
+ENCRYPTION_KEY=$ENCRYPTION_KEY
 EOF
-    echo -e "${YELLOW}⚠️  Please edit server/.env with your credentials${NC}"
+    fi
+    echo -e "${GREEN}✓ Generated encryption key${NC}"
+    echo -e "${YELLOW}⚠️  Edit server/.env to add Google credentials (optional)${NC}"
 fi
 
 # Create systemd service
@@ -123,10 +183,31 @@ sudo systemctl start familyhub
 # Configure Nginx reverse proxy
 echo ""
 echo -e "${YELLOW}🔧 Configuring Nginx reverse proxy...${NC}"
-sudo cp "$INSTALL_DIR/nginx/familyhub.conf" /etc/nginx/sites-available/familyhub
+if [ -f "$INSTALL_DIR/nginx/familyhub.conf" ]; then
+    sudo cp "$INSTALL_DIR/nginx/familyhub.conf" /etc/nginx/sites-available/familyhub
+else
+    # Create nginx config inline if file doesn't exist
+    sudo tee /etc/nginx/sites-available/familyhub > /dev/null << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+NGINX
+fi
+
 sudo ln -sf /etc/nginx/sites-available/familyhub /etc/nginx/sites-enabled/familyhub
 sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-sudo nginx -t && sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx || error_exit "Nginx configuration failed"
 sudo systemctl enable nginx
 echo -e "${GREEN}✓ Nginx configured (access on port 80)${NC}"
 
@@ -134,7 +215,8 @@ echo -e "${GREEN}✓ Nginx configured (access on port 80)${NC}"
 echo ""
 echo -e "${YELLOW}🔧 Setting up database backups...${NC}"
 mkdir -p "$INSTALL_DIR/backups"
-chmod +x "$INSTALL_DIR/scripts/backup-db.sh"
+chmod +x "$INSTALL_DIR/scripts/backup-db.sh" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/scripts/setup-kiosk.sh" 2>/dev/null || true
 
 # Add daily backup cron job (2 AM)
 CRON_JOB="0 2 * * * $INSTALL_DIR/scripts/backup-db.sh >> /var/log/familyhub-backup.log 2>&1"
@@ -153,18 +235,23 @@ echo -e "${GREEN}✅ Familyhub OS installed successfully!${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 echo ""
 echo "🌐 Access your dashboard at:"
-echo -e "   ${GREEN}http://$IP_ADDR${NC} (via Nginx)"
-echo -e "   ${GREEN}http://localhost${NC}"
+echo -e "   ${GREEN}http://$IP_ADDR${NC}"
+echo -e "   ${GREEN}http://familyhub.local${NC} (if mDNS works)"
 echo ""
 echo "📋 Useful commands:"
 echo "   sudo systemctl status familyhub    # Check app status"
 echo "   sudo systemctl restart familyhub   # Restart app"
-echo "   sudo systemctl status nginx        # Check Nginx status"
 echo "   sudo journalctl -u familyhub -f    # View app logs"
-echo "   ./scripts/backup-db.sh             # Manual backup"
 echo ""
-echo "📦 Backups:"
+echo "🖥️  For dedicated display (kiosk mode):"
+echo "   cd ~/Familyhub && ./scripts/setup-kiosk.sh"
+echo ""
+echo "💾 Backups:"
 echo "   Location: $INSTALL_DIR/backups/"
 echo "   Schedule: Daily at 2 AM (7-day retention)"
 echo ""
-echo -e "${YELLOW}⚠️  Don't forget to edit server/.env with your Google credentials!${NC}"
+echo -e "${YELLOW}📝 Next steps:${NC}"
+echo "   1. Edit server/.env for Google Calendar (optional)"
+echo "   2. Configure photos folder in Settings"
+echo "   3. Set up kiosk mode if using a display"
+echo ""
