@@ -20,7 +20,29 @@ body {
 
 /* Dark mode is default, light mode when class applied */
 body.light {
-  @apply bg-light-bg text-slate-900;
+  @apply bg-light-bg;
+  color: #1e293b !important;
+}
+
+/* Light mode color overrides using CSS custom properties */
+body.light * {
+  --tw-text-opacity: 1;
+}
+
+body.light [class*="text-white"] {
+  color: #1e293b;
+}
+
+body.light [class*="text-white/"] {
+  color: #64748b;
+}
+
+body.light [class*="border-white"] {
+  border-color: #e2e8f0;
+}
+
+body.light [class*="bg-white/"] {
+  background-color: #f1f5f9;
 }
 
 /* Typography */

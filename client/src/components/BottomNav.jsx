@@ -1,6 +1,6 @@
 import React from 'react';
-import { Home, Calendar, CheckSquare, ChefHat, Settings } from 'lucide-react';
-import { useSelector, useDispatch } from 'react-redux';
+import { Home, Calendar, CheckSquare, ChefHat, Settings, UtensilsCrossed } from 'lucide-react';
+import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { setActiveTab } from '../features/appSlice';
 import { cn } from '../lib/utils';
@@ -15,6 +15,7 @@ const BottomNav = () => {
         { id: 'calendar', icon: Calendar, path: '/calendar', label: 'Calendar' },
         { id: 'tasks', icon: CheckSquare, path: '/tasks', label: 'Tasks' },
         { id: 'recipes', icon: ChefHat, path: '/recipes', label: 'Recipes' },
+        { id: 'meals', icon: UtensilsCrossed, path: '/meals', label: 'Meals' },
         { id: 'settings', icon: Settings, path: '/settings', label: 'Settings' },
     ];
 

@@ -1,16 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
+const { encrypt, decrypt, isEncrypted } = require('../utils/crypto');
 
 // Paprika API base URL
 const PAPRIKA_API = 'https://www.paprikaapp.com/api/v2';
 
-// Get stored credentials
+// Get stored credentials (decrypts if encrypted)
 const getCredentials = () => {
     try {
         const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('paprika_credentials');
         if (row) {
-            return JSON.parse(row.value);
+            const value = row.value;
+
+            // Check if credentials are encrypted
+            if (isEncrypted(value)) {
+                // Decrypt and parse
+                const decrypted = decrypt(value);
+                return JSON.parse(decrypted);
+            } else {
+                // Legacy plaintext credentials - migrate to encrypted
+                console.log('Migrating Paprika credentials to encrypted format...');
+                const credentials = JSON.parse(value);
+                const encrypted = encrypt(value);
+                db.prepare('UPDATE settings SET value = ? WHERE key = ?').run(encrypted, 'paprika_credentials');
+                console.log('✅ Paprika credentials encrypted successfully');
+                return credentials;
+            }
         }
     } catch (error) {
         console.error('Error getting Paprika credentials:', error);
@@ -18,10 +34,11 @@ const getCredentials = () => {
     return null;
 };
 
-// Save credentials with token
+// Save credentials with token (encrypted)
 const saveCredentials = (email, password, token) => {
     const credentials = JSON.stringify({ email, password, token });
-    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('paprika_credentials', credentials);
+    const encryptedCredentials = encrypt(credentials);
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('paprika_credentials', encryptedCredentials);
 };
 
 // Clear credentials

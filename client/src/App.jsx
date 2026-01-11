@@ -14,12 +14,12 @@ function App() {
     <ErrorBoundary>
       <Layout>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/recipes" element={<Recipes />} />
-          <Route path="/meals" element={<MealPlanning />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="/calendar" element={<ErrorBoundary><Calendar /></ErrorBoundary>} />
+          <Route path="/tasks" element={<ErrorBoundary><Tasks /></ErrorBoundary>} />
+          <Route path="/recipes" element={<ErrorBoundary><Recipes /></ErrorBoundary>} />
+          <Route path="/meals" element={<ErrorBoundary><MealPlanning /></ErrorBoundary>} />
+          <Route path="/settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
         </Routes>
       </Layout>
     </ErrorBoundary>

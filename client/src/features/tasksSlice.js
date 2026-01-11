@@ -28,7 +28,7 @@ export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
     return { chores, familyMembers, googleTasks: mappedGoogleTasks };
 });
 
-export const toggleChoreAsync = createAsyncThunk('tasks/toggleChore', async (choreId, { getState }) => {
+export const toggleChoreAsync = createAsyncThunk('tasks/toggleChore', async (choreId) => {
     await api.toggleChore(choreId);
     // Refetch to get updated data
     const [chores, familyMembers] = await Promise.all([
@@ -37,6 +37,34 @@ export const toggleChoreAsync = createAsyncThunk('tasks/toggleChore', async (cho
     ]);
     return { chores, familyMembers, choreId };
 });
+
+export const completeGoogleTaskAsync = createAsyncThunk(
+    'tasks/completeGoogleTask',
+    async ({ listId, taskId }) => {
+        await api.completeGoogleTask(listId, taskId);
+        // Refetch all tasks to get updated state
+        const [chores, familyMembers, googleTasks, settings] = await Promise.all([
+            api.getTasks(),
+            api.getFamilyMembers(),
+            api.getGoogleTasks(),
+            fetch(`${API_BASE}/settings`).then(r => r.json()),
+        ]);
+
+        // Map Google tasks to family members based on task list mappings
+        const mappedGoogleTasks = googleTasks.map(task => {
+            const mappingKey = `taskListMapping_${task.listId}`;
+            const memberId = settings[mappingKey];
+            const member = familyMembers.find(m => m.id === memberId);
+            return {
+                ...task,
+                assignedTo: member?.name || task.listName,
+                assignedMemberId: memberId,
+            };
+        });
+
+        return { chores, familyMembers, googleTasks: mappedGoogleTasks, taskId };
+    }
+);
 
 const initialState = {
     chores: [],
@@ -81,6 +109,12 @@ export const tasksSlice = createSlice({
                     state.showConfetti = true;
                     state.lastCompletedChore = action.payload.choreId;
                 }
+            })
+            .addCase(completeGoogleTaskAsync.fulfilled, (state, action) => {
+                state.chores = action.payload.chores;
+                state.familyMembers = action.payload.familyMembers;
+                state.googleTasks = action.payload.googleTasks;
+                state.showConfetti = true;
             });
     },
 });

@@ -15,19 +15,15 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Speaker, Music2 } from 'lu
 const SonosWidget = () => {
     const dispatch = useDispatch();
     const { devices, activeDeviceIp, playerState, loading } = useSelector((state) => state.sonos);
-    const [localVolume, setLocalVolume] = useState(0);
+    const [pendingVolume, setPendingVolume] = useState(null);
     const volumeTimeoutRef = useRef(null);
 
     useEffect(() => {
         dispatch(fetchSonosDevices());
     }, [dispatch]);
 
-    // Sync local volume with player state
-    useEffect(() => {
-        if (playerState.volume !== undefined) {
-            setLocalVolume(playerState.volume);
-        }
-    }, [playerState.volume]);
+    // Display pending volume while adjusting, otherwise show server volume
+    const displayVolume = pendingVolume !== null ? pendingVolume : (playerState.volume ?? 0);
 
     // Poll for state updates every 5 seconds if a device is active
     useEffect(() => {
@@ -58,7 +54,7 @@ const SonosWidget = () => {
     // Volume change handler with debounce
     const handleVolumeChange = (e) => {
         const level = parseInt(e.target.value);
-        setLocalVolume(level); // Update local state immediately for smooth UI
+        setPendingVolume(level); // Update local state immediately for smooth UI
 
         if (!activeDeviceIp) return;
 
@@ -70,6 +66,7 @@ const SonosWidget = () => {
         // Debounce the actual API call by 500ms
         volumeTimeoutRef.current = setTimeout(() => {
             dispatch(sonosVolume({ ip: activeDeviceIp, level: level }));
+            setPendingVolume(null); // Clear pending, let server value take over
         }, 500);
     };
 
@@ -159,12 +156,12 @@ const SonosWidget = () => {
                         type="range"
                         min="0"
                         max="100"
-                        value={localVolume}
+                        value={displayVolume}
                         onChange={handleVolumeChange}
                         className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
                         disabled={!activeDeviceIp}
                     />
-                    <span className="text-xs text-gray-400 w-8 text-right">{localVolume}</span>
+                    <span className="text-xs text-gray-400 w-8 text-right">{displayVolume}</span>
                 </div>
             </div>
         </div>

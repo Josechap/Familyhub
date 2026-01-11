@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     activeTab: 'dashboard', // dashboard, calendar, tasks, recipes, photos, settings
+    screensaverActive: false,
     familyMembers: [
         { id: '1', name: 'Dad', color: '#A7C7E7', points: 120 },
         { id: '2', name: 'Mom', color: '#F4C2C2', points: 150 },
@@ -16,9 +17,12 @@ export const appSlice = createSlice({
         setActiveTab: (state, action) => {
             state.activeTab = action.payload;
         },
+        setScreensaverActive: (state, action) => {
+            state.screensaverActive = action.payload;
+        },
     },
 });
 
-export const { setActiveTab } = appSlice.actions;
+export const { setActiveTab, setScreensaverActive } = appSlice.actions;
 
 export default appSlice.reducer;

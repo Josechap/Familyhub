@@ -25,7 +25,6 @@ class ErrorBoundary extends React.Component {
       return (
         <ErrorFallback
           error={this.state.error}
-          errorInfo={this.state.errorInfo}
           onReset={this.handleReset}
         />
       );

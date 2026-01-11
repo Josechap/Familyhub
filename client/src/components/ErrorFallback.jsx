@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
-const ErrorFallback = ({ error, errorInfo, onReset }) => {
+const ErrorFallback = ({ error, onReset }) => {
   const handleGoHome = () => {
     window.location.href = '/';
   };

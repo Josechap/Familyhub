@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2 } from 'lucide-react';
+import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2, Sun, Moon, Monitor, Timer, Image } from 'lucide-react';
 import { API_BASE, GOOGLE_AUTH_URL } from '../lib/config';
 import {
     fetchSettings,
@@ -8,6 +8,7 @@ import {
     addFamilyMember,
     updateFamilyMember,
     deleteFamilyMember,
+    setThemeMode,
 } from '../features/settingsSlice';
 import { cn } from '../lib/utils';
 
@@ -104,7 +105,7 @@ const GoogleIntegration = () => {
             const res = await fetch(`${API_BASE}/google/status`);
             const data = await res.json();
             setStatus({ ...data, loading: false });
-        } catch (error) {
+        } catch {
             setStatus({ connected: false, loading: false });
         }
     };
@@ -191,6 +192,180 @@ const GoogleIntegration = () => {
     );
 };
 
+// Google Photos Album Picker Component
+const GooglePhotosAlbumPicker = () => {
+    const dispatch = useDispatch();
+    const { googlePhotosAlbumId, googlePhotosAlbumName } = useSelector((state) => state.settings);
+    const [status, setStatus] = useState({ connected: false, hasPhotosScope: false, loading: true });
+    const [albums, setAlbums] = useState([]);
+    const [loadingAlbums, setLoadingAlbums] = useState(false);
+    const [showPicker, setShowPicker] = useState(false);
+
+    const fetchAlbums = async () => {
+        setLoadingAlbums(true);
+        try {
+            const res = await fetch(`${API_BASE}/google/photos/albums`);
+            if (res.ok) {
+                const data = await res.json();
+                setAlbums(data);
+            }
+        } catch {
+            console.error('Failed to fetch albums');
+        }
+        setLoadingAlbums(false);
+    };
+
+    useEffect(() => {
+        const checkStatus = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/google/photos/status`);
+                const data = await res.json();
+                setStatus({ ...data, loading: false });
+
+                if (data.hasPhotosScope) {
+                    fetchAlbums();
+                }
+            } catch {
+                setStatus({ connected: false, hasPhotosScope: false, loading: false });
+            }
+        };
+        checkStatus();
+    }, []);
+
+    const handleSelectAlbum = (album) => {
+        dispatch(updateSettings({
+            googlePhotosAlbumId: album.id,
+            googlePhotosAlbumName: album.title,
+        }));
+        setShowPicker(false);
+    };
+
+    const handleClearAlbum = () => {
+        dispatch(updateSettings({
+            googlePhotosAlbumId: null,
+            googlePhotosAlbumName: null,
+        }));
+    };
+
+    if (status.loading) {
+        return <Loader2 className="animate-spin text-white/40" size={24} />;
+    }
+
+    if (!status.connected) {
+        return (
+            <p className="text-white/50 text-sm">
+                Connect Google in the Integrations section below to enable photo screensaver.
+            </p>
+        );
+    }
+
+    if (!status.hasPhotosScope) {
+        return (
+            <div className="space-y-3">
+                {status.needsApiEnabled ? (
+                    <>
+                        <p className="text-amber-400 text-sm font-medium">
+                            Photos Library API needs to be enabled
+                        </p>
+                        <p className="text-white/50 text-sm">
+                            1. Enable the API in Google Cloud Console<br/>
+                            2. Then click "Reconnect Google" below
+                        </p>
+                        <a
+                            href="https://console.developers.google.com/apis/api/photoslibrary.googleapis.com/overview"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors"
+                        >
+                            Open Google Cloud Console
+                        </a>
+                    </>
+                ) : (
+                    <p className="text-white/50 text-sm">
+                        Photos permission needed. Go to Google Integration above and click <strong className="text-white">Disconnect</strong>, then <strong className="text-white">Connect to Google</strong> again.
+                    </p>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {/* Current selection */}
+            {googlePhotosAlbumId ? (
+                <div className="flex items-center justify-between p-3 bg-success/20 rounded-xl border border-success/30">
+                    <div>
+                        <p className="text-sm font-medium text-success">Selected Album</p>
+                        <p className="text-white">{googlePhotosAlbumName}</p>
+                    </div>
+                    <button
+                        onClick={handleClearAlbum}
+                        className="p-2 text-white/40 hover:text-red-400 transition-colors"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+            ) : (
+                <p className="text-white/50 text-sm">No album selected</p>
+            )}
+
+            {/* Album picker button */}
+            <button
+                onClick={() => {
+                    setShowPicker(!showPicker);
+                    if (!showPicker && albums.length === 0) {
+                        fetchAlbums();
+                    }
+                }}
+                className="w-full py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors"
+            >
+                {showPicker ? 'Hide Albums' : 'Choose Album'}
+            </button>
+
+            {/* Album list */}
+            {showPicker && (
+                <div className="max-h-60 overflow-y-auto space-y-2 p-2 bg-white/5 rounded-xl">
+                    {loadingAlbums ? (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="animate-spin text-white/40" size={24} />
+                        </div>
+                    ) : albums.length === 0 ? (
+                        <p className="text-white/40 text-center py-4 text-sm">No albums found</p>
+                    ) : (
+                        albums.map((album) => (
+                            <button
+                                key={album.id}
+                                onClick={() => handleSelectAlbum(album)}
+                                className={cn(
+                                    "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
+                                    googlePhotosAlbumId === album.id
+                                        ? "bg-primary text-white"
+                                        : "bg-white/5 hover:bg-white/10"
+                                )}
+                            >
+                                {album.coverUrl && (
+                                    <img
+                                        src={`${album.coverUrl}=w64-h64-c`}
+                                        alt=""
+                                        className="w-10 h-10 rounded-lg object-cover"
+                                    />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium truncate">{album.title}</p>
+                                    <p className="text-xs text-white/50">{album.itemCount} photos</p>
+                                </div>
+                                {googlePhotosAlbumId === album.id && (
+                                    <Check size={18} />
+                                )}
+                            </button>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Paprika Integration Component
 const PaprikaIntegration = () => {
     const [status, setStatus] = useState({ connected: false, email: null, loading: true });
@@ -205,7 +380,7 @@ const PaprikaIntegration = () => {
             const res = await fetch(`${API_BASE}/paprika/status`);
             const data = await res.json();
             setStatus({ ...data, loading: false });
-        } catch (err) {
+        } catch {
             setStatus({ connected: false, loading: false });
         }
     };
@@ -235,7 +410,7 @@ const PaprikaIntegration = () => {
                 setEmail('');
                 setPassword('');
             }
-        } catch (err) {
+        } catch {
             setError('Connection failed');
         }
         setConnecting(false);
@@ -327,7 +502,14 @@ const PaprikaIntegration = () => {
 
 const Settings = () => {
     const dispatch = useDispatch();
-    const { familyMembers, loading } = useSelector((state) => state.settings);
+    const {
+        familyMembers,
+        themeMode,
+        idleReturnTimeout,
+        screensaverTimeout,
+        screensaverPhotoInterval,
+        loading
+    } = useSelector((state) => state.settings);
     const [editingMember, setEditingMember] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -349,6 +531,11 @@ const Settings = () => {
         if (confirm('Delete this family member?')) {
             dispatch(deleteFamilyMember(id));
         }
+    };
+
+    const handleThemeChange = (mode) => {
+        dispatch(setThemeMode(mode));
+        dispatch(updateSettings({ themeMode: mode }));
     };
 
     if (loading && familyMembers.length === 0) {
@@ -374,6 +561,156 @@ const Settings = () => {
             )}
 
             <h1 className="text-2xl font-semibold">Settings</h1>
+
+            {/* Appearance Section */}
+            <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Sun size={20} className="text-primary" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Appearance</h2>
+                </div>
+
+                <div className="space-y-3">
+                    <p className="text-sm text-white/60 mb-4">Choose your preferred theme</p>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        {/* Auto Mode */}
+                        <button
+                            onClick={() => handleThemeChange('auto')}
+                            className={cn(
+                                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all touch-target",
+                                themeMode === 'auto'
+                                    ? "border-primary bg-primary/10"
+                                    : "border-white/10 bg-white/5 hover:border-white/20"
+                            )}
+                        >
+                            <Monitor size={24} className={themeMode === 'auto' ? 'text-primary' : 'text-white/60'} />
+                            <span className="text-sm font-medium">Auto</span>
+                            <span className="text-xs text-white/40 text-center">System</span>
+                        </button>
+
+                        {/* Light Mode */}
+                        <button
+                            onClick={() => handleThemeChange('light')}
+                            className={cn(
+                                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all touch-target",
+                                themeMode === 'light'
+                                    ? "border-primary bg-primary/10"
+                                    : "border-white/10 bg-white/5 hover:border-white/20"
+                            )}
+                        >
+                            <Sun size={24} className={themeMode === 'light' ? 'text-primary' : 'text-white/60'} />
+                            <span className="text-sm font-medium">Light</span>
+                            <span className="text-xs text-white/40">Always on</span>
+                        </button>
+
+                        {/* Dark Mode */}
+                        <button
+                            onClick={() => handleThemeChange('dark')}
+                            className={cn(
+                                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all touch-target",
+                                themeMode === 'dark'
+                                    ? "border-primary bg-primary/10"
+                                    : "border-white/10 bg-white/5 hover:border-white/20"
+                            )}
+                        >
+                            <Moon size={24} className={themeMode === 'dark' ? 'text-primary' : 'text-white/60'} />
+                            <span className="text-sm font-medium">Dark</span>
+                            <span className="text-xs text-white/40">Always on</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Display Settings Section */}
+            <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                        <Timer size={20} className="text-cyan-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Display & Screensaver</h2>
+                </div>
+
+                <div className="space-y-6">
+                    {/* Idle Return Timeout */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium">Return to Dashboard after idle</label>
+                            <span className="text-sm text-primary font-semibold">{idleReturnTimeout} min</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="30"
+                            value={idleReturnTimeout}
+                            onChange={(e) => dispatch(updateSettings({ idleReturnTimeout: parseInt(e.target.value, 10) }))}
+                            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                        <div className="flex justify-between text-xs text-white/40 mt-1">
+                            <span>1 min</span>
+                            <span>30 min</span>
+                        </div>
+                    </div>
+
+                    {/* Screensaver Timeout */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium">Screensaver after idle</label>
+                            <span className="text-sm text-primary font-semibold">{screensaverTimeout} min</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="5"
+                            max="60"
+                            step="5"
+                            value={screensaverTimeout}
+                            onChange={(e) => dispatch(updateSettings({ screensaverTimeout: parseInt(e.target.value, 10) }))}
+                            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                        <div className="flex justify-between text-xs text-white/40 mt-1">
+                            <span>5 min</span>
+                            <span>60 min</span>
+                        </div>
+                    </div>
+
+                    {/* Photo Interval */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium">Photo transition interval</label>
+                            <span className="text-sm text-primary font-semibold">{screensaverPhotoInterval} sec</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="10"
+                            max="120"
+                            step="10"
+                            value={screensaverPhotoInterval}
+                            onChange={(e) => dispatch(updateSettings({ screensaverPhotoInterval: parseInt(e.target.value, 10) }))}
+                            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                        <div className="flex justify-between text-xs text-white/40 mt-1">
+                            <span>10 sec</span>
+                            <span>2 min</span>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-white/40">
+                        Screensaver shows photos from Google Photos with today's calendar overlay.
+                    </p>
+                </div>
+            </div>
+
+            {/* Google Photos Section */}
+            <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                        <Image size={20} className="text-pink-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Screensaver Photos</h2>
+                </div>
+                <GooglePhotosAlbumPicker />
+            </div>
 
             {/* Family Members Section */}
             <div className="card">

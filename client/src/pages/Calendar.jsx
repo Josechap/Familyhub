@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { ChevronLeft, ChevronRight, Loader2, X, Clock, Calendar as CalendarIcon, User, Utensils, MapPin } from 'lucide-react';
-import { fetchCalendarData, setSelectedDate } from '../features/calendarSlice';
+import { fetchCalendarData } from '../features/calendarSlice';
 import { cn } from '../lib/utils';
 import { API_BASE } from '../lib/config';
 
@@ -141,7 +141,7 @@ const EventModal = ({ event, familyMembers, onClose, onAssign }) => {
 
 const Calendar = () => {
     const dispatch = useDispatch();
-    const { events, dinnerSlots, selectedDate, familyMembers, loading } = useSelector((state) => state.calendar);
+    const { events, dinnerSlots, familyMembers, loading } = useSelector((state) => state.calendar);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDayIndex, setSelectedDayIndex] = useState(0);
     const [multiDayView, setMultiDayView] = useState(false);
@@ -325,7 +325,6 @@ const Calendar = () => {
                                 const members = event.members || [event.member];
                                 const colorKey = event.colors?.[0] || event.color || 'pastel-blue';
                                 const colors = familyColors[colorKey] || familyColors['pastel-blue'];
-                                const member = familyMembers.find(m => m.name === event.member);
 
                                 return (
                                     <div
@@ -382,7 +381,7 @@ const Calendar = () => {
                 // Multi-Day Grid View
                 <div className="flex-1 overflow-x-auto overflow-y-hidden touch-scroll hide-scrollbar">
                     <div className="flex gap-4 h-full pb-4">
-                        {dates.map((day, idx) => {
+                        {dates.map((day) => {
                             const dayEventsData = getEventsForDate(day.date);
                             const dayDinner = getDinner(day.date);
 

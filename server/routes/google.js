@@ -2,26 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { google } = require('googleapis');
 const db = require('../db/database');
-
-// OAuth2 client configuration
-const getOAuth2Client = () => {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3001/api/google/callback';
-
-    if (!clientId || !clientSecret) {
-        return null;
-    }
-
-    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-};
-
-// Scopes for Google APIs
-const SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/tasks',  // Full access for CRUD operations
-    'https://www.googleapis.com/auth/userinfo.email',
-];
+const { SCOPES, getOAuth2Client, getAuthenticatedClient } = require('../lib/googleAuth');
 
 // GET /auth - Redirect to Google OAuth
 router.get('/auth', (req, res) => {
@@ -31,12 +12,15 @@ router.get('/auth', (req, res) => {
         return res.status(500).json({ error: 'Google OAuth not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env' });
     }
 
+    // Force re-consent to get new scopes (like Photos)
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
         prompt: 'consent',
+        include_granted_scopes: true,
     });
 
+    console.log('Redirecting to Google OAuth with scopes:', SCOPES);
     res.redirect(authUrl);
 });
 
@@ -57,17 +41,33 @@ router.get('/callback', async (req, res) => {
         const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
         const { data } = await oauth2.userinfo.get();
 
-        // Store tokens in database
+        console.log('OAuth callback received, storing tokens for:', data.email);
+        console.log('Token scopes:', tokens.scope);
+        console.log('New refresh_token received:', !!tokens.refresh_token);
+
+        // Get existing tokens to preserve refresh_token if not provided
+        const existing = db.prepare('SELECT refresh_token FROM google_tokens WHERE id = 1').get();
+        const refreshToken = tokens.refresh_token || existing?.refresh_token;
+
+        if (!refreshToken) {
+            console.error('No refresh token available - user needs to re-authorize with consent');
+        }
+
+        // Store tokens in database (preserve old refresh_token if new one not provided)
         db.prepare(`
             INSERT OR REPLACE INTO google_tokens (id, access_token, refresh_token, expiry_date, email)
             VALUES (1, ?, ?, ?, ?)
-        `).run(tokens.access_token, tokens.refresh_token, tokens.expiry_date, data.email);
+        `).run(tokens.access_token, refreshToken, tokens.expiry_date, data.email);
 
-        // Redirect back to settings page
-        res.redirect('http://localhost:5173/settings?google=connected');
+        console.log('Tokens stored successfully with refresh_token:', !!refreshToken);
+
+        // Redirect back to settings page (use env var or default)
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        res.redirect(`${clientUrl}/settings?google=connected`);
     } catch (error) {
         console.error('OAuth error:', error);
-        res.redirect('http://localhost:5173/settings?google=error');
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        res.redirect(`${clientUrl}/settings?google=error`);
     }
 });
 
@@ -89,37 +89,6 @@ router.get('/status', (req, res) => {
         res.json({ connected: false });
     }
 });
-
-// Helper to get authenticated client
-const getAuthenticatedClient = async () => {
-    const oauth2Client = getOAuth2Client();
-    if (!oauth2Client) return null;
-
-    const tokens = db.prepare('SELECT access_token, refresh_token, expiry_date FROM google_tokens WHERE id = 1').get();
-    if (!tokens) return null;
-
-    oauth2Client.setCredentials({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expiry_date: tokens.expiry_date,
-    });
-
-    // Check if token needs refresh
-    if (tokens.expiry_date && Date.now() > tokens.expiry_date) {
-        try {
-            const { credentials } = await oauth2Client.refreshAccessToken();
-            db.prepare(`
-                UPDATE google_tokens SET access_token = ?, expiry_date = ? WHERE id = 1
-            `).run(credentials.access_token, credentials.expiry_date);
-            oauth2Client.setCredentials(credentials);
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            return null;
-        }
-    }
-
-    return oauth2Client;
-};
 
 // Helper to parse [Name] prefix from event title
 const parseMemberFromTitle = (title) => {
@@ -323,6 +292,14 @@ router.patch('/tasks/:listId/:taskId/complete', async (req, res) => {
 
         if (memberId) {
             db.prepare('UPDATE family_members SET points = points + 1 WHERE id = ?').run(memberId);
+
+            // Log completion to history
+            const member = db.prepare('SELECT name FROM family_members WHERE id = ?').get(memberId);
+            const taskTitle = result.data.title || 'Google Task';
+            db.prepare(`
+                INSERT INTO task_completions (member_id, member_name, task_title, task_source, points_earned)
+                VALUES (?, ?, ?, 'google', 1)
+            `).run(memberId, member?.name || 'Unknown', taskTitle);
         }
 
         res.json({ success: true, task: result.data });
@@ -351,6 +328,16 @@ router.patch('/tasks/:listId/:taskId/reopen', async (req, res) => {
                 completed: null,
             },
         });
+
+        // Deduct 1 point from the assigned family member
+        const mappingKey = `taskListMapping_${listId}`;
+        const mapping = db.prepare('SELECT value FROM settings WHERE key = ?').get(mappingKey);
+
+        let memberId = mapping ? mapping.value : null;
+
+        if (memberId) {
+            db.prepare('UPDATE family_members SET points = points - 1 WHERE id = ?').run(memberId);
+        }
 
         res.json({ success: true, task: result.data });
     } catch (error) {
@@ -464,12 +451,22 @@ router.post('/tasks/:listId/:taskId/transfer', async (req, res) => {
             task: taskId,
         });
 
-        // 2. Create new task in target list
+        // 2. If task was completed, deduct point from original list's owner
+        if (originalTask.data.status === 'completed') {
+            const mappingKey = `taskListMapping_${listId}`;
+            const mapping = db.prepare('SELECT value FROM settings WHERE key = ?').get(mappingKey);
+
+            if (mapping?.value) {
+                db.prepare('UPDATE family_members SET points = points - 1 WHERE id = ?').run(mapping.value);
+            }
+        }
+
+        // 3. Create new task in target list (always reset to needsAction)
         const newTaskBody = {
             title: originalTask.data.title,
             notes: originalTask.data.notes,
             due: originalTask.data.due,
-            status: 'needsAction', // Reset status or keep it? Usually transfer implies pending.
+            status: 'needsAction', // Reset status when transferring
         };
 
         const newTask = await tasks.tasks.insert({
@@ -477,7 +474,7 @@ router.post('/tasks/:listId/:taskId/transfer', async (req, res) => {
             requestBody: newTaskBody,
         });
 
-        // 3. Delete original task
+        // 4. Delete original task
         await tasks.tasks.delete({
             tasklist: listId,
             task: taskId,
@@ -490,10 +487,29 @@ router.post('/tasks/:listId/:taskId/transfer', async (req, res) => {
     }
 });
 
-// POST /disconnect - Remove stored tokens
-router.post('/disconnect', (req, res) => {
+// POST /disconnect - Remove stored tokens and revoke with Google
+router.post('/disconnect', async (req, res) => {
     try {
+        // Get current token to revoke it
+        const tokens = db.prepare('SELECT access_token, refresh_token FROM google_tokens WHERE id = 1').get();
+
+        if (tokens?.access_token) {
+            // Revoke the token with Google to ensure fresh scopes on reconnect
+            try {
+                await fetch(`https://oauth2.googleapis.com/revoke?token=${tokens.access_token}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                });
+                console.log('Token revoked with Google');
+            } catch (revokeError) {
+                console.log('Token revoke failed (may already be invalid):', revokeError.message);
+            }
+        }
+
+        // Delete from database
         db.prepare('DELETE FROM google_tokens WHERE id = 1').run();
+        console.log('Google tokens deleted from database');
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });

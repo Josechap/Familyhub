@@ -2,6 +2,17 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
+// GET /api/calendar - Base route with usage info
+router.get('/', (req, res) => {
+    res.json({
+        message: 'Calendar API',
+        endpoints: {
+            events: 'GET /api/calendar/events',
+            dinner: 'GET /api/calendar/dinner'
+        }
+    });
+});
+
 // GET all calendar events
 router.get('/events', (req, res) => {
     try {

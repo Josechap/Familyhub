@@ -52,11 +52,11 @@ else
     echo -e "${GREEN}✓ Node.js installed: $(node -v)${NC}"
 fi
 
-# Install build tools for native modules (better-sqlite3)
+# Install build tools for native modules (better-sqlite3) and nginx
 echo ""
 echo -e "${YELLOW}📦 Installing build dependencies...${NC}"
 sudo apt-get update
-sudo apt-get install -y build-essential python3
+sudo apt-get install -y build-essential python3 nginx sqlite3
 
 # Install server dependencies
 echo ""
@@ -120,6 +120,30 @@ sudo systemctl daemon-reload
 sudo systemctl enable familyhub
 sudo systemctl start familyhub
 
+# Configure Nginx reverse proxy
+echo ""
+echo -e "${YELLOW}🔧 Configuring Nginx reverse proxy...${NC}"
+sudo cp "$INSTALL_DIR/nginx/familyhub.conf" /etc/nginx/sites-available/familyhub
+sudo ln -sf /etc/nginx/sites-available/familyhub /etc/nginx/sites-enabled/familyhub
+sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+sudo nginx -t && sudo systemctl reload nginx
+sudo systemctl enable nginx
+echo -e "${GREEN}✓ Nginx configured (access on port 80)${NC}"
+
+# Set up backup directory and cron job
+echo ""
+echo -e "${YELLOW}🔧 Setting up database backups...${NC}"
+mkdir -p "$INSTALL_DIR/backups"
+chmod +x "$INSTALL_DIR/scripts/backup-db.sh"
+
+# Add daily backup cron job (2 AM)
+CRON_JOB="0 2 * * * $INSTALL_DIR/scripts/backup-db.sh >> /var/log/familyhub-backup.log 2>&1"
+(crontab -l 2>/dev/null | grep -v "backup-db.sh"; echo "$CRON_JOB") | crontab -
+echo -e "${GREEN}✓ Daily backups scheduled (2 AM)${NC}"
+
+# Run initial backup
+"$INSTALL_DIR/scripts/backup-db.sh" > /dev/null 2>&1 || true
+
 # Get IP address
 IP_ADDR=$(hostname -I | awk '{print $1}')
 
@@ -129,13 +153,18 @@ echo -e "${GREEN}✅ Familyhub OS installed successfully!${NC}"
 echo -e "${GREEN}════════════════════════════════════════════════${NC}"
 echo ""
 echo "🌐 Access your dashboard at:"
-echo -e "   ${GREEN}http://$IP_ADDR:3001${NC}"
-echo -e "   ${GREEN}http://localhost:3001${NC}"
+echo -e "   ${GREEN}http://$IP_ADDR${NC} (via Nginx)"
+echo -e "   ${GREEN}http://localhost${NC}"
 echo ""
 echo "📋 Useful commands:"
-echo "   sudo systemctl status familyhub   # Check status"
-echo "   sudo systemctl restart familyhub  # Restart"
-echo "   sudo systemctl stop familyhub     # Stop"
-echo "   sudo journalctl -u familyhub -f   # View logs"
+echo "   sudo systemctl status familyhub    # Check app status"
+echo "   sudo systemctl restart familyhub   # Restart app"
+echo "   sudo systemctl status nginx        # Check Nginx status"
+echo "   sudo journalctl -u familyhub -f    # View app logs"
+echo "   ./scripts/backup-db.sh             # Manual backup"
+echo ""
+echo "📦 Backups:"
+echo "   Location: $INSTALL_DIR/backups/"
+echo "   Schedule: Daily at 2 AM (7-day retention)"
 echo ""
 echo -e "${YELLOW}⚠️  Don't forget to edit server/.env with your Google credentials!${NC}"

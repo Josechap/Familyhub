@@ -43,12 +43,19 @@ export const deleteFamilyMember = createAsyncThunk('settings/deleteMember', asyn
 });
 
 const initialState = {
-    darkMode: false,
+    darkMode: false, // Legacy: kept for backward compatibility
+    themeMode: 'auto', // 'auto', 'light', 'dark'
     use24Hour: false,
     weeklyGoal: 500,
     weatherApiKey: '',
     location: '',
     familyMembers: [],
+    // Display settings
+    idleReturnTimeout: 5, // minutes before returning to dashboard
+    screensaverTimeout: 10, // minutes before screensaver activates
+    screensaverPhotoInterval: 30, // seconds between photo transitions
+    googlePhotosAlbumId: null,
+    googlePhotosAlbumName: null,
     loading: false,
     error: null,
 };
@@ -60,6 +67,10 @@ export const settingsSlice = createSlice({
         toggleDarkMode: (state) => {
             state.darkMode = !state.darkMode;
         },
+        setThemeMode: (state, action) => {
+            // action.payload: 'auto', 'light', or 'dark'
+            state.themeMode = action.payload;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -70,11 +81,18 @@ export const settingsSlice = createSlice({
                 state.loading = false;
                 const s = action.payload.settings;
                 state.darkMode = s.darkMode === 'true';
+                state.themeMode = s.themeMode || 'auto';
                 state.use24Hour = s.use24Hour === 'true';
                 state.weeklyGoal = parseInt(s.weeklyGoal) || 500;
                 state.weatherApiKey = s.weatherApiKey || '';
                 state.location = s.location || '';
                 state.familyMembers = action.payload.familyMembers;
+                // Display settings
+                state.idleReturnTimeout = parseInt(s.idleReturnTimeout) || 5;
+                state.screensaverTimeout = parseInt(s.screensaverTimeout) || 10;
+                state.screensaverPhotoInterval = parseInt(s.screensaverPhotoInterval) || 30;
+                state.googlePhotosAlbumId = s.googlePhotosAlbumId || null;
+                state.googlePhotosAlbumName = s.googlePhotosAlbumName || null;
             })
             .addCase(fetchSettings.rejected, (state, action) => {
                 state.loading = false;
@@ -103,6 +121,6 @@ export const settingsSlice = createSlice({
     },
 });
 
-export const { toggleDarkMode } = settingsSlice.actions;
+export const { toggleDarkMode, setThemeMode } = settingsSlice.actions;
 
 export default settingsSlice.reducer;

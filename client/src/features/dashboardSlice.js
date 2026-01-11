@@ -21,18 +21,37 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
                 member: e.member,
             }));
         }
-    } catch (err) {
+    } catch {
         console.log('Could not fetch events');
     }
 
+    // Fetch local chores from /api/tasks
+    let localChores = [];
+    try {
+        const choresRes = await fetch(`${API_BASE}/tasks`);
+        if (choresRes.ok) {
+            const allChores = await choresRes.json();
+            localChores = allChores.map(c => ({
+                id: `local-${c.id}`,
+                title: c.title,
+                assignedTo: c.assignedTo,
+                completed: Boolean(c.completed),
+                points: c.points || 1,
+                source: 'local',
+            }));
+        }
+    } catch {
+        console.log('Could not fetch local chores');
+    }
+
     // Fetch Google Tasks
-    let tasks = [];
+    let googleTasks = [];
     try {
         const tasksRes = await fetch(`${API_BASE}/google/tasks`);
         if (tasksRes.ok) {
             const allTasks = await tasksRes.json();
             // Filter to tasks due today and assigned to a family member
-            tasks = allTasks
+            googleTasks = allTasks
                 .filter(t => {
                     // Only include tasks with a valid assignedTo (family member name)
                     if (!t.assignedTo) return false;
@@ -46,31 +65,44 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
                     listId: t.listId,
                     googleTaskId: t.googleTaskId,
                     assignedTo: t.assignedTo,
+                    completed: t.status === 'completed',
+                    source: 'google',
                 }));
         }
-    } catch (err) {
-        console.log('Could not fetch tasks');
+    } catch {
+        console.log('Could not fetch Google tasks');
     }
 
-    // Fetch today's dinner
-    let dinner = { title: 'Plan Dinner', emoji: '🍽️' };
+    // Combine local chores and Google Tasks
+    const tasks = [...localChores, ...googleTasks];
+
+    // Fetch today's meals (all types: breakfast, lunch, dinner, snack)
+    let todayMeals = {
+        breakfast: null,
+        lunch: null,
+        dinner: null,
+        snack: null,
+    };
     try {
-        const dinnerRes = await fetch(`${API_BASE}/meals/today`);
-        if (dinnerRes.ok) {
-            const dinnerData = await dinnerRes.json();
-            if (dinnerData) {
-                dinner = {
-                    title: dinnerData.recipe_title || 'No Title',
-                    emoji: dinnerData.recipe_emoji || '🍽️',
-                    photo: dinnerData.recipe_photo || null,
-                };
-            }
+        const mealsRes = await fetch(`${API_BASE}/meals/today`);
+        if (mealsRes.ok) {
+            const mealsData = await mealsRes.json();
+            todayMeals = mealsData;
         }
-    } catch (err) {
-        console.log('Could not fetch dinner');
+    } catch {
+        console.log('Could not fetch today\'s meals');
     }
 
-    return { events, tasks, dinner };
+    // Legacy dinner for backward compatibility
+    const dinner = todayMeals.dinner
+        ? {
+            title: todayMeals.dinner.recipeTitle || 'No Title',
+            emoji: todayMeals.dinner.recipeEmoji || '🍽️',
+            photo: todayMeals.dinner.recipePhoto || null,
+        }
+        : { title: 'Plan Dinner', emoji: '🍽️' };
+
+    return { events, tasks, dinner, todayMeals };
 });
 
 // Helper functions
@@ -125,6 +157,12 @@ const initialState = {
         title: 'Plan Dinner',
         emoji: '🍽️',
     },
+    todayMeals: {
+        breakfast: null,
+        lunch: null,
+        dinner: null,
+        snack: null,
+    },
     scoreboard: [],
     loading: false,
 };
@@ -156,6 +194,7 @@ export const dashboardSlice = createSlice({
                 state.upcomingEvents = action.payload.events;
                 state.todayTasks = action.payload.tasks;
                 state.dinner = action.payload.dinner;
+                state.todayMeals = action.payload.todayMeals;
             })
             .addCase(fetchDashboardData.rejected, (state) => {
                 state.loading = false;

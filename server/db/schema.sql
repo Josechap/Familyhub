@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS recipes (
 CREATE TABLE IF NOT EXISTS chores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    points INTEGER DEFAULT 10,
+    points INTEGER DEFAULT 1,
     assigned_to INTEGER REFERENCES family_members(id),
     completed INTEGER DEFAULT 0,
     recurring TEXT, -- daily, weekly, none
@@ -47,7 +47,32 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Dinner Slots (Meal Planning)
+-- Meal Planning (supports breakfast, lunch, dinner, snack)
+CREATE TABLE IF NOT EXISTS meal_slots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL, -- YYYY-MM-DD
+    meal_type TEXT NOT NULL, -- 'breakfast', 'lunch', 'dinner', 'snack'
+    recipe_id INTEGER REFERENCES recipes(id),
+    recipe_title TEXT,
+    recipe_emoji TEXT DEFAULT '🍽️',
+    recipe_photo TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(date, meal_type) -- One meal per type per day
+);
+
+-- Meal History (track completed meals)
+CREATE TABLE IF NOT EXISTS meal_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    meal_type TEXT NOT NULL,
+    recipe_id INTEGER REFERENCES recipes(id),
+    recipe_title TEXT,
+    recipe_emoji TEXT,
+    recipe_photo TEXT,
+    completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Legacy table for backward compatibility (can be removed after migration)
 CREATE TABLE IF NOT EXISTS dinner_slots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT UNIQUE NOT NULL, -- YYYY-MM-DD
@@ -72,4 +97,15 @@ CREATE TABLE IF NOT EXISTS google_tokens (
     expiry_date INTEGER,
     email TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Task Completion History (tracks all task completions for analytics)
+CREATE TABLE IF NOT EXISTS task_completions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    member_id INTEGER REFERENCES family_members(id),
+    member_name TEXT NOT NULL,
+    task_title TEXT NOT NULL,
+    task_source TEXT NOT NULL, -- 'local' or 'google'
+    points_earned INTEGER DEFAULT 1,
+    completed_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

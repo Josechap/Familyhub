@@ -11,7 +11,7 @@ const defaultSettings = {
     location: '',
 };
 
-// GET all settings
+// GET all settings (filters sensitive data)
 router.get('/', (req, res) => {
     try {
         const settings = db.prepare('SELECT key, value FROM settings').all();
@@ -19,7 +19,15 @@ router.get('/', (req, res) => {
         settings.forEach(s => {
             result[s.key] = s.value;
         });
-        res.json(result);
+
+        // Filter out sensitive data - never expose credentials
+        const {
+            paprika_credentials,
+            google_tokens,
+            ...safeSettings
+        } = result;
+
+        res.json(safeSettings);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

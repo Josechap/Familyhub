@@ -33,6 +33,27 @@ export const api = {
         return res.json();
     },
 
+    // Task Analytics
+    async getWeeklyTaskStats() {
+        const res = await fetch(`${API_BASE}/tasks/analytics/weekly`);
+        if (!res.ok) throw new Error('Failed to fetch weekly stats');
+        return res.json();
+    },
+
+    async getTaskHistory(days = 7, memberId = null) {
+        let url = `${API_BASE}/tasks/analytics/history?days=${days}`;
+        if (memberId) url += `&memberId=${memberId}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch task history');
+        return res.json();
+    },
+
+    async getDailyTaskStats(days = 7) {
+        const res = await fetch(`${API_BASE}/tasks/analytics/daily?days=${days}`);
+        if (!res.ok) throw new Error('Failed to fetch daily stats');
+        return res.json();
+    },
+
     // Calendar
     async getEvents() {
         const res = await fetch(`${API_BASE}/calendar/events`);
@@ -180,18 +201,25 @@ export const api = {
         return res.json();
     },
 
-    async getTodayMeal() {
+    async getTodayMeals() {
         const res = await fetch(`${API_BASE}/meals/today`);
-        if (!res.ok) return null;
+        if (!res.ok) return { breakfast: null, lunch: null, dinner: null, snack: null };
         return res.json();
     },
 
-    async setMeal(date, recipe) {
+    // Legacy method for backward compatibility
+    async getTodayMeal() {
+        const meals = await this.getTodayMeals();
+        return meals.dinner || null;
+    },
+
+    async setMeal(date, mealType, recipe) {
         const res = await fetch(`${API_BASE}/meals`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date,
+                mealType,
                 recipeId: recipe.id,
                 recipeTitle: recipe.title,
                 recipeEmoji: recipe.emoji || '🍽️',
@@ -202,11 +230,32 @@ export const api = {
         return res.json();
     },
 
-    async removeMeal(date) {
-        const res = await fetch(`${API_BASE}/meals/${date}`, {
+    async removeMeal(date, mealType) {
+        const res = await fetch(`${API_BASE}/meals/${date}/${mealType}`, {
             method: 'DELETE',
         });
         if (!res.ok) throw new Error('Failed to remove meal');
+        return res.json();
+    },
+
+    async completeMeal(date, mealType) {
+        const res = await fetch(`${API_BASE}/meals/${date}/${mealType}/complete`, {
+            method: 'POST',
+        });
+        if (!res.ok) throw new Error('Failed to complete meal');
+        return res.json();
+    },
+
+    async generateShoppingList(dateRange) {
+        const { start, end } = dateRange;
+        const res = await fetch(`${API_BASE}/meals/shopping-list?start=${start}&end=${end}`);
+        if (!res.ok) throw new Error('Failed to generate shopping list');
+        return res.json();
+    },
+
+    async getMealHistory(startDate, endDate) {
+        const res = await fetch(`${API_BASE}/meals/history?start=${startDate}&end=${endDate}`);
+        if (!res.ok) throw new Error('Failed to fetch meal history');
         return res.json();
     },
     // Sonos
@@ -250,6 +299,37 @@ export const api = {
         const res = await fetch(`${API_BASE}/sonos/${ip}/state`);
         if (!res.ok) throw new Error('Failed to get state');
         return res.json();
+    },
+
+    // Google Photos
+    async getGooglePhotosStatus() {
+        try {
+            const res = await fetch(`${API_BASE}/google/photos/status`);
+            if (!res.ok) return { connected: false, hasPhotosScope: false };
+            return res.json();
+        } catch {
+            return { connected: false, hasPhotosScope: false };
+        }
+    },
+
+    async getGooglePhotosAlbums() {
+        try {
+            const res = await fetch(`${API_BASE}/google/photos/albums`);
+            if (!res.ok) return [];
+            return res.json();
+        } catch {
+            return [];
+        }
+    },
+
+    async getGooglePhotosAlbum(albumId) {
+        try {
+            const res = await fetch(`${API_BASE}/google/photos/album/${albumId}`);
+            if (!res.ok) return [];
+            return res.json();
+        } catch {
+            return [];
+        }
     },
 };
 

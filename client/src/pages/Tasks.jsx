@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Star, Check, Trophy, Plus, X, Loader2 } from 'lucide-react';
-import { fetchTasks, toggleChoreAsync, hideConfetti } from '../features/tasksSlice';
+import { Star, Check, Trophy, Plus, X, Loader2, ArrowRightLeft, BarChart3, ListTodo } from 'lucide-react';
+import { fetchTasks, toggleChoreAsync, completeGoogleTaskAsync } from '../features/tasksSlice';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
+
+// Lazy load TaskAnalytics (includes Recharts)
+const TaskAnalytics = React.lazy(() => import('../components/TaskAnalytics'));
 
 // Family member colors mapping
 const familyColors = {
@@ -15,11 +18,110 @@ const familyColors = {
     'pastel-orange': { bg: 'bg-family-orange', text: 'text-family-orange', light: 'bg-family-orange/20', border: 'border-family-orange' },
 };
 
+// Transfer Task Modal Component
+const TransferTaskModal = ({ task, onTransfer, onClose }) => {
+    const [taskLists, setTaskLists] = useState([]);
+    const [selectedList, setSelectedList] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [transferring, setTransferring] = useState(false);
+
+    useEffect(() => {
+        const fetchLists = async () => {
+            try {
+                const lists = await api.getGoogleTaskLists();
+                setTaskLists(lists.filter(list => list.id !== task.listId));
+                setLoading(false);
+            } catch (error) {
+                console.error('Failed to fetch task lists:', error);
+                setLoading(false);
+            }
+        };
+        fetchLists();
+    }, [task.listId]);
+
+    const handleTransfer = async () => {
+        if (!selectedList) return;
+        setTransferring(true);
+        try {
+            await onTransfer(selectedList);
+            onClose();
+        } catch (error) {
+            console.error('Transfer failed:', error);
+        }
+        setTransferring(false);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="card w-full max-w-md animate-scale-in">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold">Transfer Task</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="mb-4">
+                    <p className="text-white/60 text-sm mb-1">Task: <strong className="text-white">{task.title}</strong></p>
+                    <p className="text-white/60 text-sm">From: <strong className="text-white">{task.listName}</strong></p>
+                </div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="animate-spin text-white/40" size={32} />
+                    </div>
+                ) : taskLists.length === 0 ? (
+                    <p className="text-white/40 text-center py-8">No other task lists available</p>
+                ) : (
+                    <>
+                        <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+                            {taskLists.map((list) => (
+                                <button
+                                    key={list.id}
+                                    onClick={() => setSelectedList(list.id)}
+                                    className={cn(
+                                        "w-full p-3 rounded-xl text-left transition-all",
+                                        selectedList === list.id
+                                            ? "bg-primary text-white"
+                                            : "bg-white/5 hover:bg-white/10"
+                                    )}
+                                >
+                                    {list.title}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={handleTransfer}
+                            disabled={!selectedList || transferring}
+                            className={cn(
+                                "w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 touch-target",
+                                selectedList && !transferring
+                                    ? "bg-primary text-white hover:bg-primary/80"
+                                    : "bg-white/10 text-white/40 cursor-not-allowed"
+                            )}
+                        >
+                            {transferring ? (
+                                <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                                <ArrowRightLeft size={18} />
+                            )}
+                            {transferring ? 'Transferring...' : 'Transfer Task'}
+                        </button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const Tasks = () => {
     const dispatch = useDispatch();
     const { chores, familyMembers, googleTasks, confettiVisible, loading } = useSelector((state) => state.tasks);
     const [selectedMember, setSelectedMember] = useState(null);
     const [completingTask, setCompletingTask] = useState(null);
+    const [transferringTask, setTransferringTask] = useState(null);
+    const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'analytics'
 
     useEffect(() => {
         dispatch(fetchTasks());
@@ -47,15 +149,35 @@ const Tasks = () => {
         setCompletingTask(task.id);
         try {
             if (task.googleTaskId) {
-                await api.completeGoogleTask(task.listId, task.googleTaskId);
+                // Use Redux thunk for Google Task completion to trigger sync middleware
+                await dispatch(completeGoogleTaskAsync({
+                    listId: task.listId,
+                    taskId: task.googleTaskId
+                }));
             } else {
                 await dispatch(toggleChoreAsync(task.id));
             }
-            dispatch(fetchTasks());
+            // No need for fetchTasks() - thunks already refetch and middleware syncs dashboard
         } catch (error) {
             console.error('Failed to complete task:', error);
         }
         setCompletingTask(null);
+    };
+
+    const handleTransferTask = async (targetListId) => {
+        if (!transferringTask) return;
+        try {
+            await api.transferGoogleTask(
+                transferringTask.listId,
+                transferringTask.googleTaskId,
+                targetListId
+            );
+            dispatch(fetchTasks()); // Refresh tasks
+        } catch (error) {
+            console.error('Failed to transfer task:', error);
+        } finally {
+            setTransferringTask(null);
+        }
     };
 
     // Filter members to show
@@ -74,45 +196,94 @@ const Tasks = () => {
 
     return (
         <div className="h-full w-full flex flex-col gap-3 animate-fade-in">
-            {/* Header */}
+            {/* Transfer Task Modal */}
+            {transferringTask && (
+                <TransferTaskModal
+                    task={transferringTask}
+                    onTransfer={handleTransferTask}
+                    onClose={() => setTransferringTask(null)}
+                />
+            )}
+
+            {/* Header with Tabs */}
             <div className="flex items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold">Tasks</h1>
+                <div className="flex bg-white/10 rounded-xl p-1">
+                    <button
+                        onClick={() => setActiveTab('tasks')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            activeTab === 'tasks'
+                                ? "bg-primary text-white"
+                                : "text-white/60 hover:text-white"
+                        )}
+                    >
+                        <ListTodo size={18} />
+                        Tasks
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('analytics')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            activeTab === 'analytics'
+                                ? "bg-primary text-white"
+                                : "text-white/60 hover:text-white"
+                        )}
+                    >
+                        <BarChart3 size={18} />
+                        Analytics
+                    </button>
+                </div>
             </div>
 
-            {/* Member Filter Pills - Compact */}
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                <button
-                    onClick={() => setSelectedMember(null)}
-                    className={cn(
-                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
-                        !selectedMember
-                            ? "bg-primary text-white"
-                            : "bg-white/10 text-white/60 hover:bg-white/20"
-                    )}
-                >
-                    All
-                </button>
-                {familyMembers.map((member) => {
-                    const colors = familyColors[member.color] || familyColors['pastel-blue'];
-                    const isSelected = selectedMember === member.id;
-                    return (
+            {/* Analytics View */}
+            {activeTab === 'analytics' && (
+                <Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center">
+                        <Loader2 className="animate-spin text-white/40" size={48} />
+                    </div>
+                }>
+                    <TaskAnalytics familyMembers={familyMembers} />
+                </Suspense>
+            )}
+
+            {/* Tasks View */}
+            {activeTab === 'tasks' && (
+                <>
+                    {/* Member Filter Pills - Compact */}
+                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
                         <button
-                            key={member.id}
-                            onClick={() => setSelectedMember(isSelected ? null : member.id)}
+                            onClick={() => setSelectedMember(null)}
                             className={cn(
                                 "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
-                                isSelected
-                                    ? `${colors.bg} text-white`
-                                    : `${colors.light} ${colors.text} hover:opacity-80`
+                                !selectedMember
+                                    ? "bg-primary text-white"
+                                    : "bg-white/10 text-white/60 hover:bg-white/20"
                             )}
                         >
-                            {member.name}
+                            All
                         </button>
-                    );
-                })}
-            </div>
+                        {familyMembers.map((member) => {
+                            const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                            const isSelected = selectedMember === member.id;
+                            return (
+                                <button
+                                    key={member.id}
+                                    onClick={() => setSelectedMember(isSelected ? null : member.id)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
+                                        isSelected
+                                            ? `${colors.bg} text-white`
+                                            : `${colors.light} ${colors.text} hover:opacity-80`
+                                    )}
+                                >
+                                    {member.name}
+                                </button>
+                            );
+                        })}
+                    </div>
 
-            {/* Member Cards - Horizontal scroll for all personas to fit on screen */}
+                    {/* Member Cards - Horizontal scroll for all personas to fit on screen */}
             <div className="flex-1 overflow-x-auto overflow-y-hidden gap-3 touch-scroll hide-scrollbar flex">
                 {displayMembers.map((member, idx) => {
                     const colors = familyColors[member.color] || familyColors['pastel-blue'];
@@ -198,6 +369,20 @@ const Tasks = () => {
                                                         <p className="font-medium text-xs truncate">{task.title}</p>
                                                     </div>
 
+                                                    {/* Transfer button - only for Google Tasks */}
+                                                    {task.googleTaskId && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setTransferringTask(task);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded touch-target flex-shrink-0"
+                                                            title="Transfer to another list"
+                                                        >
+                                                            <ArrowRightLeft size={14} className="text-white/60" />
+                                                        </button>
+                                                    )}
+
                                                     {/* Points */}
                                                     <div className="text-warning/80 flex-shrink-0">
                                                         <Star size={10} className="fill-current inline" />
@@ -235,6 +420,8 @@ const Tasks = () => {
                     );
                 })}
             </div>
+                </>
+            )}
 
             {/* Confetti Effect */}
             {confettiVisible && (

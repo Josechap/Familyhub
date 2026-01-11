@@ -26,7 +26,7 @@ export const fetchRecipes = createAsyncThunk('recipes/fetchRecipes', async () =>
             isFavorite: r.isFavorite || false,
             paprikaSource: true,
         }));
-    } catch (error) {
+    } catch {
         console.log('Paprika recipes not available');
     }
 

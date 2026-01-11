@@ -5,6 +5,9 @@ const path = require('path');
 const dbPath = path.join(__dirname, 'familyhub.db');
 const db = new Database(dbPath);
 
+// Enable WAL mode for better concurrent read/write performance
+db.pragma('journal_mode = WAL');
+
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
 

@@ -6,6 +6,8 @@ import tasksReducer from './features/tasksSlice';
 import recipesReducer from './features/recipesSlice';
 import settingsReducer from './features/settingsSlice';
 import sonosReducer from './features/sonosSlice';
+import mealsReducer from './features/mealsSlice';
+import { taskSyncMiddleware } from './middleware/taskSyncMiddleware';
 
 export const store = configureStore({
     reducer: {
@@ -16,5 +18,8 @@ export const store = configureStore({
         recipes: recipesReducer,
         settings: settingsReducer,
         sonos: sonosReducer,
+        meals: mealsReducer,
     },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().prepend(taskSyncMiddleware.middleware),
 });
