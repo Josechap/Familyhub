@@ -88,6 +88,7 @@ app.use('/api/paprika', paprikaRouter);
 app.use('/api/meals', mealsRouter);
 app.use('/api/sonos', require('./routes/sonos'));
 app.use('/api/google/photos', require('./routes/google-photos'));
+app.use('/api/photos', require('./routes/local-photos'));
 
 // Health check with system info
 app.get('/api/health', async (req, res) => {

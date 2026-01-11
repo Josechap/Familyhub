@@ -331,6 +331,39 @@ export const api = {
             return [];
         }
     },
-};
 
+    // Local Photos
+    async getLocalPhotos() {
+        try {
+            const res = await fetch(`${API_BASE}/photos`);
+            if (!res.ok) return [];
+            return res.json();
+        } catch {
+            return [];
+        }
+    },
+
+    async getLocalPhotosConfig() {
+        try {
+            const res = await fetch(`${API_BASE}/photos/config`);
+            if (!res.ok) return { path: null, photoCount: 0, isValid: false };
+            return res.json();
+        } catch {
+            return { path: null, photoCount: 0, isValid: false };
+        }
+    },
+
+    async updateLocalPhotosConfig(photosPath) {
+        const res = await fetch(`${API_BASE}/photos/config`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: photosPath }),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to update photos config');
+        }
+        return res.json();
+    },
+};
 export default api;

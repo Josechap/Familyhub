@@ -56,6 +56,7 @@ const initialState = {
     screensaverPhotoInterval: 30, // seconds between photo transitions
     googlePhotosAlbumId: null,
     googlePhotosAlbumName: null,
+    localPhotosPath: null,
     loading: false,
     error: null,
 };
@@ -93,6 +94,7 @@ export const settingsSlice = createSlice({
                 state.screensaverPhotoInterval = parseInt(s.screensaverPhotoInterval) || 30;
                 state.googlePhotosAlbumId = s.googlePhotosAlbumId || null;
                 state.googlePhotosAlbumName = s.googlePhotosAlbumName || null;
+                state.localPhotosPath = s.localPhotosPath || null;
             })
             .addCase(fetchSettings.rejected, (state, action) => {
                 state.loading = false;

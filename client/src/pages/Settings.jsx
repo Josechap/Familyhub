@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2, Sun, Moon, Monitor, Timer, Image } from 'lucide-react';
+import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2, Sun, Moon, Monitor, Timer, Image, Play } from 'lucide-react';
 import { API_BASE, GOOGLE_AUTH_URL } from '../lib/config';
 import {
     fetchSettings,
@@ -10,6 +10,7 @@ import {
     deleteFamilyMember,
     setThemeMode,
 } from '../features/settingsSlice';
+import { setScreensaverActive } from '../features/appSlice';
 import { cn } from '../lib/utils';
 
 const colorOptions = [
@@ -192,179 +193,133 @@ const GoogleIntegration = () => {
     );
 };
 
-// Google Photos Album Picker Component
-const GooglePhotosAlbumPicker = () => {
+// Local Photos Configuration Component
+const LocalPhotosConfig = () => {
     const dispatch = useDispatch();
-    const { googlePhotosAlbumId, googlePhotosAlbumName } = useSelector((state) => state.settings);
-    const [status, setStatus] = useState({ connected: false, hasPhotosScope: false, loading: true });
-    const [albums, setAlbums] = useState([]);
-    const [loadingAlbums, setLoadingAlbums] = useState(false);
-    const [showPicker, setShowPicker] = useState(false);
-
-    const fetchAlbums = async () => {
-        setLoadingAlbums(true);
-        try {
-            const res = await fetch(`${API_BASE}/google/photos/albums`);
-            if (res.ok) {
-                const data = await res.json();
-                setAlbums(data);
-            }
-        } catch {
-            console.error('Failed to fetch albums');
-        }
-        setLoadingAlbums(false);
-    };
+    const { localPhotosPath } = useSelector((state) => state.settings);
+    const [config, setConfig] = useState({ path: null, photoCount: 0, isValid: false, loading: true });
+    const [inputPath, setInputPath] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        const checkStatus = async () => {
+        const fetchConfig = async () => {
             try {
-                const res = await fetch(`${API_BASE}/google/photos/status`);
+                const res = await fetch(`${API_BASE}/photos/config`);
                 const data = await res.json();
-                setStatus({ ...data, loading: false });
-
-                if (data.hasPhotosScope) {
-                    fetchAlbums();
-                }
+                setConfig({ ...data, loading: false });
+                setInputPath(data.path || '');
             } catch {
-                setStatus({ connected: false, hasPhotosScope: false, loading: false });
+                setConfig({ path: null, photoCount: 0, isValid: false, loading: false });
             }
         };
-        checkStatus();
+        fetchConfig();
     }, []);
 
-    const handleSelectAlbum = (album) => {
-        dispatch(updateSettings({
-            googlePhotosAlbumId: album.id,
-            googlePhotosAlbumName: album.title,
-        }));
-        setShowPicker(false);
+    const handleSave = async () => {
+        if (!inputPath.trim()) {
+            setError('Please enter a folder path');
+            return;
+        }
+        setSaving(true);
+        setError('');
+        try {
+            const res = await fetch(`${API_BASE}/photos/config`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: inputPath.trim() }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.error || 'Failed to save');
+            } else {
+                setConfig({ ...data, loading: false });
+                dispatch(updateSettings({ localPhotosPath: data.path }));
+            }
+        } catch {
+            setError('Failed to save configuration');
+        }
+        setSaving(false);
     };
 
-    const handleClearAlbum = () => {
-        dispatch(updateSettings({
-            googlePhotosAlbumId: null,
-            googlePhotosAlbumName: null,
-        }));
+    const handleClear = async () => {
+        setSaving(true);
+        try {
+            await fetch(`${API_BASE}/photos/config`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: null }),
+            });
+            setConfig({ path: null, photoCount: 0, isValid: false, loading: false });
+            setInputPath('');
+            dispatch(updateSettings({ localPhotosPath: null }));
+        } catch {
+            setError('Failed to clear configuration');
+        }
+        setSaving(false);
     };
 
-    if (status.loading) {
+    if (config.loading) {
         return <Loader2 className="animate-spin text-white/40" size={24} />;
     }
 
-    if (!status.connected) {
-        return (
-            <p className="text-white/50 text-sm">
-                Connect Google in the Integrations section below to enable photo screensaver.
-            </p>
-        );
-    }
-
-    if (!status.hasPhotosScope) {
-        return (
-            <div className="space-y-3">
-                {status.needsApiEnabled ? (
-                    <>
-                        <p className="text-amber-400 text-sm font-medium">
-                            Photos Library API needs to be enabled
-                        </p>
-                        <p className="text-white/50 text-sm">
-                            1. Enable the API in Google Cloud Console<br/>
-                            2. Then click "Reconnect Google" below
-                        </p>
-                        <a
-                            href="https://console.developers.google.com/apis/api/photoslibrary.googleapis.com/overview"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors"
-                        >
-                            Open Google Cloud Console
-                        </a>
-                    </>
-                ) : (
-                    <p className="text-white/50 text-sm">
-                        Photos permission needed. Go to Google Integration above and click <strong className="text-white">Disconnect</strong>, then <strong className="text-white">Connect to Google</strong> again.
-                    </p>
-                )}
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-3">
-            {/* Current selection */}
-            {googlePhotosAlbumId ? (
+        <div className="space-y-4">
+            {/* Current configuration */}
+            {config.isValid && config.path ? (
                 <div className="flex items-center justify-between p-3 bg-success/20 rounded-xl border border-success/30">
-                    <div>
-                        <p className="text-sm font-medium text-success">Selected Album</p>
-                        <p className="text-white">{googlePhotosAlbumName}</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-success">Photos Folder Configured</p>
+                        <p className="text-white text-sm truncate">{config.path}</p>
+                        <p className="text-success/80 text-xs">{config.photoCount} photos found</p>
                     </div>
                     <button
-                        onClick={handleClearAlbum}
+                        onClick={handleClear}
+                        disabled={saving}
                         className="p-2 text-white/40 hover:text-red-400 transition-colors"
                     >
                         <X size={18} />
                     </button>
                 </div>
             ) : (
-                <p className="text-white/50 text-sm">No album selected</p>
-            )}
+                <>
+                    <p className="text-white/50 text-sm">
+                        Enter the path to a folder containing photos for the screensaver.
+                    </p>
 
-            {/* Album picker button */}
-            <button
-                onClick={() => {
-                    setShowPicker(!showPicker);
-                    if (!showPicker && albums.length === 0) {
-                        fetchAlbums();
-                    }
-                }}
-                className="w-full py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors"
-            >
-                {showPicker ? 'Hide Albums' : 'Choose Album'}
-            </button>
-
-            {/* Album list */}
-            {showPicker && (
-                <div className="max-h-60 overflow-y-auto space-y-2 p-2 bg-white/5 rounded-xl">
-                    {loadingAlbums ? (
-                        <div className="flex justify-center py-4">
-                            <Loader2 className="animate-spin text-white/40" size={24} />
-                        </div>
-                    ) : albums.length === 0 ? (
-                        <p className="text-white/40 text-center py-4 text-sm">No albums found</p>
-                    ) : (
-                        albums.map((album) => (
-                            <button
-                                key={album.id}
-                                onClick={() => handleSelectAlbum(album)}
-                                className={cn(
-                                    "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
-                                    googlePhotosAlbumId === album.id
-                                        ? "bg-primary text-white"
-                                        : "bg-white/5 hover:bg-white/10"
-                                )}
-                            >
-                                {album.coverUrl && (
-                                    <img
-                                        src={`${album.coverUrl}=w64-h64-c`}
-                                        alt=""
-                                        className="w-10 h-10 rounded-lg object-cover"
-                                    />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{album.title}</p>
-                                    <p className="text-xs text-white/50">{album.itemCount} photos</p>
-                                </div>
-                                {googlePhotosAlbumId === album.id && (
-                                    <Check size={18} />
-                                )}
-                            </button>
-                        ))
+                    {error && (
+                        <p className="text-sm text-red-400 bg-red-500/20 p-3 rounded-lg border border-red-500/30">
+                            {error}
+                        </p>
                     )}
-                </div>
+
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={inputPath}
+                            onChange={(e) => setInputPath(e.target.value)}
+                            placeholder="/path/to/photos"
+                            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40 text-sm"
+                        />
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || !inputPath.trim()}
+                            className="px-4 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                            Save
+                        </button>
+                    </div>
+                </>
             )}
+
+            <p className="text-xs text-white/40">
+                Supported formats: JPG, PNG, GIF, WebP, HEIC. Photos will be shuffled randomly.
+            </p>
         </div>
     );
 };
+
 
 // Paprika Integration Component
 const PaprikaIntegration = () => {
@@ -696,8 +651,17 @@ const Settings = () => {
                     </div>
 
                     <p className="text-xs text-white/40">
-                        Screensaver shows photos from Google Photos with today's calendar overlay.
+                        Screensaver shows photos from a local folder with today's calendar overlay.
                     </p>
+
+                    {/* Test Screensaver Button */}
+                    <button
+                        onClick={() => dispatch(setScreensaverActive(true))}
+                        className="w-full py-3 bg-cyan-500/20 text-cyan-400 rounded-xl font-medium hover:bg-cyan-500/30 transition-colors flex items-center justify-center gap-2 touch-target"
+                    >
+                        <Play size={18} />
+                        Test Screensaver
+                    </button>
                 </div>
             </div>
 
@@ -709,7 +673,7 @@ const Settings = () => {
                     </div>
                     <h2 className="text-lg font-semibold">Screensaver Photos</h2>
                 </div>
-                <GooglePhotosAlbumPicker />
+                <LocalPhotosConfig />
             </div>
 
             {/* Family Members Section */}

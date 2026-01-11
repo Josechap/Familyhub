@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Calendar } from 'lucide-react';
+import { API_BASE } from '../lib/config';
 import api from '../lib/api';
 
-// Google Photos URLs expire after ~1 hour, refresh every 45 minutes
-const PHOTO_URL_REFRESH_INTERVAL = 45 * 60 * 1000;
+const getImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+
+    // In dev, API_BASE includes the full URL (e.g., http://localhost:3001/api)
+    // We need the origin part (http://localhost:3001) to prepend to the relative URL (/api/photos/...)
+    if (API_BASE.startsWith('http')) {
+        try {
+            const urlObj = new URL(API_BASE);
+            return `${urlObj.origin}${url}`;
+        } catch {
+            return url;
+        }
+    }
+
+    return url;
+};
 
 const Screensaver = ({ onDismiss }) => {
-    const { screensaverPhotoInterval, googlePhotosAlbumId } = useSelector((state) => state.settings);
+    const { screensaverPhotoInterval, localPhotosPath } = useSelector((state) => state.settings);
     const { upcomingEvents } = useSelector((state) => state.dashboard);
 
     const [photos, setPhotos] = useState([]);
@@ -15,8 +31,7 @@ const Screensaver = ({ onDismiss }) => {
     const [nextPhotoIndex, setNextPhotoIndex] = useState(1);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
-    // Loading starts as true only if we have an album to load
-    const [loading, setLoading] = useState(!!googlePhotosAlbumId);
+    const [loading, setLoading] = useState(true);
 
     // Update clock every minute
     useEffect(() => {
@@ -26,31 +41,19 @@ const Screensaver = ({ onDismiss }) => {
         return () => clearInterval(interval);
     }, []);
 
-    // Initial fetch and periodic refresh
+    // Fetch local photos
     useEffect(() => {
-        if (!googlePhotosAlbumId) return;
-
         let isMounted = true;
-        let refreshInterval;
 
-        const fetchPhotos = async (isRefresh = false) => {
+        const fetchPhotos = async () => {
             try {
-                const albumPhotos = await api.getGooglePhotosAlbum(googlePhotosAlbumId);
+                const localPhotos = await api.getLocalPhotos();
                 if (!isMounted) return;
 
-                if (albumPhotos?.length > 0) {
-                    if (isRefresh) {
-                        // Update URLs while maintaining order
-                        const urlMap = new Map(albumPhotos.map(p => [p.id, p.baseUrl]));
-                        setPhotos(prev => prev.map(p => ({
-                            ...p,
-                            baseUrl: urlMap.get(p.id) || p.baseUrl
-                        })));
-                    } else {
-                        // Initial load: shuffle photos
-                        const shuffled = [...albumPhotos].sort(() => Math.random() - 0.5);
-                        setPhotos(shuffled);
-                    }
+                if (localPhotos?.length > 0) {
+                    // Shuffle photos
+                    const shuffled = [...localPhotos].sort(() => Math.random() - 0.5);
+                    setPhotos(shuffled);
                 }
             } catch {
                 console.error('Failed to fetch photos');
@@ -60,21 +63,12 @@ const Screensaver = ({ onDismiss }) => {
             }
         };
 
-        // Initial fetch
-        fetchPhotos(false);
-
-        // Set up periodic refresh
-        refreshInterval = setInterval(() => {
-            fetchPhotos(true);
-        }, PHOTO_URL_REFRESH_INTERVAL);
+        fetchPhotos();
 
         return () => {
             isMounted = false;
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
         };
-    }, [googlePhotosAlbumId]);
+    }, []);
 
     // Photo rotation
     useEffect(() => {
@@ -134,20 +128,18 @@ const Screensaver = ({ onDismiss }) => {
                 <>
                     {/* Current photo */}
                     <div
-                        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${
-                            isTransitioning ? 'opacity-0' : 'opacity-100'
-                        }`}
+                        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'
+                            }`}
                         style={{
-                            backgroundImage: `url(${currentPhoto?.baseUrl}=w1920-h1080)`,
+                            backgroundImage: `url(${getImageUrl(currentPhoto?.url)})`,
                         }}
                     />
                     {/* Next photo (for crossfade) */}
                     <div
-                        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${
-                            isTransitioning ? 'opacity-100' : 'opacity-0'
-                        }`}
+                        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-500 ${isTransitioning ? 'opacity-100' : 'opacity-0'
+                            }`}
                         style={{
-                            backgroundImage: `url(${nextPhoto?.baseUrl}=w1920-h1080)`,
+                            backgroundImage: `url(${getImageUrl(nextPhoto?.url)})`,
                         }}
                     />
                 </>
@@ -213,11 +205,11 @@ const Screensaver = ({ onDismiss }) => {
                 </div>
             )}
 
-            {/* No album configured message */}
-            {!loading && !googlePhotosAlbumId && (
+            {/* No photos configured message */}
+            {!loading && photos.length === 0 && (
                 <div className="absolute top-8 right-8 bg-black/60 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/10">
                     <p className="text-white/60 text-sm">
-                        Configure Google Photos in Settings
+                        Configure local photos in Settings
                     </p>
                 </div>
             )}
@@ -231,3 +223,4 @@ const Screensaver = ({ onDismiss }) => {
 };
 
 export default Screensaver;
+
