@@ -30,7 +30,7 @@ sudo apt-get install -y --no-install-recommends \
     x11-xserver-utils \
     xinit \
     openbox \
-    chromium-browser \
+    chromium \
     unclutter
 
 echo ""
@@ -57,7 +57,7 @@ unclutter -idle 5 -root &
 sleep 10
 
 # Start Chromium in kiosk mode
-chromium-browser \
+chromium \
     --noerrdialogs \
     --disable-infobars \
     --disable-session-crashed-bubble \
