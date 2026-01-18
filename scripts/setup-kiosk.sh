@@ -23,7 +23,7 @@ if [ ! -f /etc/rpi-issue ]; then
     fi
 fi
 
-echo -e "${YELLOW}📦 Installing desktop and browser packages...${NC}"
+echo -e "${YELLOW}📦 Installing desktop, browser, and virtual keyboard packages...${NC}"
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     xserver-xorg \
@@ -31,7 +31,8 @@ sudo apt-get install -y --no-install-recommends \
     xinit \
     openbox \
     chromium \
-    unclutter
+    unclutter \
+    onboard
 
 echo ""
 echo -e "${YELLOW}⚙️  Configuring auto-login to console (for kiosk mode)...${NC}"
@@ -52,6 +53,9 @@ xset -dpms
 
 # Hide mouse cursor after 5 seconds of idle
 unclutter -idle 5 -root &
+
+# Start virtual keyboard (minimized, auto-show on text input)
+onboard --size=800x300 --layout=Phone --theme=Nightshade &
 
 # Wait for network and server to be ready
 sleep 10
