@@ -53,14 +53,28 @@ validateEnvironment();
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3001', 'https://accounts.google.com'];
+    : null; // null means use dynamic checking below
 
 // Middleware
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+
+        // If custom origins are set, use those
+        if (allowedOrigins) {
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+            return callback(new Error('Not allowed by CORS'));
+        }
+
+        // Default: allow localhost and local network IPs (192.168.x.x, 10.x.x.x, etc.)
+        const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+        const isLocalNetwork = /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+        const isGoogleAuth = origin.includes('accounts.google.com');
+
+        if (isLocalhost || isLocalNetwork || isGoogleAuth) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
