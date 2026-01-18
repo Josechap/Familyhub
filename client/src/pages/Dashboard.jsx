@@ -4,6 +4,7 @@ import { useClock } from '../hooks/useClock';
 import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
+import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
 import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, Shirt } from 'lucide-react';
 import api from '../lib/api';
 
@@ -43,7 +44,7 @@ const Dashboard = () => {
     const { time, date, hours } = useClock();
     const { weather, upcomingEvents, todayTasks, todayMeals, clothing } = useSelector((state) => state.dashboard);
     const familyMembers = useSelector((state) => state.settings.familyMembers);
-    const { playerState } = useSelector((state) => state.sonos);
+    const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
 
     // Dynamic greeting based on time
@@ -59,8 +60,19 @@ const Dashboard = () => {
     useEffect(() => {
         dispatch(fetchDashboardData());
         dispatch(fetchSettings());
+        dispatch(fetchSonosDevices());
         api.getWeeklyTaskStats().then(setWeeklyStats).catch(console.error);
     }, [dispatch]);
+
+    // Poll Sonos state every 5 seconds when device is active
+    useEffect(() => {
+        if (!activeDeviceIp) return;
+        dispatch(fetchSonosState(activeDeviceIp));
+        const interval = setInterval(() => {
+            dispatch(fetchSonosState(activeDeviceIp));
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [dispatch, activeDeviceIp]);
 
     // Update scoreboard when family members change
     useEffect(() => {
@@ -195,13 +207,13 @@ const Dashboard = () => {
                             <Music size={24} className="text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            {playerState?.currentTrack ? (
+                            {playerState?.track ? (
                                 <>
                                     <p className="font-medium text-white text-lg truncate">
-                                        {playerState.currentTrack.title || 'Unknown'}
+                                        {playerState.track.title || 'Unknown'}
                                     </p>
                                     <p className="text-white/50 text-base truncate">
-                                        {playerState.currentTrack.artist || 'Unknown Artist'}
+                                        {playerState.track.artist || 'Unknown Artist'}
                                     </p>
                                 </>
                             ) : (
