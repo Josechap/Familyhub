@@ -105,15 +105,20 @@ router.post('/reset-database', (req, res) => {
     try {
         // Use a transaction for atomic operation
         const reset = db.transaction(() => {
-            // Clear user content tables
-            db.prepare('DELETE FROM family_members').run();
+            // Delete child tables first (tables that reference other tables via foreign keys)
+            // 1. Tables referencing family_members
             db.prepare('DELETE FROM chores').run();
             db.prepare('DELETE FROM calendar_events').run();
-            db.prepare('DELETE FROM recipes').run();
+            db.prepare('DELETE FROM task_completions').run();
+
+            // 2. Tables referencing recipes
             db.prepare('DELETE FROM meal_slots').run();
             db.prepare('DELETE FROM meal_history').run();
             db.prepare('DELETE FROM dinner_slots').run();
-            db.prepare('DELETE FROM task_completions').run();
+
+            // 3. Now delete parent tables
+            db.prepare('DELETE FROM family_members').run();
+            db.prepare('DELETE FROM recipes').run();
 
             // Reset SQLite sequences so IDs start fresh
             db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('family_members', 'chores', 'calendar_events', 'recipes', 'meal_slots', 'meal_history', 'dinner_slots', 'task_completions')").run();
