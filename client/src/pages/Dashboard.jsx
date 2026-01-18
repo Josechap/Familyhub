@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, Shirt } from 'lucide-react';
+import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
 import api from '../lib/api';
 
 // Family member colors mapping
@@ -169,122 +169,122 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN - Clock, Weather, Small Cards (Wider) */}
+            {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
             <div className="flex-1 flex flex-col gap-3">
-                {/* Time & Weather Card */}
-                <div className="card text-center py-6">
-                    <p className="text-white/60 text-lg mb-1">{getGreeting()}</p>
-                    <h1 className="text-6xl text-white font-display tracking-tight">{time}</h1>
-                    <p className="text-white/60 text-lg mt-1">{date}</p>
+                {/* Time & Weather Card - Compact */}
+                <div className="card text-center py-4">
+                    <p className="text-white/60 text-base mb-1">{getGreeting()}</p>
+                    <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
+                    <p className="text-white/60 text-base mt-1">{date}</p>
 
                     {weather && (
-                        <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-white/10">
-                            <span className="text-4xl">{weather.icon}</span>
+                        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
+                            <span className="text-3xl">{weather.icon}</span>
                             <div className="text-left">
-                                <span className="text-2xl font-semibold">{weather.temp}°F</span>
-                                <p className="text-white/50 text-base">{weather.condition}</p>
+                                <span className="text-xl font-semibold">{weather.temp}°F</span>
+                                <p className="text-white/50 text-sm">{weather.condition}</p>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* What to Wear */}
-                {clothing && (
-                    <div className="card bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 py-4">
-                        <div className="flex items-center gap-3">
-                            <Shirt size={22} className="text-cyan-400" />
-                            <span className="text-lg text-white/60">Wear</span>
-                            <span className="text-2xl">{clothing.mainIcon}</span>
-                            <span className="font-semibold text-white text-xl">{clothing.main}</span>
+                {/* Now Playing / Playlists - 25% height */}
+                <div className="card h-[25%] flex flex-col overflow-hidden">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                            <Music size={20} className="text-orange-400" />
                         </div>
+                        <h2 className="font-semibold text-xl">Music</h2>
                     </div>
-                )}
 
-                {/* Now Playing */}
-                <div className="card py-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <Music size={24} className="text-primary" />
+                    {playerState?.track && playerState.state === 'PLAYING' ? (
+                        /* Currently Playing */
+                        <div className="flex-1 flex items-center gap-4">
+                            <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                                {playerState.track.art ? (
+                                    <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
+                                ) : (
+                                    <Music size={32} className="text-white/30" />
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
+                                <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
+                                    <Play size={24} />
+                                </button>
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
+                                    <SkipForward size={24} />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            {playerState?.track ? (
-                                <>
-                                    <p className="font-medium text-white text-lg truncate">
-                                        {playerState.track.title || 'Unknown'}
-                                    </p>
-                                    <p className="text-white/50 text-base truncate">
-                                        {playerState.track.artist || 'Unknown Artist'}
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-white/40 text-lg">No music playing</p>
-                            )}
+                    ) : (
+                        /* Quick Playlists when not playing */
+                        <div className="flex-1 flex flex-col">
+                            <p className="text-white/50 text-base mb-3">Quick Play</p>
+                            <div className="grid grid-cols-2 gap-2 flex-1">
+                                {[
+                                    { name: 'Chill Vibes', emoji: '🎧' },
+                                    { name: 'Party Mix', emoji: '🎉' },
+                                    { name: 'Focus', emoji: '🎯' },
+                                    { name: 'Kids', emoji: '🧒' },
+                                ].map(playlist => (
+                                    <button
+                                        key={playlist.name}
+                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left"
+                                    >
+                                        <span className="text-2xl">{playlist.emoji}</span>
+                                        <span className="font-medium text-base truncate">{playlist.name}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20">
-                                <Play size={20} />
-                            </button>
-                            <button className="p-2.5 rounded-full bg-white/10 hover:bg-white/20">
-                                <SkipForward size={20} />
-                            </button>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Weekly Scoreboard */}
-                <div className="card flex-1 overflow-hidden">
+                {/* Weekly Scoreboard - 50% height, 2-column grid */}
+                <div className="card h-[50%] flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
                         <Trophy size={28} className="text-warning" />
                     </div>
-                    <div className="space-y-3">
-                        {sortedMembers.slice(0, 5).map((member, idx) => {
+                    <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
+                        {sortedMembers.slice(0, 6).map((member, idx) => {
                             const weekly = getMemberWeeklyStats(member.id);
                             const colorClass = familyColors[member.color] || 'bg-family-blue';
                             const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
 
                             return (
-                                <div key={member.id} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                                <div key={member.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
                                     <div className={cn(
-                                        "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-2xl",
+                                        "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
                                         colorClass
                                     )}>
                                         {member.name[0]}
+                                        {isLeader && (
+                                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
+                                                <Trophy size={12} className="text-white" />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-xl truncate">{member.name.split(' ')[0]}</p>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xl">
-                                        <span className="text-success font-bold text-2xl">{weekly.weeklyTasksCompleted}</span>
-                                        <span className="text-white/30">|</span>
-                                        <div className="flex items-center gap-1">
-                                            <Star size={20} className="text-warning fill-warning" />
-                                            <span className="text-warning font-bold text-2xl">{member.points}</span>
+                                        <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
+                                        <div className="flex items-center gap-2 text-base">
+                                            <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
+                                            <span className="text-white/30">|</span>
+                                            <div className="flex items-center gap-1">
+                                                <Star size={14} className="text-warning fill-warning" />
+                                                <span className="text-warning font-bold">{member.points}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    {isLeader && <Trophy size={24} className="text-warning fill-warning" />}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
-
-                {/* Today's Tasks - Quick Preview */}
-                {todayTasks.filter(t => !t.completed).length > 0 && (
-                    <div className="card py-3">
-                        <p className="text-xs text-white/50 mb-2">
-                            {todayTasks.filter(t => !t.completed).length} tasks remaining
-                        </p>
-                        <div className="space-y-1">
-                            {todayTasks.filter(t => !t.completed).slice(0, 3).map((task) => (
-                                <div key={task.id} className="flex items-center gap-2 text-sm">
-                                    <div className="w-3 h-3 rounded-full border border-white/30" />
-                                    <span className="truncate">{task.title}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
