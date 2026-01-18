@@ -85,8 +85,8 @@ const Dashboard = () => {
 
     return (
         <div className="h-full w-full flex gap-4 animate-fade-in overflow-hidden">
-            {/* LEFT COLUMN - Upcoming Events (75% width) */}
-            <div className="w-3/4 flex-shrink-0 flex flex-col gap-3 min-w-0">
+            {/* LEFT COLUMN - Upcoming Events (65% width) */}
+            <div className="w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
                 <div className="card flex-1 flex flex-col overflow-hidden">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
