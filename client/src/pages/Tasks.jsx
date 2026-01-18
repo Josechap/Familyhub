@@ -206,31 +206,31 @@ const Tasks = () => {
             )}
 
             {/* Header with Tabs */}
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-2xl font-semibold">Tasks</h1>
-                <div className="flex bg-white/10 rounded-xl p-1">
+            <div className="flex items-center justify-between gap-4">
+                <h1 className="text-3xl font-semibold">Tasks</h1>
+                <div className="flex bg-white/10 rounded-xl p-1.5">
                     <button
                         onClick={() => setActiveTab('tasks')}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-lg text-lg font-medium transition-all",
                             activeTab === 'tasks'
                                 ? "bg-primary text-white"
                                 : "text-white/60 hover:text-white"
                         )}
                     >
-                        <ListTodo size={18} />
+                        <ListTodo size={22} />
                         Tasks
                     </button>
                     <button
                         onClick={() => setActiveTab('analytics')}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            "flex items-center gap-2 px-5 py-2.5 rounded-lg text-lg font-medium transition-all",
                             activeTab === 'analytics'
                                 ? "bg-primary text-white"
                                 : "text-white/60 hover:text-white"
                         )}
                     >
-                        <BarChart3 size={18} />
+                        <BarChart3 size={22} />
                         Analytics
                     </button>
                 </div>
