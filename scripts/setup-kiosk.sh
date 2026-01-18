@@ -34,8 +34,8 @@ sudo apt-get install -y --no-install-recommends \
     unclutter
 
 echo ""
-echo -e "${YELLOW}⚙️  Configuring auto-login to desktop...${NC}"
-sudo raspi-config nonint do_boot_behaviour B4
+echo -e "${YELLOW}⚙️  Configuring auto-login to console (for kiosk mode)...${NC}"
+sudo raspi-config nonint do_boot_behaviour B2
 
 echo ""
 echo -e "${YELLOW}📝 Creating autostart configuration...${NC}"

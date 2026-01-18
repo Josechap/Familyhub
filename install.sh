@@ -166,8 +166,8 @@ WorkingDirectory=$INSTALL_DIR/server
 ExecStart=$(which node) index.js
 Restart=on-failure
 RestartSec=10
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=familyhub
 Environment=NODE_ENV=production
 
