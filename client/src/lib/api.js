@@ -365,5 +365,17 @@ export const api = {
         }
         return res.json();
     },
+
+    // Database Reset
+    async resetDatabase() {
+        const res = await fetch(`${API_BASE}/settings/reset-database`, {
+            method: 'POST',
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to reset database');
+        }
+        return res.json();
+    },
 };
 export default api;

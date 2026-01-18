@@ -100,4 +100,33 @@ router.delete('/family/:id', (req, res) => {
     }
 });
 
+// POST reset database - clears all user data except settings and auth tokens
+router.post('/reset-database', (req, res) => {
+    try {
+        // Use a transaction for atomic operation
+        const reset = db.transaction(() => {
+            // Clear user content tables
+            db.prepare('DELETE FROM family_members').run();
+            db.prepare('DELETE FROM chores').run();
+            db.prepare('DELETE FROM calendar_events').run();
+            db.prepare('DELETE FROM recipes').run();
+            db.prepare('DELETE FROM meal_slots').run();
+            db.prepare('DELETE FROM meal_history').run();
+            db.prepare('DELETE FROM dinner_slots').run();
+            db.prepare('DELETE FROM task_completions').run();
+
+            // Reset SQLite sequences so IDs start fresh
+            db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('family_members', 'chores', 'calendar_events', 'recipes', 'meal_slots', 'meal_history', 'dinner_slots', 'task_completions')").run();
+        });
+
+        reset();
+
+        console.log('Database reset completed - all user data cleared');
+        res.json({ success: true, message: 'Database reset successfully. All user data has been cleared.' });
+    } catch (error) {
+        console.error('Database reset failed:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2, Sun, Moon, Monitor, Timer, Image, Play } from 'lucide-react';
+import { User, Link, Check, Loader2, Unlink, RefreshCw, BookOpen, Edit2, Plus, X, Trash2, Sun, Moon, Monitor, Timer, Image, Play, AlertTriangle } from 'lucide-react';
 import { API_BASE, GOOGLE_AUTH_URL } from '../lib/config';
+import api from '../lib/api';
 import {
     fetchSettings,
     updateSettings,
@@ -467,6 +468,7 @@ const Settings = () => {
     } = useSelector((state) => state.settings);
     const [editingMember, setEditingMember] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [resetting, setResetting] = useState(false);
 
     useEffect(() => {
         dispatch(fetchSettings());
@@ -748,6 +750,55 @@ const Settings = () => {
                             <span className="font-medium">Paprika Recipes</span>
                         </div>
                         <PaprikaIntegration />
+                    </div>
+                </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="card border-2 border-red-500/30">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                        <AlertTriangle size={20} className="text-red-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-red-400">Danger Zone</h2>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="font-medium text-white mb-1">Reset Database</h3>
+                        <p className="text-sm text-white/50 mb-3">
+                            This will permanently delete all family members, local tasks, calendar events, recipes, meal plans, and task history. Google Calendar and Paprika data will NOT be affected (they sync from external sources). Settings and integrations will be preserved.
+                        </p>
+                        <button
+                            onClick={async () => {
+                                const confirmed = confirm(
+                                    '⚠️ Are you sure you want to reset the database?\n\nThis will delete:\n• All family members\n• All local tasks and points\n• All calendar events\n• All recipes\n• All meal plans\n• All task completion history\n\nThis action cannot be undone!'
+                                );
+                                if (!confirmed) return;
+
+                                const doubleConfirm = prompt('Type "RESET" to confirm:');
+                                if (doubleConfirm !== 'RESET') {
+                                    alert('Reset cancelled.');
+                                    return;
+                                }
+
+                                setResetting(true);
+                                try {
+                                    await api.resetDatabase();
+                                    alert('Database reset successfully! The page will now reload.');
+                                    window.location.reload();
+                                } catch (error) {
+                                    alert('Failed to reset database: ' + error.message);
+                                } finally {
+                                    setResetting(false);
+                                }
+                            }}
+                            disabled={resetting}
+                            className="py-3 px-6 bg-red-500/20 text-red-400 border border-red-500/40 rounded-xl font-medium hover:bg-red-500/30 transition-colors flex items-center gap-2 touch-target"
+                        >
+                            {resetting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                            {resetting ? 'Resetting...' : 'Reset Database'}
+                        </button>
                     </div>
                 </div>
             </div>
