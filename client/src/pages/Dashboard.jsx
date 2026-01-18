@@ -91,11 +91,15 @@ const Dashboard = () => {
                 <p className="text-white/60 text-xl">{date}</p>
 
                 {/* Weather inline */}
-                <div className="flex items-center justify-center gap-3 mt-4">
-                    <span className="text-4xl">{weather.icon}</span>
-                    <span className="text-2xl font-semibold">{weather.temp}°F</span>
-                    <span className="text-white/60">{weather.condition}</span>
-                </div>
+                {weather ? (
+                    <div className="flex items-center justify-center gap-3 mt-4">
+                        <span className="text-4xl">{weather.icon}</span>
+                        <span className="text-2xl font-semibold">{weather.temp}°F</span>
+                        <span className="text-white/60">{weather.condition}</span>
+                    </div>
+                ) : (
+                    <p className="text-white/40 text-sm mt-4">Configure weather in Settings</p>
+                )}
             </div>
 
             {/* Quick Glance Cards */}
@@ -162,32 +166,36 @@ const Dashboard = () => {
                         </div>
                         <span className="text-white/60 text-sm font-medium">What to Wear</span>
                     </div>
-                    <div className="space-y-2">
-                        {/* Main recommendation */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-2xl">{clothing.mainIcon}</span>
-                            <p className="font-semibold text-white">{clothing.main}</p>
-                        </div>
-                        {/* Accessories */}
-                        {clothing.accessories?.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                                {clothing.accessories.map((item, idx) => (
-                                    <span
-                                        key={idx}
-                                        className="text-sm bg-white/10 px-2 py-1 rounded-lg"
-                                    >
-                                        {item}
-                                    </span>
-                                ))}
+                    {clothing ? (
+                        <div className="space-y-2">
+                            {/* Main recommendation */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl">{clothing.mainIcon}</span>
+                                <p className="font-semibold text-white">{clothing.main}</p>
                             </div>
-                        )}
-                        {/* Note */}
-                        {clothing.note && (
-                            <p className="text-xs text-white/50 mt-2">
-                                {clothing.note}
-                            </p>
-                        )}
-                    </div>
+                            {/* Accessories */}
+                            {clothing.accessories?.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {clothing.accessories.map((item, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="text-sm bg-white/10 px-2 py-1 rounded-lg"
+                                        >
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            {/* Note */}
+                            {clothing.note && (
+                                <p className="text-xs text-white/50 mt-2">
+                                    {clothing.note}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-white/40 text-sm">Configure weather to get clothing recommendations</p>
+                    )}
                 </div>
 
                 {/* Today's Meals Card */}

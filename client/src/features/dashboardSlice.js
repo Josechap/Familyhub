@@ -136,21 +136,8 @@ const mapColor = (color) => {
 
 const initialState = {
     greeting: 'Good Morning',
-    weather: {
-        temp: 68,
-        high: 72,
-        low: 55,
-        condition: 'Partly Cloudy',
-        icon: '⛅',
-        humidity: 45,
-        wind: 8,
-    },
-    clothing: {
-        main: 'Light Jacket',
-        mainIcon: '🧥',
-        accessories: ['👟 Sneakers', '🧢 Cap'],
-        note: 'Bring sunglasses for afternoon sun',
-    },
+    weather: null, // null until real weather data is fetched
+    clothing: null, // null until weather-based recommendations are available
     upcomingEvents: [],
     todayTasks: [],
     dinner: {
