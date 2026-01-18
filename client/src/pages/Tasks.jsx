@@ -283,143 +283,143 @@ const Tasks = () => {
                         })}
                     </div>
 
-                    {/* Member Cards - Horizontal scroll for all personas to fit on screen */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden gap-3 touch-scroll hide-scrollbar flex">
-                {displayMembers.map((member, idx) => {
-                    const colors = familyColors[member.color] || familyColors['pastel-blue'];
-                    const stats = getMemberStats(member.name);
-                    const tasks = getTasksByMember(member.name);
-                    const pendingTasks = tasks.filter(t => !t.completed && t.status !== 'completed');
-                    const completedTasks = tasks.filter(t => t.completed || t.status === 'completed');
+                    {/* Member Cards - Responsive grid that fills the width */}
+                    <div className="flex-1 overflow-x-auto overflow-y-hidden gap-4 touch-scroll hide-scrollbar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        {displayMembers.map((member, idx) => {
+                            const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                            const stats = getMemberStats(member.name);
+                            const tasks = getTasksByMember(member.name);
+                            const pendingTasks = tasks.filter(t => !t.completed && t.status !== 'completed');
+                            const completedTasks = tasks.filter(t => t.completed || t.status === 'completed');
 
-                    return (
-                        <div
-                            key={member.id}
-                            className="card animate-slide-up flex-shrink-0 w-64 flex flex-col"
-                            style={{ animationDelay: `${idx * 50}ms` }}
-                        >
-                            {/* Member Header - Compact */}
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className={cn(
-                                    "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg",
-                                    colors.bg
-                                )}>
-                                    {member.name[0]}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <h2 className="text-base font-semibold truncate">{member.name}</h2>
-                                        <div className="flex items-center gap-0.5 bg-warning/20 px-2 py-0.5 rounded-full flex-shrink-0">
-                                            <Star size={14} className="text-warning fill-warning" />
-                                            <span className="font-bold text-warning text-xs">{member.points}</span>
+                            return (
+                                <div
+                                    key={member.id}
+                                    className="card animate-slide-up flex flex-col min-h-[200px]"
+                                    style={{ animationDelay: `${idx * 50}ms` }}
+                                >
+                                    {/* Member Header - Larger */}
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className={cn(
+                                            "w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg",
+                                            colors.bg
+                                        )}>
+                                            {member.name[0]}
                                         </div>
-                                    </div>
-                                    {/* Progress bar */}
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="flex-1 progress-bar h-1">
-                                            <div
-                                                className="progress-bar-fill h-1"
-                                                style={{ width: `${stats.percent}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-white/50 text-xs whitespace-nowrap">
-                                            {stats.completed}/{stats.total}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Pending Tasks - Compact */}
-                            <div className="space-y-1 flex-1 overflow-y-auto">
-                                {pendingTasks.length === 0 && completedTasks.length === 0 ? (
-                                    <p className="text-white/40 text-center text-xs py-4">No tasks</p>
-                                ) : (
-                                    <>
-                                        {pendingTasks.slice(0, 2).map((task) => {
-                                            const isCompleting = completingTask === task.id;
-                                            const points = task.points || 1;
-
-                                            return (
-                                                <div
-                                                    key={task.id}
-                                                    className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all group"
-                                                >
-                                                    {/* Checkbox */}
-                                                    <button
-                                                        onClick={(e) => handleCompleteTask(task, e)}
-                                                        disabled={isCompleting}
-                                                        className={cn(
-                                                            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all touch-target flex-shrink-0",
-                                                            colors.border,
-                                                            "hover:bg-success/20 hover:border-success",
-                                                            isCompleting && "animate-pulse border-success bg-success/20"
-                                                        )}
-                                                    >
-                                                        <Check
-                                                            size={12}
-                                                            className={cn(
-                                                                "transition-all",
-                                                                isCompleting ? "text-success" : "text-transparent group-hover:text-success"
-                                                            )}
-                                                        />
-                                                    </button>
-
-                                                    {/* Task info */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-xs truncate">{task.title}</p>
-                                                    </div>
-
-                                                    {/* Transfer button - only for Google Tasks */}
-                                                    {task.googleTaskId && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setTransferringTask(task);
-                                                            }}
-                                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded touch-target flex-shrink-0"
-                                                            title="Transfer to another list"
-                                                        >
-                                                            <ArrowRightLeft size={14} className="text-white/60" />
-                                                        </button>
-                                                    )}
-
-                                                    {/* Points */}
-                                                    <div className="text-warning/80 flex-shrink-0">
-                                                        <Star size={10} className="fill-current inline" />
-                                                        <span className="text-xs font-semibold ml-0.5">+{points}</span>
-                                                    </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <h2 className="text-lg font-semibold truncate">{member.name}</h2>
+                                                <div className="flex items-center gap-1 bg-warning/20 px-3 py-1 rounded-full flex-shrink-0">
+                                                    <Star size={16} className="text-warning fill-warning" />
+                                                    <span className="font-bold text-warning text-base">{member.points}</span>
                                                 </div>
-                                            );
-                                        })}
-
-                                        {pendingTasks.length > 2 && (
-                                            <p className="text-center text-white/30 text-xs py-1">
-                                                +{pendingTasks.length - 2} more
-                                            </p>
-                                        )}
-
-                                        {/* Completed Tasks - Show count only */}
-                                        {completedTasks.length > 0 && (
-                                            <div className="flex items-center justify-center gap-1 py-1 mt-1 border-t border-white/10">
-                                                <Check size={12} className="text-success" />
-                                                <span className="text-xs text-white/50">{completedTasks.length} completed</span>
                                             </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                                            {/* Progress bar */}
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <div className="flex-1 progress-bar h-2">
+                                                    <div
+                                                        className="progress-bar-fill h-2"
+                                                        style={{ width: `${stats.percent}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-white/50 text-sm whitespace-nowrap">
+                                                    {stats.completed}/{stats.total}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            {/* 100% completion badge - Compact */}
-                            {stats.percent === 100 && stats.total > 0 && (
-                                <div className="mt-2 flex items-center justify-center gap-1 py-2 bg-success/20 rounded-lg text-success text-xs">
-                                    <Trophy size={14} />
-                                    <span className="font-semibold">Perfect!</span>
+                                    {/* Pending Tasks - Larger text */}
+                                    <div className="space-y-2 flex-1 overflow-y-auto">
+                                        {pendingTasks.length === 0 && completedTasks.length === 0 ? (
+                                            <p className="text-white/40 text-center text-base py-4">No tasks</p>
+                                        ) : (
+                                            <>
+                                                {pendingTasks.slice(0, 4).map((task) => {
+                                                    const isCompleting = completingTask === task.id;
+                                                    const points = task.points || 1;
+
+                                                    return (
+                                                        <div
+                                                            key={task.id}
+                                                            className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all group"
+                                                        >
+                                                            {/* Checkbox */}
+                                                            <button
+                                                                onClick={(e) => handleCompleteTask(task, e)}
+                                                                disabled={isCompleting}
+                                                                className={cn(
+                                                                    "w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all touch-target flex-shrink-0",
+                                                                    colors.border,
+                                                                    "hover:bg-success/20 hover:border-success",
+                                                                    isCompleting && "animate-pulse border-success bg-success/20"
+                                                                )}
+                                                            >
+                                                                <Check
+                                                                    size={16}
+                                                                    className={cn(
+                                                                        "transition-all",
+                                                                        isCompleting ? "text-success" : "text-transparent group-hover:text-success"
+                                                                    )}
+                                                                />
+                                                            </button>
+
+                                                            {/* Task info */}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-base truncate">{task.title}</p>
+                                                            </div>
+
+                                                            {/* Transfer button - only for Google Tasks */}
+                                                            {task.googleTaskId && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setTransferringTask(task);
+                                                                    }}
+                                                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded touch-target flex-shrink-0"
+                                                                    title="Transfer to another list"
+                                                                >
+                                                                    <ArrowRightLeft size={14} className="text-white/60" />
+                                                                </button>
+                                                            )}
+
+                                                            {/* Points */}
+                                                            <div className="text-warning/80 flex-shrink-0">
+                                                                <Star size={14} className="fill-current inline" />
+                                                                <span className="text-sm font-semibold ml-0.5">+{points}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+
+                                                {pendingTasks.length > 4 && (
+                                                    <p className="text-center text-white/30 text-sm py-1">
+                                                        +{pendingTasks.length - 4} more
+                                                    </p>
+                                                )}
+
+                                                {/* Completed Tasks - Show count only */}
+                                                {completedTasks.length > 0 && (
+                                                    <div className="flex items-center justify-center gap-2 py-2 mt-2 border-t border-white/10">
+                                                        <Check size={16} className="text-success" />
+                                                        <span className="text-sm text-white/50">{completedTasks.length} completed</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* 100% completion badge - Larger */}
+                                    {stats.percent === 100 && stats.total > 0 && (
+                                        <div className="mt-3 flex items-center justify-center gap-2 py-3 bg-success/20 rounded-xl text-success text-base">
+                                            <Trophy size={18} />
+                                            <span className="font-semibold">Perfect!</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                            );
+                        })}
+                    </div>
                 </>
             )}
 

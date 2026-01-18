@@ -17,6 +17,13 @@ const familyColors = {
     'pastel-orange': 'bg-family-orange',
 };
 
+// Member color dots for events
+const getMemberColor = (memberName, familyMembers) => {
+    const member = familyMembers.find(m => m.name === memberName);
+    if (!member) return 'bg-white/30';
+    return familyColors[member.color] || 'bg-family-blue';
+};
+
 // Format date for display
 const formatEventDate = (dateStr) => {
     const today = new Date().toISOString().split('T')[0];
@@ -78,8 +85,8 @@ const Dashboard = () => {
 
     return (
         <div className="h-full w-full flex gap-4 animate-fade-in overflow-hidden">
-            {/* LEFT COLUMN - Upcoming Events (Large) */}
-            <div className="flex-1 flex flex-col gap-3 min-w-0">
+            {/* LEFT COLUMN - Upcoming Events (75% width) */}
+            <div className="w-3/4 flex-shrink-0 flex flex-col gap-3 min-w-0">
                 <div className="card flex-1 flex flex-col overflow-hidden">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
@@ -97,22 +104,22 @@ const Dashboard = () => {
                                         event.isToday ? "bg-purple-500/20" : "bg-white/5"
                                     )}
                                 >
+                                    {/* Color dot for family member */}
+                                    <div className={cn(
+                                        "w-3 h-3 rounded-full flex-shrink-0 mt-1.5",
+                                        getMemberColor(event.member, familyMembers)
+                                    )} />
                                     {/* Date badge */}
                                     <div className={cn(
-                                        "flex-shrink-0 w-14 text-center rounded-lg py-1.5 px-2",
+                                        "flex-shrink-0 w-20 text-center rounded-lg py-2 px-2",
                                         event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
                                     )}>
-                                        <div className="text-xs font-medium">{formatEventDate(event.date)}</div>
+                                        <div className="text-sm font-semibold">{formatEventDate(event.date)}</div>
                                     </div>
                                     {/* Event details */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-white truncate">{event.title}</p>
-                                        <p className="text-white/50 text-sm">{event.time}</p>
-                                        {event.member && event.member !== 'Family' && (
-                                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-white/10 text-xs">
-                                                {event.member}
-                                            </span>
-                                        )}
+                                        <p className="font-semibold text-white truncate text-lg">{event.title}</p>
+                                        <p className="text-white/50">{event.time}</p>
                                     </div>
                                 </div>
                             ))
@@ -150,8 +157,8 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* RIGHT COLUMN - Clock, Weather, Small Cards */}
-            <div className="w-80 flex flex-col gap-3">
+            {/* RIGHT COLUMN - Clock, Weather, Small Cards (Wider) */}
+            <div className="flex-1 flex flex-col gap-3">
                 {/* Time & Weather Card */}
                 <div className="card text-center">
                     <p className="text-white/60 text-sm mb-1">{getGreeting()}</p>
@@ -214,9 +221,9 @@ const Dashboard = () => {
 
                 {/* Weekly Scoreboard - Vertical */}
                 <div className="card flex-1 overflow-hidden">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="font-semibold text-sm">Weekly Scoreboard</h2>
-                        <Trophy size={16} className="text-warning" />
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="font-semibold text-lg">Weekly Scoreboard</h2>
+                        <Trophy size={20} className="text-warning" />
                     </div>
                     <div className="space-y-2">
                         {sortedMembers.slice(0, 5).map((member, idx) => {
@@ -225,25 +232,25 @@ const Dashboard = () => {
                             const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
 
                             return (
-                                <div key={member.id} className="flex items-center gap-2 p-2 bg-white/5 rounded-lg">
+                                <div key={member.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
                                     <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm",
+                                        "w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg",
                                         colorClass
                                     )}>
                                         {member.name[0]}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm truncate">{member.name.split(' ')[0]}</p>
+                                        <p className="font-medium text-base truncate">{member.name.split(' ')[0]}</p>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <span className="text-success font-semibold">{weekly.weeklyTasksCompleted}</span>
+                                    <div className="flex items-center gap-3 text-base">
+                                        <span className="text-success font-bold text-lg">{weekly.weeklyTasksCompleted}</span>
                                         <span className="text-white/30">|</span>
-                                        <div className="flex items-center gap-0.5">
-                                            <Star size={10} className="text-warning fill-warning" />
-                                            <span className="text-warning font-semibold">{member.points}</span>
+                                        <div className="flex items-center gap-1">
+                                            <Star size={14} className="text-warning fill-warning" />
+                                            <span className="text-warning font-bold text-lg">{member.points}</span>
                                         </div>
                                     </div>
-                                    {isLeader && <Trophy size={14} className="text-warning fill-warning" />}
+                                    {isLeader && <Trophy size={18} className="text-warning fill-warning" />}
                                 </div>
                             );
                         })}
