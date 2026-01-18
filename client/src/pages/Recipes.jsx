@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Heart, Clock, Users, ChevronLeft, ChevronRight, Play, X, Search, Loader2, Flame } from 'lucide-react';
+import { Heart, Clock, Users, ChevronLeft, ChevronRight, Play, X, Search, Loader2, Flame, Calendar, Plus } from 'lucide-react';
 import {
     fetchRecipes,
     selectRecipe,
@@ -13,6 +13,7 @@ import {
     setSearchQuery,
     setFilterCategory,
 } from '../features/recipesSlice';
+import { setMealAsync } from '../features/mealsSlice';
 import { cn } from '../lib/utils';
 
 // Cooking Mode Component - Fully responsive immersive experience
@@ -102,7 +103,31 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
 };
 
 // Recipe Detail Modal
-const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite }) => {
+const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPlanMeal }) => {
+    const [showMealPicker, setShowMealPicker] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedMealType, setSelectedMealType] = useState('dinner');
+
+    const mealTypes = [
+        { key: 'breakfast', label: 'Breakfast', emoji: '🍳' },
+        { key: 'lunch', label: 'Lunch', emoji: '🥗' },
+        { key: 'dinner', label: 'Dinner', emoji: '🍽️' },
+        { key: 'snack', label: 'Snack', emoji: '🍎' },
+    ];
+
+    // Generate next 7 days
+    const nextDays = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        return d.toISOString().split('T')[0];
+    });
+
+    const handlePlanMeal = () => {
+        onPlanMeal(selectedDate, selectedMealType, recipe);
+        setShowMealPicker(false);
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center p-4">
             <div className="card max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col animate-scale-in">
@@ -142,6 +167,68 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite }) => 
                         </button>
                     </div>
                 </div>
+
+                {/* Meal Planning Quick Picker */}
+                {showMealPicker && (
+                    <div className="mb-4 p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                        <h4 className="font-medium text-purple-300 mb-3 flex items-center gap-2">
+                            <Calendar size={16} />
+                            Plan this meal
+                        </h4>
+                        <div className="grid grid-cols-7 gap-1 mb-3">
+                            {nextDays.map(dateStr => {
+                                const d = new Date(dateStr + 'T12:00:00');
+                                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                                return (
+                                    <button
+                                        key={dateStr}
+                                        onClick={() => setSelectedDate(dateStr)}
+                                        className={cn(
+                                            "p-2 rounded-lg text-center transition-all",
+                                            selectedDate === dateStr
+                                                ? "bg-purple-500 text-white"
+                                                : "bg-white/5 hover:bg-white/10"
+                                        )}
+                                    >
+                                        <div className="text-xs text-white/60">{d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                                        <div className="font-medium">{d.getDate()}</div>
+                                        {isToday && <div className="text-xs text-purple-300">Today</div>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="flex gap-2 mb-3">
+                            {mealTypes.map(type => (
+                                <button
+                                    key={type.key}
+                                    onClick={() => setSelectedMealType(type.key)}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-lg text-sm font-medium transition-all",
+                                        selectedMealType === type.key
+                                            ? "bg-purple-500 text-white"
+                                            : "bg-white/5 hover:bg-white/10"
+                                    )}
+                                >
+                                    {type.emoji} {type.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowMealPicker(false)}
+                                className="flex-1 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handlePlanMeal}
+                                className="flex-1 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600"
+                            >
+                                Add to Meal Plan
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto space-y-6 touch-scroll">
@@ -186,13 +273,22 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite }) => 
 
                 {/* Footer */}
                 <div className="pt-4 mt-4 border-t border-white/10">
-                    <button
-                        onClick={onStartCooking}
-                        className="w-full flex items-center justify-center gap-3 py-4 bg-primary text-white rounded-2xl font-semibold hover:bg-primary/80 transition-colors touch-target"
-                    >
-                        <Play size={24} />
-                        Start Cooking Mode
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowMealPicker(true)}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-500/20 text-purple-300 rounded-xl font-medium hover:bg-purple-500/30 transition-colors touch-target"
+                        >
+                            <Calendar size={20} />
+                            Plan Meal
+                        </button>
+                        <button
+                            onClick={onStartCooking}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors touch-target"
+                        >
+                            <Play size={20} />
+                            Start Cooking
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -263,6 +359,18 @@ const Recipes = () => {
                     onClose={() => dispatch(selectRecipe(null))}
                     onStartCooking={() => dispatch(startCookingMode())}
                     onToggleFavorite={(id) => dispatch(toggleFavoriteAsync(id))}
+                    onPlanMeal={(date, mealType, recipe) => {
+                        dispatch(setMealAsync({
+                            date,
+                            mealType,
+                            recipe: {
+                                id: recipe.id,
+                                title: recipe.title,
+                                emoji: recipe.emoji,
+                                photoUrl: recipe.photoUrl || null,
+                            }
+                        }));
+                    }}
                 />
             )}
 

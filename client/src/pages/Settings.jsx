@@ -580,6 +580,60 @@ const Settings = () => {
                 </div>
             </div>
 
+            {/* Weather Settings Section */}
+            <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                        <Sun size={20} className="text-yellow-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Weather</h2>
+                </div>
+
+                <div className="space-y-4">
+                    <p className="text-sm text-white/60">
+                        Configure weather to see current conditions and clothing recommendations on the dashboard.
+                    </p>
+
+                    {/* Location */}
+                    <div>
+                        <label className="block text-sm font-medium text-white/60 mb-2">City or ZIP Code</label>
+                        <input
+                            type="text"
+                            placeholder="e.g., Austin, TX or 78701"
+                            defaultValue=""
+                            onBlur={(e) => dispatch(updateSettings({ weatherLocation: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                        />
+                    </div>
+
+                    {/* API Key */}
+                    <div>
+                        <label className="block text-sm font-medium text-white/60 mb-2">
+                            OpenWeatherMap API Key
+                            <a
+                                href="https://openweathermap.org/api"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary text-xs ml-2 hover:underline"
+                            >
+                                (Get free key)
+                            </a>
+                        </label>
+                        <input
+                            type="password"
+                            placeholder="Enter your API key"
+                            defaultValue=""
+                            onBlur={(e) => dispatch(updateSettings({ weatherApiKey: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                        />
+                    </div>
+
+                    <p className="text-xs text-white/40">
+                        💡 Weather data powers the "What to Wear" recommendations based on temperature and conditions.
+                    </p>
+                </div>
+            </div>
+
             {/* Display Settings Section */}
             <div className="card">
                 <div className="flex items-center gap-3 mb-4">
@@ -814,3 +868,4 @@ const Settings = () => {
 };
 
 export default Settings;
+

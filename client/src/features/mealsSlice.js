@@ -116,7 +116,13 @@ export const mealsSlice = createSlice({
                 if (!state.meals[date]) {
                     state.meals[date] = {};
                 }
-                state.meals[date][mealType] = recipe;
+                // Transform recipe to format expected by UI
+                state.meals[date][mealType] = {
+                    recipeId: recipe.id,
+                    recipeTitle: recipe.title,
+                    recipeEmoji: recipe.emoji || '🍽️',
+                    recipePhoto: recipe.photoUrl || null,
+                };
                 state.showRecipePicker = false;
             })
             // Remove meal

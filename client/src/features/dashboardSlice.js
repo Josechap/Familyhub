@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { API_BASE } from '../lib/config';
 
-// Fetch dashboard data (today's events, tasks, and dinner)
+// Fetch dashboard data (upcoming events, tasks, and meals)
 export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async () => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
@@ -12,14 +12,23 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
         const eventsRes = await fetch(`${API_BASE}/google/calendar/events`);
         if (eventsRes.ok) {
             const allEvents = await eventsRes.json();
-            // Filter to today's events
-            events = allEvents.filter(e => e.date === todayStr).map(e => ({
-                id: e.id,
-                title: e.title,
-                time: formatEventTime(e.startHour, e.duration),
-                color: mapColor(e.color),
-                member: e.member,
-            }));
+            // Filter to today and future events, limit to next 10
+            events = allEvents
+                .filter(e => e.date >= todayStr)
+                .sort((a, b) => {
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return (a.startHour || 0) - (b.startHour || 0);
+                })
+                .slice(0, 10)
+                .map(e => ({
+                    id: e.id,
+                    title: e.title,
+                    date: e.date,
+                    time: formatEventTime(e.startHour, e.duration),
+                    color: mapColor(e.color),
+                    member: e.member,
+                    isToday: e.date === todayStr,
+                }));
         }
     } catch {
         console.log('Could not fetch events');
