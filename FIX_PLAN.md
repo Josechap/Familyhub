@@ -852,7 +852,7 @@ app.listen(PORT, HOST, () => {
 - [ ] Add error toast notifications
 - [ ] Improve accessibility (ARIA labels)
 - [ ] Add rate limiting
-- [ ] Write unit tests
+- [x] Write unit tests (40 tests added)
 
 ---
 
@@ -914,7 +914,25 @@ All fixes implemented and verified:
 | - | Error toast notifications | ⬜ Planned |
 | - | Accessibility improvements (ARIA) | ⬜ Planned |
 | - | Rate limiting | ⬜ Planned |
-| - | Unit tests | ⬜ Planned |
+| - | Unit tests | ✅ Complete |
+
+### Unit Tests (Completed 2026-01-26)
+
+**40 tests** covering all core API endpoints:
+- Health API (2 tests)
+- Recipes API (5 tests) - CRUD, favorites
+- Tasks API (10 tests) - chores, family, analytics
+- Calendar API (5 tests) - events, dinner slots
+- Meals API (11 tests) - planning, shopping list
+- Settings API (9 tests) - config, family members
+
+**Run tests:**
+```bash
+cd server
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
+```
 
 ---
 
