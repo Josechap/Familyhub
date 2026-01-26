@@ -36,3 +36,7 @@ backups/
 
 # Sample photos (may contain personal photos)
 server/sample-photos/
+
+# Test coverage
+coverage/
+server/coverage/
