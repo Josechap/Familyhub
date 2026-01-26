@@ -68,8 +68,9 @@ app.use(cors({
         }
         const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
         const isLocalNetwork = /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+        const isLocalDomain = /\.local(:\d+)?$/.test(new URL(origin).host);
         const isGoogleAuth = origin.includes('accounts.google.com');
-        if (isLocalhost || isLocalNetwork || isGoogleAuth) {
+        if (isLocalhost || isLocalNetwork || isLocalDomain || isGoogleAuth) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
