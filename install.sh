@@ -117,6 +117,9 @@ echo ""
 echo -e "${YELLOW}🔨 Building client for production...${NC}"
 npm run build || error_exit "Failed to build client"
 
+# Get IP address early (needed for CORS config)
+IP_ADDR=$(hostname -I | awk '{print $1}')
+
 # Create .env if it doesn't exist
 if [ ! -f "$INSTALL_DIR/server/.env" ]; then
     echo ""
@@ -147,7 +150,14 @@ HOST=0.0.0.0
 ENCRYPTION_KEY=$ENCRYPTION_KEY
 EOF
     fi
+    
+    # Add ALLOWED_ORIGINS with familyhub.local and the Pi's IP
+    echo "" >> "$INSTALL_DIR/server/.env"
+    echo "# CORS - Allowed origins for browser access" >> "$INSTALL_DIR/server/.env"
+    echo "ALLOWED_ORIGINS=http://familyhub.local,http://$IP_ADDR" >> "$INSTALL_DIR/server/.env"
+    
     echo -e "${GREEN}✓ Generated encryption key${NC}"
+    echo -e "${GREEN}✓ Configured CORS for familyhub.local${NC}"
     echo -e "${YELLOW}⚠️  Edit server/.env to add Google credentials (optional)${NC}"
 fi
 
