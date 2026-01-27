@@ -7,7 +7,7 @@ import {
     setActiveDevice,
     setTargetTempOptimistic,
 } from '../features/nestSlice';
-import { Thermometer, Flame, Snowflake, Leaf, Power, ChevronUp, ChevronDown, Droplets } from 'lucide-react';
+import { Thermometer, Flame, Snowflake, Leaf, Power, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const NestCard = ({ onOpenDetail }) => {
@@ -16,57 +16,41 @@ const NestCard = ({ onOpenDetail }) => {
     const [pendingTemp, setPendingTemp] = useState(null);
     const tempTimeoutRef = useRef(null);
 
-    // Display pending temp while adjusting, otherwise show server temp
     const displayTargetTemp = pendingTemp !== null ? pendingTemp : thermostatState.targetTemp;
 
     useEffect(() => {
         dispatch(fetchNestDevices());
     }, [dispatch]);
 
-    // Poll for state updates every 60 seconds if a device is active
     useEffect(() => {
         if (!activeDeviceId) return;
-
         const fetchState = () => dispatch(fetchNestState(activeDeviceId));
-        fetchState(); // Initial fetch
-
+        fetchState();
         const interval = setInterval(fetchState, 60000);
         return () => clearInterval(interval);
     }, [dispatch, activeDeviceId]);
 
-    // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
-            if (tempTimeoutRef.current) {
-                clearTimeout(tempTimeoutRef.current);
-            }
+            if (tempTimeoutRef.current) clearTimeout(tempTimeoutRef.current);
         };
     }, []);
 
-    // Temperature adjustment handler with debounce
     const handleTempChange = (delta) => {
         const newTemp = (pendingTemp !== null ? pendingTemp : thermostatState.targetTemp) + delta;
-
-        // Clamp between 50-90°F
         const clampedTemp = Math.max(50, Math.min(90, newTemp));
         setPendingTemp(clampedTemp);
         dispatch(setTargetTempOptimistic(clampedTemp));
 
         if (!activeDeviceId) return;
+        if (tempTimeoutRef.current) clearTimeout(tempTimeoutRef.current);
 
-        // Clear any pending API call
-        if (tempTimeoutRef.current) {
-            clearTimeout(tempTimeoutRef.current);
-        }
-
-        // Debounce the actual API call by 1 second
         tempTimeoutRef.current = setTimeout(() => {
             dispatch(setNestTemperature({ deviceId: activeDeviceId, temperature: clampedTemp }));
             setPendingTemp(null);
         }, 1000);
     };
 
-    // Get mode icon and color
     const getModeDisplay = () => {
         switch (thermostatState.mode) {
             case 'HEAT':
@@ -82,13 +66,6 @@ const NestCard = ({ onOpenDetail }) => {
         }
     };
 
-    // Get HVAC status text
-    const getHvacStatusText = () => {
-        if (thermostatState.hvacStatus === 'heating') return 'Heating to';
-        if (thermostatState.hvacStatus === 'cooling') return 'Cooling to';
-        return 'Set to';
-    };
-
     const modeDisplay = getModeDisplay();
     const ModeIcon = modeDisplay.icon;
 
@@ -96,12 +73,11 @@ const NestCard = ({ onOpenDetail }) => {
     if (!connected && !loading) {
         return (
             <div
-                className="card flex flex-col items-center justify-center text-white/40 h-full min-h-[180px] cursor-pointer hover:bg-white/5 transition-colors"
+                className="card py-3 flex items-center justify-center gap-3 text-white/40 cursor-pointer hover:bg-white/5 transition-colors"
                 onClick={onOpenDetail}
             >
-                <Thermometer size={32} className="mb-2 opacity-50" />
-                <div className="text-lg">Nest not connected</div>
-                <div className="text-sm mt-1">Tap to set up</div>
+                <Thermometer size={20} className="opacity-50" />
+                <span>Nest not connected</span>
             </div>
         );
     }
@@ -109,104 +85,70 @@ const NestCard = ({ onOpenDetail }) => {
     // Loading state
     if (loading && devices.length === 0) {
         return (
-            <div className="card flex flex-col items-center justify-center text-white/40 h-full min-h-[180px]">
-                <Thermometer size={32} className="mb-2 opacity-50 animate-pulse" />
-                <div>Loading...</div>
+            <div className="card py-3 flex items-center justify-center gap-3 text-white/40">
+                <Thermometer size={20} className="opacity-50 animate-pulse" />
+                <span>Loading...</span>
             </div>
         );
     }
 
-    const activeDevice = devices.find(d => d.id === activeDeviceId);
-
     return (
         <div
-            className="card h-full flex flex-col cursor-pointer hover:bg-white/5 transition-colors"
+            className="card py-3 px-4 cursor-pointer hover:bg-white/5 transition-colors"
             onClick={onOpenDetail}
         >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", modeDisplay.bg)}>
-                        <ModeIcon size={20} className={modeDisplay.color} />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-lg">Thermostat</h3>
-                        {devices.length > 1 && (
-                            <p className="text-white/50 text-sm">{activeDevice?.name}</p>
-                        )}
-                    </div>
+            <div className="flex items-center gap-4">
+                {/* Mode Icon */}
+                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", modeDisplay.bg)}>
+                    <ModeIcon size={20} className={modeDisplay.color} />
                 </div>
-                {devices.length > 1 && (
-                    <span className="text-xs bg-white/10 px-2 py-1 rounded-full">
-                        +{devices.length - 1} more
-                    </span>
-                )}
-            </div>
 
-            {/* Temperature Display */}
-            <div className="flex-1 flex items-center justify-center gap-6">
-                {/* Current Temperature */}
-                <div className="text-center">
-                    <div className="text-5xl font-bold text-white">
-                        {thermostatState.currentTemp ?? '--'}°
-                    </div>
-                    <div className="text-white/50 text-sm mt-1">Current</div>
+                {/* Current Temp */}
+                <div className="flex-shrink-0">
+                    <div className="text-3xl font-bold">{thermostatState.currentTemp ?? '--'}°</div>
+                    <div className="text-white/40 text-xs">Inside</div>
                 </div>
 
                 {/* Divider */}
-                <div className="h-16 w-px bg-white/10"></div>
+                <div className="h-10 w-px bg-white/10 flex-shrink-0"></div>
 
-                {/* Target Temperature with Controls */}
-                <div className="text-center">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleTempChange(-1);
-                            }}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                            disabled={thermostatState.mode === 'OFF'}
-                        >
-                            <ChevronDown size={20} />
-                        </button>
+                {/* Target Temp with Controls */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleTempChange(-1); }}
+                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        disabled={thermostatState.mode === 'OFF'}
+                    >
+                        <ChevronDown size={16} />
+                    </button>
+                    <div className="text-center min-w-[50px]">
                         <div className={cn(
-                            "text-4xl font-bold min-w-[80px]",
+                            "text-2xl font-bold",
                             thermostatState.hvacStatus === 'heating' && "text-orange-400",
                             thermostatState.hvacStatus === 'cooling' && "text-blue-400",
                             thermostatState.hvacStatus === 'idle' && "text-white/70"
                         )}>
                             {displayTargetTemp ?? '--'}°
                         </div>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleTempChange(1);
-                            }}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                            disabled={thermostatState.mode === 'OFF'}
-                        >
-                            <ChevronUp size={20} />
-                        </button>
                     </div>
-                    <div className="text-white/50 text-sm mt-1">
-                        {getHvacStatusText()}
-                    </div>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleTempChange(1); }}
+                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                        disabled={thermostatState.mode === 'OFF'}
+                    >
+                        <ChevronUp size={16} />
+                    </button>
                 </div>
-            </div>
 
-            {/* Footer - Humidity & Status */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center gap-2 text-white/50">
-                    <Droplets size={16} />
-                    <span className="text-sm">{thermostatState.humidity ?? '--'}% humidity</span>
-                </div>
+                {/* Status */}
                 <div className={cn(
-                    "text-sm font-medium",
+                    "ml-auto text-sm font-medium flex-shrink-0",
                     thermostatState.hvacStatus === 'heating' && "text-orange-400",
                     thermostatState.hvacStatus === 'cooling' && "text-blue-400",
-                    thermostatState.hvacStatus === 'idle' && "text-white/50"
+                    thermostatState.hvacStatus === 'idle' && "text-white/40"
                 )}>
-                    {thermostatState.hvacStatus === 'idle' ? 'Idle' :
+                    {thermostatState.mode === 'OFF' ? 'Off' :
+                     thermostatState.hvacStatus === 'idle' ? 'Idle' :
                      thermostatState.hvacStatus === 'heating' ? 'Heating' : 'Cooling'}
                 </div>
             </div>

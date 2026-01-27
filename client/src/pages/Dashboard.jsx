@@ -194,8 +194,8 @@ const Dashboard = () => {
                 {/* Nest Thermostat Card */}
                 <NestCard onOpenDetail={() => setShowNestDetail(true)} />
 
-                {/* Now Playing / Playlists - 20% height */}
-                <div className="card h-[20%] flex flex-col overflow-hidden">
+                {/* Now Playing / Playlists - 25% height */}
+                <div className="card h-[25%] flex flex-col overflow-hidden">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
@@ -250,8 +250,8 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Weekly Scoreboard - 40% height, 2-column grid */}
-                <div className="card h-[40%] flex flex-col overflow-hidden">
+                {/* Weekly Scoreboard - 45% height, 2-column grid */}
+                <div className="card h-[45%] flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
                         <Trophy size={28} className="text-warning" />
