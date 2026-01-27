@@ -7,6 +7,8 @@ import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
 import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
 import api from '../lib/api';
+import NestCard from '../components/NestCard';
+import NestDetailView from '../components/NestDetailView';
 
 // Family member colors mapping
 const familyColors = {
@@ -46,6 +48,7 @@ const Dashboard = () => {
     const familyMembers = useSelector((state) => state.settings.familyMembers);
     const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
+    const [showNestDetail, setShowNestDetail] = useState(false);
 
     // Dynamic greeting based on time
     const getGreeting = () => {
@@ -188,8 +191,11 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Now Playing / Playlists - 25% height */}
-                <div className="card h-[25%] flex flex-col overflow-hidden">
+                {/* Nest Thermostat Card */}
+                <NestCard onOpenDetail={() => setShowNestDetail(true)} />
+
+                {/* Now Playing / Playlists - 20% height */}
+                <div className="card h-[20%] flex flex-col overflow-hidden">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
@@ -244,8 +250,8 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Weekly Scoreboard - 50% height, 2-column grid */}
-                <div className="card h-[50%] flex flex-col overflow-hidden">
+                {/* Weekly Scoreboard - 40% height, 2-column grid */}
+                <div className="card h-[40%] flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
                         <Trophy size={28} className="text-warning" />
@@ -286,6 +292,11 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Nest Detail Modal */}
+            {showNestDetail && (
+                <NestDetailView onClose={() => setShowNestDetail(false)} />
+            )}
         </div>
     );
 };

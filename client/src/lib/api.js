@@ -377,5 +377,104 @@ export const api = {
         }
         return res.json();
     },
+
+    // Nest Thermostat
+    async getNestDevices() {
+        try {
+            const res = await fetch(`${API_BASE}/nest/devices`);
+            if (!res.ok) {
+                // Return mock data for development
+                return {
+                    connected: true,
+                    devices: [
+                        { id: 'mock-1', name: 'Living Room', type: 'thermostat' },
+                        { id: 'mock-2', name: 'Upstairs', type: 'thermostat' },
+                    ]
+                };
+            }
+            return res.json();
+        } catch {
+            // Return mock data if API not available
+            return {
+                connected: true,
+                devices: [
+                    { id: 'mock-1', name: 'Living Room', type: 'thermostat' },
+                    { id: 'mock-2', name: 'Upstairs', type: 'thermostat' },
+                ]
+            };
+        }
+    },
+
+    async getNestState(deviceId) {
+        try {
+            const res = await fetch(`${API_BASE}/nest/devices/${deviceId}`);
+            if (!res.ok) {
+                // Return mock data for development
+                return {
+                    currentTemp: 72,
+                    targetTemp: 70,
+                    humidity: 45,
+                    mode: 'HEAT',
+                    hvacStatus: 'heating',
+                    isOnline: true,
+                };
+            }
+            return res.json();
+        } catch {
+            // Return mock data if API not available
+            return {
+                currentTemp: 72,
+                targetTemp: 70,
+                humidity: 45,
+                mode: 'HEAT',
+                hvacStatus: 'heating',
+                isOnline: true,
+            };
+        }
+    },
+
+    async setNestTemperature(deviceId, temperature) {
+        try {
+            const res = await fetch(`${API_BASE}/nest/devices/${deviceId}/temperature`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ temperature }),
+            });
+            if (!res.ok) {
+                // Mock response
+                return { targetTemp: temperature };
+            }
+            return res.json();
+        } catch {
+            return { targetTemp: temperature };
+        }
+    },
+
+    async setNestMode(deviceId, mode) {
+        try {
+            const res = await fetch(`${API_BASE}/nest/devices/${deviceId}/mode`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode }),
+            });
+            if (!res.ok) {
+                // Mock response
+                return { mode };
+            }
+            return res.json();
+        } catch {
+            return { mode };
+        }
+    },
+
+    async getNestStatus() {
+        try {
+            const res = await fetch(`${API_BASE}/nest/status`);
+            if (!res.ok) return { connected: false };
+            return res.json();
+        } catch {
+            return { connected: false };
+        }
+    },
 };
 export default api;

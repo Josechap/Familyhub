@@ -7,6 +7,7 @@ import recipesReducer from './features/recipesSlice';
 import settingsReducer from './features/settingsSlice';
 import sonosReducer from './features/sonosSlice';
 import mealsReducer from './features/mealsSlice';
+import nestReducer from './features/nestSlice';
 import { taskSyncMiddleware } from './middleware/taskSyncMiddleware';
 
 export const store = configureStore({
@@ -19,6 +20,7 @@ export const store = configureStore({
         settings: settingsReducer,
         sonos: sonosReducer,
         meals: mealsReducer,
+        nest: nestReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().prepend(taskSyncMiddleware.middleware),
