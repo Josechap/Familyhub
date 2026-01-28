@@ -145,26 +145,29 @@ const Calendar = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDayIndex, setSelectedDayIndex] = useState(0);
     const [multiDayView, setMultiDayView] = useState(false);
+    const [weekOffset, setWeekOffset] = useState(0); // 0 = this week, 1 = next week, etc.
 
     // Fetch calendar data on mount
     useEffect(() => {
         dispatch(fetchCalendarData());
     }, [dispatch]);
 
-    // Generate array of dates (7 days for multi-day view)
+    // Generate array of dates (7 days for current week view)
     const getDates = () => {
         const dates = [];
         const today = new Date();
+        const startOffset = weekOffset * 7;
         for (let i = 0; i < 7; i++) {
             const date = new Date(today);
-            date.setDate(today.getDate() + i);
+            date.setDate(today.getDate() + startOffset + i);
+            const dayIndex = startOffset + i;
             dates.push({
                 date: date.toISOString().split('T')[0],
                 dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
                 dayNum: date.getDate(),
                 month: date.toLocaleDateString('en-US', { month: 'short' }),
                 fullDay: date.toLocaleDateString('en-US', { weekday: 'long' }),
-                isToday: i === 0,
+                isToday: dayIndex === 0,
             });
         }
         return dates;
@@ -211,10 +214,38 @@ const Calendar = () => {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold">Calendar</h1>
                 <div className="flex items-center gap-2">
+                    {/* Week navigation */}
+                    <button
+                        onClick={() => { setWeekOffset(Math.max(0, weekOffset - 1)); setSelectedDayIndex(0); }}
+                        disabled={weekOffset === 0}
+                        className={cn(
+                            "p-2 rounded-xl transition-colors touch-target",
+                            weekOffset === 0
+                                ? "text-white/20 cursor-not-allowed"
+                                : "hover:bg-white/10 text-white"
+                        )}
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                    <span className="text-sm text-white/60 min-w-[80px] text-center">
+                        {weekOffset === 0 ? 'This Week' : weekOffset === 1 ? 'Next Week' : `Week +${weekOffset}`}
+                    </span>
+                    <button
+                        onClick={() => { setWeekOffset(Math.min(3, weekOffset + 1)); setSelectedDayIndex(0); }}
+                        disabled={weekOffset === 3}
+                        className={cn(
+                            "p-2 rounded-xl transition-colors touch-target",
+                            weekOffset === 3
+                                ? "text-white/20 cursor-not-allowed"
+                                : "hover:bg-white/10 text-white"
+                        )}
+                    >
+                        <ChevronRight size={24} />
+                    </button>
                     <button
                         onClick={() => setMultiDayView(!multiDayView)}
                         className={cn(
-                            "px-4 py-2 rounded-xl text-sm font-medium transition-all touch-target",
+                            "px-4 py-2 rounded-xl text-sm font-medium transition-all touch-target ml-2",
                             multiDayView
                                 ? "bg-primary text-white shadow-lg shadow-primary/20"
                                 : "bg-white/10 text-white/60 hover:bg-white/20"
@@ -222,34 +253,6 @@ const Calendar = () => {
                     >
                         {multiDayView ? 'Week View' : 'Day View'}
                     </button>
-                    {!multiDayView && (
-                        <>
-                            <button
-                                onClick={() => setSelectedDayIndex(Math.max(0, selectedDayIndex - 1))}
-                                disabled={selectedDayIndex === 0}
-                                className={cn(
-                                    "p-2 rounded-xl transition-colors touch-target",
-                                    selectedDayIndex === 0
-                                        ? "text-white/20 cursor-not-allowed"
-                                        : "hover:bg-white/10 text-white"
-                                )}
-                            >
-                                <ChevronLeft size={24} />
-                            </button>
-                            <button
-                                onClick={() => setSelectedDayIndex(Math.min(6, selectedDayIndex + 1))}
-                                disabled={selectedDayIndex === 6}
-                                className={cn(
-                                    "p-2 rounded-xl transition-colors touch-target",
-                                    selectedDayIndex === 6
-                                        ? "text-white/20 cursor-not-allowed"
-                                        : "hover:bg-white/10 text-white"
-                                )}
-                            >
-                                <ChevronRight size={24} />
-                            </button>
-                        </>
-                    )}
                 </div>
             </div>
 

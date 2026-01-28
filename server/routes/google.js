@@ -123,17 +123,17 @@ router.get('/calendar/events', async (req, res) => {
             memberColorMap[m.name] = m.color;
         });
 
-        // Get events for the next 14 days
+        // Get events for the next 28 days (4 weeks)
         const now = new Date();
-        const twoWeeksLater = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+        const fourWeeksLater = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000);
 
         const response = await calendar.events.list({
             calendarId: 'primary',
             timeMin: now.toISOString(),
-            timeMax: twoWeeksLater.toISOString(),
+            timeMax: fourWeeksLater.toISOString(),
             singleEvents: true,
             orderBy: 'startTime',
-            maxResults: 100,
+            maxResults: 200,
         });
 
         const events = response.data.items.map(event => {

@@ -88,6 +88,7 @@ const settingsRouter = require('./routes/settings');
 const googleRouter = require('./routes/google');
 const paprikaRouter = require('./routes/paprika');
 const mealsRouter = require('./routes/meals');
+const weatherRouter = require('./routes/weather');
 
 app.use('/api/recipes', recipesRouter);
 app.use('/api/tasks', tasksRouter);
@@ -96,6 +97,7 @@ app.use('/api/settings', settingsRouter);
 app.use('/api/google', googleRouter);
 app.use('/api/paprika', paprikaRouter);
 app.use('/api/meals', mealsRouter);
+app.use('/api/weather', weatherRouter);
 
 // Skip Sonos in test mode - it does network discovery on import
 if (!IS_TEST) {

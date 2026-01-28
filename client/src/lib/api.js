@@ -378,6 +378,17 @@ export const api = {
         return res.json();
     },
 
+    // Weather
+    async getWeather() {
+        try {
+            const res = await fetch(`${API_BASE}/weather`);
+            if (!res.ok) return null;
+            return res.json();
+        } catch {
+            return null;
+        }
+    },
+
     // Nest Thermostat
     async getNestDevices() {
         try {

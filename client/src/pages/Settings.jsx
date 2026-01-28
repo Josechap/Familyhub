@@ -464,6 +464,8 @@ const Settings = () => {
         idleReturnTimeout,
         screensaverTimeout,
         screensaverPhotoInterval,
+        weatherApiKey,
+        location,
         loading
     } = useSelector((state) => state.settings);
     const [editingMember, setEditingMember] = useState(null);
@@ -600,8 +602,8 @@ const Settings = () => {
                         <input
                             type="text"
                             placeholder="e.g., Austin, TX or 78701"
-                            defaultValue=""
-                            onBlur={(e) => dispatch(updateSettings({ weatherLocation: e.target.value }))}
+                            defaultValue={location || ''}
+                            onBlur={(e) => dispatch(updateSettings({ location: e.target.value }))}
                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
                         />
                     </div>
@@ -622,7 +624,7 @@ const Settings = () => {
                         <input
                             type="password"
                             placeholder="Enter your API key"
-                            defaultValue=""
+                            defaultValue={weatherApiKey || ''}
                             onBlur={(e) => dispatch(updateSettings({ weatherApiKey: e.target.value }))}
                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
                         />

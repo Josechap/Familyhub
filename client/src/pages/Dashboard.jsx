@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useClock } from '../hooks/useClock';
 import { cn } from '../lib/utils';
-import { fetchDashboardData, setScoreboard } from '../features/dashboardSlice';
+import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
 import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
@@ -65,6 +65,10 @@ const Dashboard = () => {
         dispatch(fetchSettings());
         dispatch(fetchSonosDevices());
         api.getWeeklyTaskStats().then(setWeeklyStats).catch(console.error);
+        // Fetch weather
+        api.getWeather().then(weather => {
+            if (weather) dispatch(setWeather(weather));
+        }).catch(console.error);
     }, [dispatch]);
 
     // Poll Sonos state every 5 seconds when device is active

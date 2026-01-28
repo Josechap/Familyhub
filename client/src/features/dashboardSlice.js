@@ -12,14 +12,17 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
         const eventsRes = await fetch(`${API_BASE}/google/calendar/events`);
         if (eventsRes.ok) {
             const allEvents = await eventsRes.json();
-            // Filter to today and future events, limit to next 10
+            // Filter to today and future events within 4 weeks, limit to next 20
+            const fourWeeksLater = new Date();
+            fourWeeksLater.setDate(fourWeeksLater.getDate() + 28);
+            const fourWeeksStr = fourWeeksLater.toISOString().split('T')[0];
             events = allEvents
-                .filter(e => e.date >= todayStr)
+                .filter(e => e.date >= todayStr && e.date <= fourWeeksStr)
                 .sort((a, b) => {
                     if (a.date !== b.date) return a.date.localeCompare(b.date);
                     return (a.startHour || 0) - (b.startHour || 0);
                 })
-                .slice(0, 10)
+                .slice(0, 20)
                 .map(e => ({
                     id: e.id,
                     title: e.title,
