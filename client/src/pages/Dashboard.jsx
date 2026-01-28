@@ -8,6 +8,7 @@ import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
 import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
 import api from '../lib/api';
+import { API_BASE } from '../lib/config';
 import NestCard from '../components/NestCard';
 import NestDetailView from '../components/NestDetailView';
 import EventModal from '../components/modals/EventModal';
@@ -55,6 +56,17 @@ const Dashboard = () => {
     const [showNestDetail, setShowNestDetail] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedMeal, setSelectedMeal] = useState(null);
+
+    // Handle assigning event to member (saves to settings and refreshes)
+    const handleAssignEvent = async (eventId, memberName) => {
+        await fetch(`${API_BASE}/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [`calendarEventMapping_${eventId}`]: memberName || '' }),
+        });
+        // Refresh dashboard data to reflect the change
+        dispatch(fetchDashboardData());
+    };
 
     // Dynamic greeting based on time
     const getGreeting = () => {
@@ -323,6 +335,7 @@ const Dashboard = () => {
                     event={selectedEvent}
                     familyMembers={familyMembers}
                     onClose={() => setSelectedEvent(null)}
+                    onAssign={handleAssignEvent}
                 />
             )}
 
