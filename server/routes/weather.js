@@ -29,7 +29,12 @@ router.get('/', async (req, res) => {
         }
 
         // Fetch weather from OpenWeatherMap
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location.value)}&appid=${apiKey.value}&units=imperial`;
+        // Check if location is a zip code (5 digits) or city name
+        const loc = location.value.trim();
+        const isZipCode = /^\d{5}$/.test(loc);
+        const url = isZipCode
+            ? `https://api.openweathermap.org/data/2.5/weather?zip=${loc},US&appid=${apiKey.value}&units=imperial`
+            : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(loc)}&appid=${apiKey.value}&units=imperial`;
 
         const response = await fetch(url);
         if (!response.ok) {
