@@ -1,0 +1,15 @@
+[Unit]
+Description=Update Familyhub and Ghost Coach from GitHub
+After=network-online.target
+Wants=network-online.target
+Before=familyhub.service hypertrophyai.service
+
+[Service]
+Type=oneshot
+User=joschapa
+ExecStart=/home/joschapa/update-apps.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

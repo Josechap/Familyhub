@@ -1,0 +1,19 @@
+[Unit]
+Description=Familyhub OS Dashboard
+After=network.target
+After=app-update.service
+
+[Service]
+Type=simple
+User=joschapa
+WorkingDirectory=/home/joschapa/Familyhub/server
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=familyhub
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
