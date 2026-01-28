@@ -25,11 +25,15 @@ export const fetchDashboardData = createAsyncThunk('dashboard/fetchData', async 
                 .slice(0, 20)
                 .map(e => ({
                     id: e.id,
+                    googleEventId: e.googleEventId,
                     title: e.title,
                     date: e.date,
+                    startHour: e.startHour,
+                    duration: e.duration,
                     time: formatEventTime(e.startHour, e.duration),
                     color: mapColor(e.color),
                     member: e.member,
+                    source: e.source,
                     isToday: e.date === todayStr,
                 }));
         }
