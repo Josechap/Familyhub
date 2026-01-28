@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { useClock } from '../hooks/useClock';
 import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
@@ -9,6 +10,8 @@ import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'luci
 import api from '../lib/api';
 import NestCard from '../components/NestCard';
 import NestDetailView from '../components/NestDetailView';
+import EventModal from '../components/modals/EventModal';
+import MealModal from '../components/modals/MealModal';
 
 // Family member colors mapping
 const familyColors = {
@@ -43,12 +46,15 @@ const formatEventDate = (dateStr) => {
 
 const Dashboard = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { time, date, hours } = useClock();
     const { weather, upcomingEvents, todayTasks, todayMeals, clothing } = useSelector((state) => state.dashboard);
     const familyMembers = useSelector((state) => state.settings.familyMembers);
     const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
     const [showNestDetail, setShowNestDetail] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [selectedMeal, setSelectedMeal] = useState(null);
 
     // Dynamic greeting based on time
     const getGreeting = () => {
@@ -116,10 +122,11 @@ const Dashboard = () => {
                     <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
                         {upcomingEvents.length > 0 ? (
                             upcomingEvents.map((event, idx) => (
-                                <div
+                                <button
                                     key={event.id || idx}
+                                    onClick={() => setSelectedEvent(event)}
                                     className={cn(
-                                        "flex items-start gap-3 p-3 rounded-xl transition-colors",
+                                        "w-full flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-white/10",
                                         event.isToday ? "bg-purple-500/20" : "bg-white/5"
                                     )}
                                 >
@@ -136,11 +143,11 @@ const Dashboard = () => {
                                         <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
                                     </div>
                                     {/* Event details */}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 text-left">
                                         <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
                                         <p className="text-white/50 text-lg">{event.time}</p>
                                     </div>
-                                </div>
+                                </button>
                             ))
                         ) : (
                             <div className="flex-1 flex items-center justify-center text-white/40">
@@ -165,12 +172,16 @@ const Dashboard = () => {
                             { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-400' },
                             { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-400' },
                         ].map(meal => (
-                            <div key={meal.key} className="text-center p-3 bg-white/5 rounded-xl">
+                            <button
+                                key={meal.key}
+                                onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
+                                className="text-center p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                            >
                                 <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
                                 <p className="text-base text-white/50 truncate mt-2">
                                     {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
                                 </p>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -267,7 +278,11 @@ const Dashboard = () => {
                             const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
 
                             return (
-                                <div key={member.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+                                <button
+                                    key={member.id}
+                                    onClick={() => navigate('/tasks')}
+                                    className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
+                                >
                                     <div className={cn(
                                         "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
                                         colorClass
@@ -290,7 +305,7 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </button>
                             );
                         })}
                     </div>
@@ -300,6 +315,24 @@ const Dashboard = () => {
             {/* Nest Detail Modal */}
             {showNestDetail && (
                 <NestDetailView onClose={() => setShowNestDetail(false)} />
+            )}
+
+            {/* Event Detail Modal */}
+            {selectedEvent && (
+                <EventModal
+                    event={selectedEvent}
+                    familyMembers={familyMembers}
+                    onClose={() => setSelectedEvent(null)}
+                />
+            )}
+
+            {/* Meal Detail Modal */}
+            {selectedMeal && (
+                <MealModal
+                    meal={selectedMeal.meal}
+                    mealType={selectedMeal.type}
+                    onClose={() => setSelectedMeal(null)}
+                />
             )}
         </div>
     );
