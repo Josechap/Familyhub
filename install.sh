@@ -151,10 +151,10 @@ ENCRYPTION_KEY=$ENCRYPTION_KEY
 EOF
     fi
     
-    # Add ALLOWED_ORIGINS with familyhub.local and the Pi's IP
+    # Add ALLOWED_ORIGINS with localhost (for kiosk), familyhub.local and the Pi's IP
     echo "" >> "$INSTALL_DIR/server/.env"
-    echo "# CORS - Allowed origins for browser access" >> "$INSTALL_DIR/server/.env"
-    echo "ALLOWED_ORIGINS=http://familyhub.local,http://$IP_ADDR" >> "$INSTALL_DIR/server/.env"
+    echo "# CORS - Allowed origins for browser access (includes localhost for kiosk mode)" >> "$INSTALL_DIR/server/.env"
+    echo "ALLOWED_ORIGINS=http://localhost:3001,http://localhost,http://familyhub.local,http://$IP_ADDR" >> "$INSTALL_DIR/server/.env"
     
     echo -e "${GREEN}✓ Generated encryption key${NC}"
     echo -e "${GREEN}✓ Configured CORS for familyhub.local${NC}"
