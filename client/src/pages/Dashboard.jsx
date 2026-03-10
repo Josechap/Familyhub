@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
+import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves } from 'lucide-react';
 import api from '../lib/api';
 import { API_BASE } from '../lib/config';
 import NestCard from '../components/NestCard';
@@ -50,7 +50,7 @@ const Dashboard = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { time, date, hours } = useClock();
-    const { weather, upcomingEvents, todayTasks, todayMeals, clothing } = useSelector((state) => state.dashboard);
+    const { weather, upcomingEvents, todayMeals } = useSelector((state) => state.dashboard);
     const familyMembers = useSelector((state) => state.settings.familyMembers);
     const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
@@ -120,6 +120,7 @@ const Dashboard = () => {
         const bStats = getMemberWeeklyStats(b.id);
         return bStats.weeklyTasksCompleted - aStats.weeklyTasksCompleted;
     });
+    const maxWeeklyTasks = Math.max(...sortedMembers.map((member) => getMemberWeeklyStats(member.id).weeklyTasksCompleted), 1);
 
     const plannedMealsCount = Object.values(todayMeals || {}).filter(Boolean).length;
 
@@ -159,12 +160,19 @@ const Dashboard = () => {
             <div className="min-h-0 flex flex-1 flex-col gap-4 overflow-hidden xl:flex-row">
                 {/* LEFT COLUMN - Upcoming Events (65% width) */}
                 <div className="flex min-h-0 min-w-0 flex-[1.6] flex-col gap-3">
-                    <div className="card flex-1 flex flex-col overflow-hidden">
+                    <div className="card flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                                 <Calendar size={28} className="text-purple-400" />
                             </div>
-                            <h2 className="text-2xl font-semibold">Upcoming Events</h2>
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-semibold">Upcoming Events</h2>
+                                <p className="text-sm text-white/50">Tap an event to view details</p>
+                            </div>
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
+                                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                                {upcomingEvents.length} scheduled
+                            </span>
                         </div>
                         <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
                             {upcomingEvents.length > 0 ? (
@@ -173,8 +181,8 @@ const Dashboard = () => {
                                         key={event.id || idx}
                                         onClick={() => setSelectedEvent(event)}
                                         className={cn(
-                                            "w-full flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-white/10",
-                                            event.isToday ? "bg-purple-500/20" : "bg-white/5"
+                                            "w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)]",
+                                            event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
                                         )}
                                     >
                                         {/* Color dot for family member */}
@@ -184,7 +192,7 @@ const Dashboard = () => {
                                         )} />
                                         {/* Date badge */}
                                         <div className={cn(
-                                            "flex-shrink-0 w-28 text-center rounded-lg py-3 px-3",
+                                            "flex-shrink-0 w-28 text-center rounded-xl py-3 px-3 border border-white/10",
                                             event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
                                         )}>
                                             <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
@@ -194,6 +202,7 @@ const Dashboard = () => {
                                             <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
                                             <p className="text-white/50 text-lg">{event.time}</p>
                                         </div>
+                                        <ChevronRight size={18} className="text-white/40 mt-3" />
                                     </button>
                                 ))
                             ) : (
@@ -205,7 +214,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Today's Meals */}
-                    <div className="card">
+                    <div className="card border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm">
                         <div className="flex items-center gap-4 mb-3">
                             <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
                                 <Utensils size={22} className="text-success" />
@@ -214,20 +223,22 @@ const Dashboard = () => {
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                             {[
-                                { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-400' },
-                                { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-400' },
-                                { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-400' },
-                                { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-400' },
+                                { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-300', tint: 'from-yellow-500/15 to-transparent' },
+                                { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-300', tint: 'from-green-500/15 to-transparent' },
+                                { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-300', tint: 'from-blue-500/15 to-transparent' },
+                                { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-300', tint: 'from-pink-500/15 to-transparent' },
                             ].map(meal => (
                                 <button
                                     key={meal.key}
                                     onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                    className="text-center p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                                    className={cn("text-center p-3 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-0.5 bg-gradient-to-br", meal.tint)}
                                 >
                                     <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
-                                    <p className="text-base text-white/50 truncate mt-2">
+                                    <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
+                                    <p className="text-base text-white/50 truncate mt-1">
                                         {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
                                     </p>
+                                    {!todayMeals?.[meal.key] && <p className="text-xs text-primary mt-1">Set meal</p>}
                                 </button>
                             ))}
                         </div>
@@ -237,8 +248,10 @@ const Dashboard = () => {
                 {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
                 <div className="flex min-h-0 flex-1 flex-col gap-3">
                     {/* Time & Weather Card - Compact */}
-                    <div className="card text-center py-4">
-                        <p className="text-white/60 text-base mb-1">{getGreeting()}</p>
+                    <div className="card text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03]">
+                        <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2">
+                            <Waves size={16} className="text-primary" />{getGreeting()}
+                        </p>
                         <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
                         <p className="text-white/60 text-base mt-1">{date}</p>
 
@@ -257,105 +270,121 @@ const Dashboard = () => {
                     <NestCard onOpenDetail={() => setShowNestDetail(true)} />
 
                     {/* Now Playing / Playlists - 25% height */}
-                    <div className="card h-[25%] flex flex-col overflow-hidden">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                            <Music size={20} className="text-orange-400" />
+                    <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03]">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                                <Music size={20} className="text-orange-400" />
+                            </div>
+                            <h2 className="font-semibold text-xl">Music</h2>
                         </div>
-                        <h2 className="font-semibold text-xl">Music</h2>
-                    </div>
 
-                    {playerState?.track && playerState.state === 'PLAYING' ? (
-                        /* Currently Playing */
-                        <div className="flex-1 flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
-                                {playerState.track.art ? (
-                                    <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
-                                ) : (
-                                    <Music size={32} className="text-white/30" />
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
-                                <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
-                                    <Play size={24} />
-                                </button>
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
-                                    <SkipForward size={24} />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Quick Playlists when not playing */
-                        <div className="flex-1 flex flex-col">
-                            <p className="text-white/50 text-base mb-3">Quick Play</p>
-                            <div className="grid grid-cols-2 gap-2 flex-1">
-                                {[
-                                    { name: 'Chill Vibes', emoji: '🎧' },
-                                    { name: 'Party Mix', emoji: '🎉' },
-                                    { name: 'Focus', emoji: '🎯' },
-                                    { name: 'Kids', emoji: '🧒' },
-                                ].map(playlist => (
-                                    <button
-                                        key={playlist.name}
-                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left"
-                                    >
-                                        <span className="text-2xl">{playlist.emoji}</span>
-                                        <span className="font-medium text-base truncate">{playlist.name}</span>
+                        {playerState?.track && playerState.state === 'PLAYING' ? (
+                            /* Currently Playing */
+                            <div className="flex-1 flex items-center gap-4">
+                                <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                                    {playerState.track.art ? (
+                                        <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Music size={32} className="text-white/30" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
+                                    <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10 hover:scale-105">
+                                        <Play size={24} />
                                     </button>
-                                ))}
+                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10 hover:scale-105">
+                                        <SkipForward size={24} />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            /* Quick Playlists when not playing */
+                            <div className="flex-1 flex flex-col">
+                                <p className="text-white/50 text-base mb-3">Quick Play</p>
+                                <div className="grid grid-cols-2 gap-2 flex-1">
+                                    {[
+                                        { name: 'Chill Vibes', emoji: '🎧' },
+                                        { name: 'Party Mix', emoji: '🎉' },
+                                        { name: 'Focus', emoji: '🎯' },
+                                        { name: 'Kids', emoji: '🧒' },
+                                    ].map(playlist => (
+                                        <button
+                                            key={playlist.name}
+                                            className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20"
+                                        >
+                                            <span className="text-2xl">{playlist.emoji}</span>
+                                            <span className="font-medium text-base truncate">{playlist.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Weekly Scoreboard - 45% height, 2-column grid */}
-                    <div className="card h-[45%] flex flex-col overflow-hidden">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
-                        <Trophy size={28} className="text-warning" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
-                        {sortedMembers.slice(0, 6).map((member, idx) => {
-                            const weekly = getMemberWeeklyStats(member.id);
-                            const colorClass = familyColors[member.color] || 'bg-family-blue';
-                            const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
+                    <div className="card h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03]">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
+                                <p className="text-sm text-white/50">This week's momentum</p>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30">
+                                <Sparkles size={14} className="text-warning" />
+                                <Trophy size={18} className="text-warning" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
+                            {sortedMembers.slice(0, 6).map((member, idx) => {
+                                const weekly = getMemberWeeklyStats(member.id);
+                                const colorClass = familyColors[member.color] || 'bg-family-blue';
+                                const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
+                                const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
 
-                            return (
-                                <button
-                                    key={member.id}
-                                    onClick={() => navigate('/tasks')}
-                                    className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
-                                >
-                                    <div className={cn(
-                                        "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
-                                        colorClass
-                                    )}>
-                                        {member.name[0]}
-                                        {isLeader && (
-                                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
-                                                <Trophy size={12} className="text-white" />
+                                return (
+                                    <button
+                                        key={member.id}
+                                        onClick={() => navigate('/tasks')}
+                                        className="relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
+                                    >
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
+                                            colorClass
+                                        )}>
+                                            {member.name[0]}
+                                            {isLeader && (
+                                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
+                                                    <Trophy size={12} className="text-white" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
+                                                {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
-                                        <div className="flex items-center gap-2 text-base">
-                                            <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
-                                            <span className="text-white/30">|</span>
-                                            <div className="flex items-center gap-1">
-                                                <Star size={14} className="text-warning fill-warning" />
-                                                <span className="text-warning font-bold">{member.points}</span>
+                                            <div className="flex items-center gap-2 text-base">
+                                                <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
+                                                <span className="text-white/30">|</span>
+                                                <div className="flex items-center gap-1">
+                                                    <Star size={14} className="text-warning fill-warning" />
+                                                    <span className="text-warning font-bold">{member.points}</span>
+                                                </div>
+                                            </div>
+                                            <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-gradient-to-r from-success to-family-blue transition-all duration-500"
+                                                    style={{ width: `${taskProgress}%` }}
+                                                />
                                             </div>
                                         </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
