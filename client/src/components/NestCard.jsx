@@ -4,7 +4,6 @@ import {
     fetchNestDevices,
     fetchNestState,
     setNestTemperature,
-    setActiveDevice,
     setTargetTempOptimistic,
 } from '../features/nestSlice';
 import { Thermometer, Flame, Snowflake, Leaf, Power, ChevronUp, ChevronDown } from 'lucide-react';

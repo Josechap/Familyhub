@@ -26,12 +26,12 @@ const TemperatureDial = ({
     };
 
     // Convert angle to temperature
-    const angleToTemp = (angle) => {
+    const angleToTemp = useCallback((angle) => {
         // Clamp angle to valid range
         const clampedAngle = Math.max(-135, Math.min(135, angle));
         const normalized = (clampedAngle + 135) / 270;
         return Math.round(minTemp + normalized * (maxTemp - minTemp));
-    };
+    }, [minTemp, maxTemp]);
 
     // Get angle from mouse/touch position
     const getAngleFromEvent = useCallback((e) => {
@@ -56,7 +56,7 @@ const TemperatureDial = ({
         const angle = getAngleFromEvent(e);
         const temp = angleToTemp(angle);
         setLocalTarget(temp);
-    }, [disabled, mode, getAngleFromEvent]);
+    }, [disabled, mode, getAngleFromEvent, angleToTemp]);
 
     const handleMove = useCallback((e) => {
         if (!isDragging || disabled) return;
@@ -64,7 +64,7 @@ const TemperatureDial = ({
         const angle = getAngleFromEvent(e);
         const temp = angleToTemp(angle);
         setLocalTarget(temp);
-    }, [isDragging, disabled, getAngleFromEvent]);
+    }, [isDragging, disabled, getAngleFromEvent, angleToTemp]);
 
     const handleEnd = useCallback(() => {
         if (!isDragging) return;
