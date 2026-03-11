@@ -197,7 +197,6 @@ const GoogleIntegration = () => {
 // Local Photos Configuration Component
 const LocalPhotosConfig = () => {
     const dispatch = useDispatch();
-    const { localPhotosPath } = useSelector((state) => state.settings);
     const [config, setConfig] = useState({ path: null, photoCount: 0, isValid: false, loading: true });
     const [inputPath, setInputPath] = useState('');
     const [saving, setSaving] = useState(false);
