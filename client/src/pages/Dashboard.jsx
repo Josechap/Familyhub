@@ -3,18 +3,23 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useClock } from '../hooks/useClock';
 import { cn } from '../lib/utils';
-import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
+import {
+    fetchDashboardData,
+    setScoreboard,
+    dismissAnnouncementLocal,
+} from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves, Crown } from 'lucide-react';
+import { fetchNestDevices } from '../features/nestSlice';
+import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves, Crown, ShoppingCart } from 'lucide-react';
 import api from '../lib/api';
-import { API_BASE } from '../lib/config';
+import TodayStrip from '../components/TodayStrip';
 import NestCard from '../components/NestCard';
 import NestDetailView from '../components/NestDetailView';
 import EventModal from '../components/modals/EventModal';
 import MealModal from '../components/modals/MealModal';
+import { API_BASE } from '../lib/config';
 
-// Family member colors mapping
 const familyColors = {
     'pastel-blue': 'bg-family-blue',
     'pastel-pink': 'bg-family-pink',
@@ -24,14 +29,12 @@ const familyColors = {
     'pastel-orange': 'bg-family-orange',
 };
 
-// Member color dots for events
 const getMemberColor = (memberName, familyMembers) => {
-    const member = familyMembers.find(m => m.name === memberName);
+    const member = familyMembers.find((item) => item.name === memberName);
     if (!member) return 'bg-white/30';
     return familyColors[member.color] || 'bg-family-blue';
 };
 
-// Format date for display
 const formatEventDate = (dateStr) => {
     const today = new Date().toISOString().split('T')[0];
     const tomorrow = new Date();
@@ -41,7 +44,7 @@ const formatEventDate = (dateStr) => {
     if (dateStr === today) return 'Today';
     if (dateStr === tomorrowStr) return 'Tomorrow';
 
-    const date = new Date(dateStr + 'T12:00:00');
+    const date = new Date(`${dateStr}T12:00:00`);
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
@@ -49,26 +52,42 @@ const Dashboard = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { time, date, hours } = useClock();
-    const { weather, upcomingEvents, todayMeals } = useSelector((state) => state.dashboard);
+    const {
+        weather,
+        clothing,
+        upcomingEvents,
+        todayTasks,
+        todayMeals,
+        announcements,
+        prepAgenda,
+        shopping,
+    } = useSelector((state) => state.dashboard);
     const familyMembers = useSelector((state) => state.settings.familyMembers);
     const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
+    const { connected: nestConnected } = useSelector((state) => state.nest);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
     const [showNestDetail, setShowNestDetail] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedMeal, setSelectedMeal] = useState(null);
 
-    // Handle assigning event to member (saves to settings and refreshes)
     const handleAssignEvent = async (eventId, memberName) => {
         await fetch(`${API_BASE}/settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ [`calendarEventMapping_${eventId}`]: memberName || '' }),
         });
-        // Refresh dashboard data to reflect the change
         dispatch(fetchDashboardData());
     };
 
-    // Dynamic greeting based on time
+    const handleDismissAnnouncement = async (announcementId) => {
+        try {
+            await api.dismissAnnouncement(announcementId);
+            dispatch(dismissAnnouncementLocal(announcementId));
+        } catch (error) {
+            console.error('Failed to dismiss announcement:', error);
+        }
+    };
+
     const getGreeting = () => {
         if (hours < 5) return 'Good Night';
         if (hours < 12) return 'Good Morning';
@@ -77,19 +96,14 @@ const Dashboard = () => {
         return 'Good Night';
     };
 
-    // Fetch dashboard data on mount
     useEffect(() => {
         dispatch(fetchDashboardData());
         dispatch(fetchSettings());
         dispatch(fetchSonosDevices());
+        dispatch(fetchNestDevices());
         api.getWeeklyTaskStats().then(setWeeklyStats).catch(console.error);
-        // Fetch weather
-        api.getWeather().then(weather => {
-            if (weather) dispatch(setWeather(weather));
-        }).catch(console.error);
     }, [dispatch]);
 
-    // Poll Sonos state every 5 seconds when device is active
     useEffect(() => {
         if (!activeDeviceIp) return;
         dispatch(fetchSonosState(activeDeviceIp));
@@ -99,7 +113,6 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, [dispatch, activeDeviceIp]);
 
-    // Update scoreboard when family members change
     useEffect(() => {
         if (familyMembers.length > 0) {
             const sorted = [...familyMembers].sort((a, b) => b.points - a.points);
@@ -107,13 +120,11 @@ const Dashboard = () => {
         }
     }, [dispatch, familyMembers]);
 
-    // Get weekly stats for a member
     const getMemberWeeklyStats = (memberId) => {
-        const memberStats = weeklyStats.stats?.find(s => s.id === memberId);
+        const memberStats = weeklyStats.stats?.find((item) => item.id === memberId);
         return memberStats || { weeklyTasksCompleted: 0, weeklyPointsEarned: 0, totalPoints: 0 };
     };
 
-    // Sort family members by weekly tasks for scoreboard
     const sortedMembers = [...familyMembers].sort((a, b) => {
         const aStats = getMemberWeeklyStats(a.id);
         const bStats = getMemberWeeklyStats(b.id);
@@ -123,268 +134,308 @@ const Dashboard = () => {
     const mealsPlannedCount = ['breakfast', 'lunch', 'dinner', 'snack'].filter((key) => todayMeals?.[key]).length;
     const topPerformer = sortedMembers[0];
 
-    const plannedMealsCount = Object.values(todayMeals || {}).filter(Boolean).length;
-
     return (
-        <div className="relative h-full w-full flex gap-5 animate-fade-in overflow-hidden">
+        <div className="relative h-full w-full flex flex-col gap-4 animate-fade-in overflow-hidden">
             <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-family-purple/25 blur-3xl" />
             <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.12),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.16),transparent_38%)]" />
 
-            {/* LEFT COLUMN - Upcoming Events (65% width) */}
-            <div className="relative z-10 w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
-                <div className="card relative flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                            <Calendar size={28} className="text-purple-400" />
+            <TodayStrip
+                announcements={announcements}
+                tasks={todayTasks}
+                shopping={shopping}
+                clothing={clothing}
+                prepAgenda={prepAgenda}
+                onDismissAnnouncement={handleDismissAnnouncement}
+            />
+
+            <div className="relative z-10 flex-1 flex gap-5 overflow-hidden min-h-0">
+                {/* LEFT COLUMN - Upcoming Events (65% width) */}
+                <div className="w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
+                    <div className="card relative flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                <Calendar size={28} className="text-purple-400" />
+                            </div>
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upcoming Events</h2>
+                                <p className="text-sm text-white/50">Tap an event to view details</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/calendar')}
+                                className="text-sm text-white/55 hover:text-white transition-colors"
+                            >
+                                Open Calendar
+                            </button>
                         </div>
-                        <div className="flex-1">
-                            <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upcoming Events</h2>
-                            <p className="text-sm text-white/50">Tap an event to view details</p>
+
+                        <div className="mb-3 rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 to-white/0 px-4 py-3 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today focus</p>
+                                <p className="text-sm text-white/70">{mealsPlannedCount}/4 meals planned</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Top performer</p>
+                                <p className="text-sm text-warning inline-flex items-center gap-1 justify-end"><Crown size={12} />{topPerformer?.name?.split(' ')[0] || 'No data'}</p>
+                            </div>
                         </div>
-                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
-                            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                            {upcomingEvents.length} scheduled
-                        </span>
+
+                        <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
+                            {upcomingEvents.length > 0 ? (
+                                upcomingEvents.map((event, idx) => (
+                                    <button
+                                        key={event.id || idx}
+                                        onClick={() => setSelectedEvent(event)}
+                                        className={cn(
+                                            "group w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5",
+                                            event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
+                                        )}
+                                    >
+                                        {/* Color dot for family member */}
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full flex-shrink-0 mt-2",
+                                            getMemberColor(event.member, familyMembers)
+                                        )} />
+                                        {/* Date badge */}
+                                        <div className={cn(
+                                            "flex-shrink-0 w-28 text-center rounded-xl py-3 px-3 border border-white/10",
+                                            event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
+                                        )}>
+                                            <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
+                                        </div>
+                                        {/* Event details */}
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <p className="font-semibold text-white truncate text-xl">{event.title}</p>
+                                            <p className="text-white/50 text-base">{event.time}</p>
+                                            {event.prepMatches?.length > 0 && (
+                                                <p className="text-xs text-violet-300 mt-1">
+                                                    Prep ready: {event.prepMatches[0].title}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="flex-1 flex items-center justify-center text-white/40">
+                                    <p>No upcoming events</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
+                                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                                {upcomingEvents.length} scheduled
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="mb-3 rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 to-white/0 px-4 py-3 flex items-center justify-between">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today focus</p>
-                            <p className="text-sm text-white/70">{mealsPlannedCount}/4 meals planned</p>
+                    {/* Today's Meals */}
+                    <div className="card relative border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
+                                <Utensils size={22} className="text-success" />
+                            </div>
+                            <span className="font-semibold text-xl">Today's Meals</span>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Top performer</p>
-                            <p className="text-sm text-warning inline-flex items-center gap-1 justify-end"><Crown size={12} />{topPerformer?.name?.split(' ')[0] || 'No data'}</p>
+                        <div className="grid grid-cols-4 gap-2">
+                            {[
+                                { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-300', tint: 'from-yellow-500/15 to-transparent' },
+                                { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-300', tint: 'from-green-500/15 to-transparent' },
+                                { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-300', tint: 'from-blue-500/15 to-transparent' },
+                                { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-300', tint: 'from-pink-500/15 to-transparent' },
+                            ].map((meal) => (
+                                <button
+                                    key={meal.key}
+                                    onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
+                                    className={cn("text-center p-3 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] bg-gradient-to-br", meal.tint)}
+                                >
+                                    <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
+                                    <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
+                                    <p className="text-base text-white/50 truncate mt-1">
+                                        {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
+                                    </p>
+                                    {!todayMeals?.[meal.key] && <p className="text-xs text-primary mt-1">Set meal</p>}
+                                </button>
+                            ))}
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
-                        {upcomingEvents.length > 0 ? (
-                            upcomingEvents.map((event, idx) => (
-                                <button
-                                    key={event.id || idx}
-                                    onClick={() => setSelectedEvent(event)}
-                                    className={cn(
-                                        "group w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5",
-                                        event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
-                                    )}
-                                >
-                                    {/* Color dot for family member */}
-                                    <div className={cn(
-                                        "w-4 h-4 rounded-full flex-shrink-0 mt-2",
-                                        getMemberColor(event.member, familyMembers)
-                                    )} />
-                                    {/* Date badge */}
-                                    <div className={cn(
-                                        "flex-shrink-0 w-28 text-center rounded-xl py-3 px-3 border border-white/10",
-                                        event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
-                                    )}>
-                                        <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
-                                    </div>
-                                    {/* Event details */}
-                                    <div className="flex-1 min-w-0 text-left">
-                                        <p className="font-semibold text-white truncate text-xl">{event.title}</p>
-                                        <p className="text-white/50 text-base">{event.time}</p>
-                                    </div>
-                                    <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
-                                </button>
-                            ))
-                        ) : (
-                            <div className="flex-1 flex items-center justify-center text-white/40">
-                                <p>No upcoming events</p>
+
+                    {/* Shopping Pulse */}
+                    <button
+                        onClick={() => navigate('/meals')}
+                        className="card relative text-left hover:bg-white/10 transition-colors border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]"
+                    >
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                                <ShoppingCart size={22} className="text-sky-300" />
+                            </div>
+                            <span className="font-semibold text-xl">Shopping Pulse</span>
+                        </div>
+                        <p className="text-5xl font-semibold">{shopping?.uncheckedCount || 0}</p>
+                        <p className="text-white/50 mt-2">unchecked shopping items</p>
+                        <p className="text-xs text-white/35 mt-4">Open Meals to review and edit the persistent list.</p>
+                    </button>
+                </div>
+
+                {/* RIGHT COLUMN - Clock, Nest, Sonos, Scoreboard */}
+                <div className="flex-1 flex flex-col gap-3">
+                    {/* Time & Weather Card */}
+                    <div className="card relative text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.24)] overflow-hidden">
+                        <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
+                        <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2"><Waves size={16} className="text-primary" />{getGreeting()}</p>
+                        <h1 className="text-6xl text-white font-display tracking-tight drop-shadow-[0_4px_16px_rgba(99,102,241,0.35)]">{time}</h1>
+                        <p className="text-white/60 text-base mt-1">{date}</p>
+
+                        {weather && (
+                            <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
+                                <span className="px-2 py-1 rounded-full text-xs bg-white/10 border border-white/15 text-white/70">Live</span>
+                                <span className="text-3xl">{weather.icon}</span>
+                                <div className="text-left">
+                                    <span className="text-xl font-semibold">{weather.temp}°F</span>
+                                    <p className="text-white/50 text-sm">{weather.condition}</p>
+                                </div>
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* Today's Meals */}
-                <div className="card relative border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                    <div className="flex items-center gap-4 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                            <Utensils size={22} className="text-success" />
-                        </div>
-                        <span className="font-semibold text-xl">Today's Meals</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                        {[
-                            { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-300', tint: 'from-yellow-500/15 to-transparent' },
-                            { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-300', tint: 'from-green-500/15 to-transparent' },
-                            { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-300', tint: 'from-blue-500/15 to-transparent' },
-                            { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-300', tint: 'from-pink-500/15 to-transparent' },
-                        ].map(meal => (
-                            <button
-                                key={meal.key}
-                                onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                className={cn("text-center p-3 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] bg-gradient-to-br", meal.tint)}
-                            >
-                                <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
-                                <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
-                                <p className="text-base text-white/50 truncate mt-1">
-                                    {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
-                                </p>
-                                {!todayMeals?.[meal.key] && <p className="text-xs text-primary mt-1">Set meal</p>}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
-            <div className="relative z-10 flex-1 flex flex-col gap-3">
-                {/* Time & Weather Card - Compact */}
-                <div className="card relative text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.24)] overflow-hidden">
-                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
-                    <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2"><Waves size={16} className="text-primary" />{getGreeting()}</p>
-                    <h1 className="text-6xl text-white font-display tracking-tight drop-shadow-[0_4px_16px_rgba(99,102,241,0.35)]">{time}</h1>
-                    <p className="text-white/60 text-base mt-1">{date}</p>
-
-                    {weather && (
-                        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
-                            <span className="px-2 py-1 rounded-full text-xs bg-white/10 border border-white/15 text-white/70">Live</span>
-                            <span className="text-3xl">{weather.icon}</span>
-                            <div className="text-left">
-                                <span className="text-xl font-semibold">{weather.temp}°F</span>
-                                <p className="text-white/50 text-sm">{weather.condition}</p>
-                            </div>
-                        </div>
+                    {/* Nest Thermostat Card */}
+                    {nestConnected && (
+                        <NestCard onOpenDetail={() => setShowNestDetail(true)} />
                     )}
-                </div>
 
-                {/* Nest Thermostat Card */}
-                <NestCard onOpenDetail={() => setShowNestDetail(true)} />
-
-                {/* Now Playing / Playlists - 25% height */}
-                <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                            <Music size={20} className="text-orange-400" />
-                        </div>
-                        <div>
-                            <h2 className="font-semibold text-xl">Music</h2>
-                            <p className="text-xs uppercase tracking-[0.16em] text-white/45">Now playing</p>
-                        </div>
-                    </div>
-
-                    {playerState?.track && playerState.state === 'PLAYING' ? (
-                        /* Currently Playing */
-                        <div className="flex-1 flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
-                                {playerState.track.art ? (
-                                    <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
-                                ) : (
-                                    <Music size={32} className="text-white/30" />
-                                )}
+                    {/* Now Playing / Playlists */}
+                    <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                                <Music size={20} className="text-orange-400" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
-                                <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
-                                    <Play size={24} />
-                                </button>
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
-                                    <SkipForward size={24} />
-                                </button>
+                            <div>
+                                <h2 className="font-semibold text-xl">Music</h2>
+                                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Now playing</p>
                             </div>
                         </div>
-                    ) : (
-                        /* Quick Playlists when not playing */
-                        <div className="flex-1 flex flex-col">
-                            <p className="text-white/50 text-base mb-3">Quick Play</p>
-                            <div className="grid grid-cols-2 gap-2 flex-1">
-                                {[
-                                    { name: 'Chill Vibes', emoji: '🎧' },
-                                    { name: 'Party Mix', emoji: '🎉' },
-                                    { name: 'Focus', emoji: '🎯' },
-                                    { name: 'Kids', emoji: '🧒' },
-                                ].map(playlist => (
-                                    <button
-                                        key={playlist.name}
-                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
-                                    >
-                                        <span className="text-2xl">{playlist.emoji}</span>
-                                        <span className="font-medium text-base truncate">{playlist.name}</span>
+
+                        {playerState?.track && playerState.state === 'PLAYING' ? (
+                            /* Currently Playing */
+                            <div className="flex-1 flex items-center gap-4">
+                                <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                                    {playerState.track.art ? (
+                                        <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Music size={32} className="text-white/30" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
+                                    <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
+                                        <Play size={24} />
                                     </button>
-                                ))}
+                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
+                                        <SkipForward size={24} />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Quick Playlists when not playing */
+                            <div className="flex-1 flex flex-col">
+                                <p className="text-white/50 text-base mb-3">Quick Play</p>
+                                <div className="grid grid-cols-2 gap-2 flex-1">
+                                    {[
+                                        { name: 'Chill Vibes', emoji: '🎧' },
+                                        { name: 'Party Mix', emoji: '🎉' },
+                                        { name: 'Focus', emoji: '🎯' },
+                                        { name: 'Kids', emoji: '🧒' },
+                                    ].map((playlist) => (
+                                        <button
+                                            key={playlist.name}
+                                            className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
+                                        >
+                                            <span className="text-2xl">{playlist.emoji}</span>
+                                            <span className="font-medium text-base truncate">{playlist.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Weekly Scoreboard */}
+                    <div className="card relative h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
+                                <p className="text-sm text-white/50">This week's momentum</p>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30">
+                                <Sparkles size={14} className="text-warning" />
+                                <Trophy size={18} className="text-warning" />
                             </div>
                         </div>
-                    )}
-                </div>
+                        <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
+                            {sortedMembers.slice(0, 6).map((member, idx) => {
+                                const weekly = getMemberWeeklyStats(member.id);
+                                const colorClass = familyColors[member.color] || 'bg-family-blue';
+                                const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
+                                const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
 
-                {/* Weekly Scoreboard - 45% height, 2-column grid */}
-                <div className="card relative h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
-                            <p className="text-sm text-white/50">This week's momentum</p>
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30">
-                            <Sparkles size={14} className="text-warning" />
-                            <Trophy size={18} className="text-warning" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
-                        {sortedMembers.slice(0, 6).map((member, idx) => {
-                            const weekly = getMemberWeeklyStats(member.id);
-                            const colorClass = familyColors[member.color] || 'bg-family-blue';
-                            const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
-                            const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
-
-                            return (
-                                <button
-                                    key={member.id}
-                                    onClick={() => navigate('/tasks')}
-                                    className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "col-span-2 ring-1 ring-warning/30 bg-warning/10")}
-                                >
-                                    <div className={cn(
-                                        "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
-                                        colorClass
-                                    )}>
-                                        {member.name[0]}
-                                        {isLeader && (
-                                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
-                                                <Trophy size={12} className="text-white" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
-                                            {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
+                                return (
+                                    <button
+                                        key={member.id}
+                                        onClick={() => navigate('/tasks')}
+                                        className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "col-span-2 ring-1 ring-warning/30 bg-warning/10")}
+                                    >
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
+                                            colorClass
+                                        )}>
+                                            {member.name[0]}
+                                            {isLeader && (
+                                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
+                                                    <Trophy size={12} className="text-white" />
+                                                </div>
+                                            )}
                                         </div>
-                                        {idx === 0 && <p className="text-xs text-white/55 mt-0.5">Leading this week with consistent completions</p>}
-                                        <div className="flex items-center gap-2 text-base">
-                                            <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
-                                            <span className="text-white/30">|</span>
-                                            <div className="flex items-center gap-1">
-                                                <Star size={14} className="text-warning fill-warning" />
-                                                <span className="text-warning font-bold">{member.points}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
+                                                {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
+                                            </div>
+                                            {idx === 0 && <p className="text-xs text-white/55 mt-0.5">Leading this week with consistent completions</p>}
+                                            <div className="flex items-center gap-2 text-base">
+                                                <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
+                                                <span className="text-white/30">|</span>
+                                                <div className="flex items-center gap-1">
+                                                    <Star size={14} className="text-warning fill-warning" />
+                                                    <span className="text-warning font-bold">{member.points}</span>
+                                                </div>
+                                            </div>
+                                            <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-gradient-to-r from-success via-family-blue to-family-purple transition-all duration-500 shadow-[0_0_16px_rgba(80,200,120,0.45)]"
+                                                    style={{ width: `${taskProgress}%` }}
+                                                />
                                             </div>
                                         </div>
-                                        <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
-                                            <div
-                                                className="h-full rounded-full bg-gradient-to-r from-success via-family-blue to-family-purple transition-all duration-500 shadow-[0_0_16px_rgba(80,200,120,0.45)]"
-                                                style={{ width: `${taskProgress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Nest Detail Modal */}
-            {showNestDetail && (
+            {showNestDetail && nestConnected && (
                 <NestDetailView onClose={() => setShowNestDetail(false)} />
             )}
 
-            {/* Event Detail Modal */}
             {selectedEvent && (
                 <EventModal
                     event={selectedEvent}
@@ -394,7 +445,6 @@ const Dashboard = () => {
                 />
             )}
 
-            {/* Meal Detail Modal */}
             {selectedMeal && (
                 <MealModal
                     meal={selectedMeal.meal}

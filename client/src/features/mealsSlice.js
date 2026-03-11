@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../lib/api';
 
-// Async thunks
 export const fetchMeals = createAsyncThunk('meals/fetchMeals', async (weekStart) => {
-    const meals = await api.getMealsForWeek(weekStart);
-    return { meals, weekStart };
+    const [meals, shoppingList] = await Promise.all([
+        api.getMealsForWeek(weekStart),
+        api.getShoppingItems().catch(() => ({ items: [], uncheckedCount: 0 })),
+    ]);
+    return { meals, weekStart, shoppingList };
 });
 
 export const setMealAsync = createAsyncThunk('meals/setMeal', async ({ date, mealType, recipe }) => {
@@ -23,17 +25,31 @@ export const fetchTodayMeals = createAsyncThunk('meals/fetchTodayMeals', async (
 });
 
 export const generateShoppingList = createAsyncThunk('meals/generateShoppingList', async (dateRange) => {
-    const shoppingList = await api.generateShoppingList(dateRange);
-    return shoppingList;
+    return api.generateShoppingList(dateRange);
+});
+
+export const fetchShoppingList = createAsyncThunk('meals/fetchShoppingList', async () => {
+    return api.getShoppingItems();
+});
+
+export const updateShoppingListItem = createAsyncThunk('meals/updateShoppingListItem', async ({ id, updates }) => {
+    return api.updateShoppingItem(id, updates);
+});
+
+export const addShoppingListItem = createAsyncThunk('meals/addShoppingListItem', async (payload) => {
+    return api.addShoppingItem(payload);
+});
+
+export const deleteShoppingListItem = createAsyncThunk('meals/deleteShoppingListItem', async (id) => {
+    return api.deleteShoppingItem(id);
 });
 
 export const fetchMealHistory = createAsyncThunk('meals/fetchMealHistory', async ({ startDate, endDate }) => {
-    const history = await api.getMealHistory(startDate, endDate);
-    return history;
+    return api.getMealHistory(startDate, endDate);
 });
 
 const initialState = {
-    meals: {}, // Date-keyed object: { '2026-01-09': { breakfast: {...}, lunch: {...}, dinner: {...}, snack: {...} } }
+    meals: {},
     weekStart: null,
     todayMeals: {
         breakfast: null,
@@ -43,6 +59,7 @@ const initialState = {
     },
     shoppingList: {
         items: [],
+        uncheckedCount: 0,
         loading: false,
         dateRange: null,
     },
@@ -53,7 +70,7 @@ const initialState = {
         endDate: null,
     },
     selectedDate: null,
-    selectedMealType: null, // 'breakfast', 'lunch', 'dinner', 'snack'
+    selectedMealType: null,
     showRecipePicker: false,
     loading: false,
     error: null,
@@ -73,7 +90,6 @@ export const mealsSlice = createSlice({
             state.showRecipePicker = action.payload ?? !state.showRecipePicker;
         },
         openRecipePicker: (state, action) => {
-            // Action payload: { date, mealType }
             state.selectedDate = action.payload.date;
             state.selectedMealType = action.payload.mealType;
             state.showRecipePicker = true;
@@ -81,23 +97,20 @@ export const mealsSlice = createSlice({
         closeRecipePicker: (state) => {
             state.showRecipePicker = false;
         },
-        clearShoppingList: (state) => {
-            state.shoppingList.items = [];
-            state.shoppingList.dateRange = null;
-        },
-        toggleShoppingListItem: (state, action) => {
-            const item = state.shoppingList.items.find(i => i.id === action.payload);
-            if (item) {
-                item.checked = !item.checked;
-            }
-        },
         setWeekStart: (state, action) => {
             state.weekStart = action.payload;
         },
     },
     extraReducers: (builder) => {
+        const applyShoppingPayload = (state, payload) => {
+            state.shoppingList.items = payload.items || [];
+            state.shoppingList.uncheckedCount = payload.uncheckedCount || 0;
+            if (payload.dateRange) {
+                state.shoppingList.dateRange = payload.dateRange;
+            }
+        };
+
         builder
-            // Fetch meals for week
             .addCase(fetchMeals.pending, (state) => {
                 state.loading = true;
             })
@@ -105,18 +118,17 @@ export const mealsSlice = createSlice({
                 state.loading = false;
                 state.meals = action.payload.meals;
                 state.weekStart = action.payload.weekStart;
+                applyShoppingPayload(state, action.payload.shoppingList);
             })
             .addCase(fetchMeals.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message;
             })
-            // Set meal
             .addCase(setMealAsync.fulfilled, (state, action) => {
                 const { date, mealType, recipe } = action.payload;
                 if (!state.meals[date]) {
                     state.meals[date] = {};
                 }
-                // Transform recipe to format expected by UI
                 state.meals[date][mealType] = {
                     recipeId: recipe.id,
                     recipeTitle: recipe.title,
@@ -125,7 +137,6 @@ export const mealsSlice = createSlice({
                 };
                 state.showRecipePicker = false;
             })
-            // Remove meal
             .addCase(removeMealAsync.fulfilled, (state, action) => {
                 const { date, mealType } = action.payload;
                 if (state.meals[date]) {
@@ -135,24 +146,32 @@ export const mealsSlice = createSlice({
                     }
                 }
             })
-            // Fetch today's meals
             .addCase(fetchTodayMeals.fulfilled, (state, action) => {
                 state.todayMeals = action.payload;
             })
-            // Generate shopping list
             .addCase(generateShoppingList.pending, (state) => {
                 state.shoppingList.loading = true;
             })
             .addCase(generateShoppingList.fulfilled, (state, action) => {
                 state.shoppingList.loading = false;
-                state.shoppingList.items = action.payload.items;
-                state.shoppingList.dateRange = action.payload.dateRange;
+                applyShoppingPayload(state, action.payload);
             })
             .addCase(generateShoppingList.rejected, (state, action) => {
                 state.shoppingList.loading = false;
                 state.error = action.error.message;
             })
-            // Fetch meal history
+            .addCase(fetchShoppingList.fulfilled, (state, action) => {
+                applyShoppingPayload(state, action.payload);
+            })
+            .addCase(updateShoppingListItem.fulfilled, (state, action) => {
+                applyShoppingPayload(state, action.payload);
+            })
+            .addCase(addShoppingListItem.fulfilled, (state, action) => {
+                applyShoppingPayload(state, action.payload);
+            })
+            .addCase(deleteShoppingListItem.fulfilled, (state, action) => {
+                applyShoppingPayload(state, action.payload);
+            })
             .addCase(fetchMealHistory.pending, (state) => {
                 state.history.loading = true;
             })
@@ -173,8 +192,6 @@ export const {
     toggleRecipePicker,
     openRecipePicker,
     closeRecipePicker,
-    clearShoppingList,
-    toggleShoppingListItem,
     setWeekStart,
 } = mealsSlice.actions;
 
