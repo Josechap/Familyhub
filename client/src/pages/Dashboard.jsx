@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves } from 'lucide-react';
+import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves, Crown } from 'lucide-react';
 import api from '../lib/api';
 import { API_BASE } from '../lib/config';
 import NestCard from '../components/NestCard';
@@ -120,6 +120,8 @@ const Dashboard = () => {
         return bStats.weeklyTasksCompleted - aStats.weeklyTasksCompleted;
     });
     const maxWeeklyTasks = Math.max(...sortedMembers.map((member) => getMemberWeeklyStats(member.id).weeklyTasksCompleted), 1);
+    const mealsPlannedCount = ['breakfast', 'lunch', 'dinner', 'snack'].filter((key) => todayMeals?.[key]).length;
+    const topPerformer = sortedMembers[0];
 
     const plannedMealsCount = Object.values(todayMeals || {}).filter(Boolean).length;
 
@@ -146,6 +148,17 @@ const Dashboard = () => {
                             {upcomingEvents.length} scheduled
                         </span>
                     </div>
+
+                    <div className="mb-3 rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 to-white/0 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today focus</p>
+                            <p className="text-sm text-white/70">{mealsPlannedCount}/4 meals planned</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Top performer</p>
+                            <p className="text-sm text-warning inline-flex items-center gap-1 justify-end"><Crown size={12} />{topPerformer?.name?.split(' ')[0] || 'No data'}</p>
+                        </div>
+                    </div>
                     <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
                         {upcomingEvents.length > 0 ? (
                             upcomingEvents.map((event, idx) => (
@@ -171,8 +184,8 @@ const Dashboard = () => {
                                     </div>
                                     {/* Event details */}
                                     <div className="flex-1 min-w-0 text-left">
-                                        <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
-                                        <p className="text-white/50 text-lg">{event.time}</p>
+                                        <p className="font-semibold text-white truncate text-xl">{event.title}</p>
+                                        <p className="text-white/50 text-base">{event.time}</p>
                                     </div>
                                     <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
                                 </button>
@@ -229,6 +242,7 @@ const Dashboard = () => {
 
                     {weather && (
                         <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
+                            <span className="px-2 py-1 rounded-full text-xs bg-white/10 border border-white/15 text-white/70">Live</span>
                             <span className="text-3xl">{weather.icon}</span>
                             <div className="text-left">
                                 <span className="text-xl font-semibold">{weather.temp}°F</span>
@@ -247,7 +261,10 @@ const Dashboard = () => {
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
                         </div>
-                        <h2 className="font-semibold text-xl">Music</h2>
+                        <div>
+                            <h2 className="font-semibold text-xl">Music</h2>
+                            <p className="text-xs uppercase tracking-[0.16em] text-white/45">Now playing</p>
+                        </div>
                     </div>
 
                     {playerState?.track && playerState.state === 'PLAYING' ? (
@@ -321,7 +338,7 @@ const Dashboard = () => {
                                 <button
                                     key={member.id}
                                     onClick={() => navigate('/tasks')}
-                                    className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "ring-1 ring-warning/30 bg-warning/10")}
+                                    className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "col-span-2 ring-1 ring-warning/30 bg-warning/10")}
                                 >
                                     <div className={cn(
                                         "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
@@ -339,6 +356,7 @@ const Dashboard = () => {
                                             <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
                                             {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
                                         </div>
+                                        {idx === 0 && <p className="text-xs text-white/55 mt-0.5">Leading this week with consistent completions</p>}
                                         <div className="flex items-center gap-2 text-base">
                                             <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
                                             <span className="text-white/30">|</span>
@@ -349,7 +367,7 @@ const Dashboard = () => {
                                         </div>
                                         <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
                                             <div
-                                                className="h-full rounded-full bg-gradient-to-r from-success to-family-blue transition-all duration-500"
+                                                className="h-full rounded-full bg-gradient-to-r from-success via-family-blue to-family-purple transition-all duration-500 shadow-[0_0_16px_rgba(80,200,120,0.45)]"
                                                 style={{ width: `${taskProgress}%` }}
                                             />
                                         </div>
