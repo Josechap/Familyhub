@@ -142,6 +142,40 @@ describe('Settings API', () => {
     });
   });
 
+
+
+  describe('POST /api/settings/reset-database', () => {
+    const originalEnableReset = process.env.ENABLE_RESET_ENDPOINT;
+    const originalResetApiKey = process.env.RESET_API_KEY;
+
+    afterEach(() => {
+      process.env.ENABLE_RESET_ENDPOINT = originalEnableReset;
+      process.env.RESET_API_KEY = originalResetApiKey;
+    });
+
+    it('should block reset when endpoint is disabled', async () => {
+      process.env.ENABLE_RESET_ENDPOINT = 'false';
+      process.env.RESET_API_KEY = 'test-key';
+
+      const response = await request(app)
+        .post('/api/settings/reset-database')
+        .set('x-admin-key', 'test-key')
+        .expect(403);
+
+      expect(response.body.error).toMatch(/disabled/i);
+    });
+
+    it('should require valid admin key when enabled', async () => {
+      process.env.ENABLE_RESET_ENDPOINT = 'true';
+      process.env.RESET_API_KEY = 'expected-key';
+
+      await request(app)
+        .post('/api/settings/reset-database')
+        .set('x-admin-key', 'wrong-key')
+        .expect(401);
+    });
+  });
+
   describe('DELETE /api/settings/family/:id', () => {
     it('should delete a family member', async () => {
       // First create a member to delete

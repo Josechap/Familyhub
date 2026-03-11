@@ -2,6 +2,30 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+const canResetDatabase = (req) => {
+    if (process.env.ENABLE_RESET_ENDPOINT !== 'true') {
+        return { allowed: false, code: 403, error: 'Reset endpoint is disabled' };
+    }
+
+    const configuredKey = process.env.RESET_API_KEY;
+    if (!configuredKey) {
+        return { allowed: false, code: 500, error: 'RESET_API_KEY is not configured' };
+    }
+
+    const providedKey = req.get('x-admin-key');
+    if (providedKey !== configuredKey) {
+        return { allowed: false, code: 401, error: 'Unauthorized' };
+    }
+
+    if (IS_PRODUCTION && process.env.ALLOW_PROD_DB_RESET !== 'true') {
+        return { allowed: false, code: 403, error: 'Reset is blocked in production' };
+    }
+
+    return { allowed: true };
+};
+
 // Default settings
 const defaultSettings = {
     darkMode: 'false',
@@ -102,6 +126,11 @@ router.delete('/family/:id', (req, res) => {
 
 // POST reset database - clears all user data except settings and auth tokens
 router.post('/reset-database', (req, res) => {
+    const resetAccess = canResetDatabase(req);
+    if (!resetAccess.allowed) {
+        return res.status(resetAccess.code).json({ error: resetAccess.error });
+    }
+
     try {
         // Use a transaction for atomic operation
         const reset = db.transaction(() => {
@@ -126,7 +155,7 @@ router.post('/reset-database', (req, res) => {
 
         reset();
 
-        console.log('Database reset completed - all user data cleared');
+        console.log('Database reset completed - all user data cleared', { ip: req.ip, at: new Date().toISOString() });
         res.json({ success: true, message: 'Database reset successfully. All user data has been cleared.' });
     } catch (error) {
         console.error('Database reset failed:', error);

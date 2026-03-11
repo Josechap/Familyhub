@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { fetchDashboardData, setScoreboard, setWeather } from '../features/dashboardSlice';
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy } from 'lucide-react';
+import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves, Crown } from 'lucide-react';
 import api from '../lib/api';
 import { API_BASE } from '../lib/config';
 import NestCard from '../components/NestCard';
@@ -45,11 +45,53 @@ const formatEventDate = (dateStr) => {
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
+const getOutfitRecommendation = (weather) => {
+    if (!weather) return null;
+
+    const condition = (weather.condition || '').toLowerCase();
+    const description = (weather.description || '').toLowerCase();
+    const temp = Number(weather.temp);
+
+    if (condition.includes('thunderstorm')) {
+        return { icon: '⛈️', title: 'Rain jacket + umbrella', detail: 'Stormy weather expected' };
+    }
+
+    if (condition.includes('rain') || condition.includes('drizzle') || description.includes('shower')) {
+        return { icon: '☔', title: 'Waterproof layer', detail: 'Bring an umbrella today' };
+    }
+
+    if (condition.includes('snow')) {
+        return { icon: '🧤', title: 'Winter coat + gloves', detail: 'Dress warmly for snow' };
+    }
+
+    if (condition.includes('mist') || condition.includes('fog') || condition.includes('haze')) {
+        return { icon: '🧥', title: 'Light jacket', detail: 'Cool and low-visibility conditions' };
+    }
+
+    if (temp <= 35) {
+        return { icon: '🥶', title: 'Heavy coat + hat', detail: 'Very cold outside' };
+    }
+
+    if (temp <= 50) {
+        return { icon: '🧥', title: 'Jacket weather', detail: 'Layer up for a chilly day' };
+    }
+
+    if (temp <= 65) {
+        return { icon: '👕', title: 'Light layer', detail: 'Sweater or long sleeves recommended' };
+    }
+
+    if (temp <= 78) {
+        return { icon: '👟', title: 'Comfortable casual', detail: 'T-shirt and sneakers weather' };
+    }
+
+    return { icon: '🕶️', title: 'Cool and breathable', detail: 'Light clothes and sun protection' };
+};
+
 const Dashboard = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { time, date, hours } = useClock();
-    const { weather, upcomingEvents, todayTasks, todayMeals, clothing } = useSelector((state) => state.dashboard);
+    const { weather, upcomingEvents, todayMeals } = useSelector((state) => state.dashboard);
     const familyMembers = useSelector((state) => state.settings.familyMembers);
     const { playerState, activeDeviceIp } = useSelector((state) => state.sonos);
     const [weeklyStats, setWeeklyStats] = useState({ stats: [] });
@@ -119,17 +161,43 @@ const Dashboard = () => {
         const bStats = getMemberWeeklyStats(b.id);
         return bStats.weeklyTasksCompleted - aStats.weeklyTasksCompleted;
     });
+    const maxWeeklyTasks = Math.max(...sortedMembers.map((member) => getMemberWeeklyStats(member.id).weeklyTasksCompleted), 1);
+    const mealsPlannedCount = ['breakfast', 'lunch', 'dinner', 'snack'].filter((key) => todayMeals?.[key]).length;
+    const topPerformer = sortedMembers[0];
+    const outfitRecommendation = getOutfitRecommendation(weather);
 
     return (
-        <div className="h-full w-full flex gap-4 animate-fade-in overflow-hidden">
+        <div className="relative h-full w-full flex gap-5 animate-fade-in overflow-hidden">
+            <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-family-purple/25 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.12),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.16),transparent_38%)]" />
             {/* LEFT COLUMN - Upcoming Events (65% width) */}
-            <div className="w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
-                <div className="card flex-1 flex flex-col overflow-hidden">
+            <div className="relative z-10 w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
+                <div className="card relative flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                             <Calendar size={28} className="text-purple-400" />
                         </div>
-                        <h2 className="text-2xl font-semibold">Upcoming Events</h2>
+                        <div className="flex-1">
+                            <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upcoming Events</h2>
+                            <p className="text-sm text-white/50">Tap an event to view details</p>
+                        </div>
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
+                            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                            {upcomingEvents.length} scheduled
+                        </span>
+                    </div>
+
+                    <div className="mb-3 rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 to-white/0 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today focus</p>
+                            <p className="text-sm text-white/70">{mealsPlannedCount}/4 meals planned</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs uppercase tracking-[0.18em] text-white/45">Top performer</p>
+                            <p className="text-sm text-warning inline-flex items-center gap-1 justify-end"><Crown size={12} />{topPerformer?.name?.split(' ')[0] || 'No data'}</p>
+                        </div>
                     </div>
                     <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
                         {upcomingEvents.length > 0 ? (
@@ -138,8 +206,8 @@ const Dashboard = () => {
                                     key={event.id || idx}
                                     onClick={() => setSelectedEvent(event)}
                                     className={cn(
-                                        "w-full flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-white/10",
-                                        event.isToday ? "bg-purple-500/20" : "bg-white/5"
+                                        "group w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5",
+                                        event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
                                     )}
                                 >
                                     {/* Color dot for family member */}
@@ -149,16 +217,17 @@ const Dashboard = () => {
                                     )} />
                                     {/* Date badge */}
                                     <div className={cn(
-                                        "flex-shrink-0 w-28 text-center rounded-lg py-3 px-3",
+                                        "flex-shrink-0 w-28 text-center rounded-xl py-3 px-3 border border-white/10",
                                         event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
                                     )}>
                                         <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
                                     </div>
                                     {/* Event details */}
                                     <div className="flex-1 min-w-0 text-left">
-                                        <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
-                                        <p className="text-white/50 text-lg">{event.time}</p>
+                                        <p className="font-semibold text-white truncate text-xl">{event.title}</p>
+                                        <p className="text-white/50 text-base">{event.time}</p>
                                     </div>
+                                    <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
                                 </button>
                             ))
                         ) : (
@@ -170,7 +239,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Today's Meals */}
-                <div className="card">
+                <div className="card relative border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     <div className="flex items-center gap-4 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
                             <Utensils size={22} className="text-success" />
@@ -179,20 +249,22 @@ const Dashboard = () => {
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                         {[
-                            { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-400' },
-                            { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-400' },
-                            { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-400' },
-                            { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-400' },
+                            { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-300', tint: 'from-yellow-500/15 to-transparent' },
+                            { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-300', tint: 'from-green-500/15 to-transparent' },
+                            { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-300', tint: 'from-blue-500/15 to-transparent' },
+                            { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-300', tint: 'from-pink-500/15 to-transparent' },
                         ].map(meal => (
                             <button
                                 key={meal.key}
                                 onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                className="text-center p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                                className={cn("text-center p-3 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] bg-gradient-to-br", meal.tint)}
                             >
                                 <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
-                                <p className="text-base text-white/50 truncate mt-2">
+                                <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
+                                <p className="text-base text-white/50 truncate mt-1">
                                     {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
                                 </p>
+                                {!todayMeals?.[meal.key] && <p className="text-xs text-primary mt-1">Set meal</p>}
                             </button>
                         ))}
                     </div>
@@ -200,34 +272,60 @@ const Dashboard = () => {
             </div>
 
             {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
-            <div className="flex-1 flex flex-col gap-3">
+            <div className="relative z-10 flex-1 flex flex-col gap-3">
                 {/* Time & Weather Card - Compact */}
-                <div className="card text-center py-4">
-                    <p className="text-white/60 text-base mb-1">{getGreeting()}</p>
-                    <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
+                <div className="card relative text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.24)] overflow-hidden">
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
+                    <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2"><Waves size={16} className="text-primary" />{getGreeting()}</p>
+                    <h1 className="text-6xl text-white font-display tracking-tight drop-shadow-[0_4px_16px_rgba(99,102,241,0.35)]">{time}</h1>
                     <p className="text-white/60 text-base mt-1">{date}</p>
 
-                    {weather && (
-                        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
-                            <span className="text-3xl">{weather.icon}</span>
-                            <div className="text-left">
-                                <span className="text-xl font-semibold">{weather.temp}°F</span>
-                                <p className="text-white/50 text-sm">{weather.condition}</p>
-                            </div>
+                    <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                        <div className="mx-auto max-w-[92%] rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left shadow-[0_8px_20px_rgba(0,0,0,0.18)]">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-primary/85">Weather & outfit</p>
+
+                            {weather ? (
+                                <>
+                                    <div className="mt-1 flex items-center gap-3">
+                                        <span className="px-2 py-1 rounded-full text-xs bg-white/10 border border-white/15 text-white/70">Live</span>
+                                        <span className="text-3xl">{weather.icon}</span>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">{weather.temp}°F · {weather.condition}</p>
+                                            <p className="text-xs text-white/50">{weather.location || 'Current location'} · Feels like {weather.feelsLike}°F</p>
+                                        </div>
+                                    </div>
+
+                                    {outfitRecommendation && (
+                                        <div className="mt-2 rounded-lg border border-white/10 bg-black/15 px-2.5 py-2">
+                                            <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">What to wear</p>
+                                            <div className="mt-1 flex items-center gap-2">
+                                                <span className="text-lg" aria-hidden="true">{outfitRecommendation.icon}</span>
+                                                <p className="text-sm font-medium text-white">{outfitRecommendation.title}</p>
+                                            </div>
+                                            <p className="text-xs text-white/55">{outfitRecommendation.detail}</p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="mt-1 text-sm text-white/55">Add weather API key and location in Settings to see outfit recommendations.</p>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Nest Thermostat Card */}
                 <NestCard onOpenDetail={() => setShowNestDetail(true)} />
 
                 {/* Now Playing / Playlists - 25% height */}
-                <div className="card h-[25%] flex flex-col overflow-hidden">
+                <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
                         </div>
-                        <h2 className="font-semibold text-xl">Music</h2>
+                        <div>
+                            <h2 className="font-semibold text-xl">Music</h2>
+                            <p className="text-xs uppercase tracking-[0.16em] text-white/45">Now playing</p>
+                        </div>
                     </div>
 
                     {playerState?.track && playerState.state === 'PLAYING' ? (
@@ -245,10 +343,10 @@ const Dashboard = () => {
                                 <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
                                     <Play size={24} />
                                 </button>
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20">
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
                                     <SkipForward size={24} />
                                 </button>
                             </div>
@@ -266,7 +364,7 @@ const Dashboard = () => {
                                 ].map(playlist => (
                                     <button
                                         key={playlist.name}
-                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left"
+                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
                                     >
                                         <span className="text-2xl">{playlist.emoji}</span>
                                         <span className="font-medium text-base truncate">{playlist.name}</span>
@@ -278,22 +376,30 @@ const Dashboard = () => {
                 </div>
 
                 {/* Weekly Scoreboard - 45% height, 2-column grid */}
-                <div className="card h-[45%] flex flex-col overflow-hidden">
+                <div className="card relative h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
-                        <Trophy size={28} className="text-warning" />
+                        <div>
+                            <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
+                            <p className="text-sm text-white/50">This week's momentum</p>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30">
+                            <Sparkles size={14} className="text-warning" />
+                            <Trophy size={18} className="text-warning" />
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
                         {sortedMembers.slice(0, 6).map((member, idx) => {
                             const weekly = getMemberWeeklyStats(member.id);
                             const colorClass = familyColors[member.color] || 'bg-family-blue';
                             const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
+                            const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
 
                             return (
                                 <button
                                     key={member.id}
                                     onClick={() => navigate('/tasks')}
-                                    className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
+                                    className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "col-span-2 ring-1 ring-warning/30 bg-warning/10")}
                                 >
                                     <div className={cn(
                                         "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
@@ -307,7 +413,11 @@ const Dashboard = () => {
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
+                                            {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
+                                        </div>
+                                        {idx === 0 && <p className="text-xs text-white/55 mt-0.5">Leading this week with consistent completions</p>}
                                         <div className="flex items-center gap-2 text-base">
                                             <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
                                             <span className="text-white/30">|</span>
@@ -315,6 +425,12 @@ const Dashboard = () => {
                                                 <Star size={14} className="text-warning fill-warning" />
                                                 <span className="text-warning font-bold">{member.points}</span>
                                             </div>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-success via-family-blue to-family-purple transition-all duration-500 shadow-[0_0_16px_rgba(80,200,120,0.45)]"
+                                                style={{ width: `${taskProgress}%` }}
+                                            />
                                         </div>
                                     </div>
                                 </button>
