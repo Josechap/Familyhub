@@ -1,8 +1,24 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const db = require('../db/database');
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const isProduction = () => process.env.NODE_ENV === 'production';
+
+const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
+
+const isValidMemberId = (value) => /^\d+$/.test(String(value));
+
+const secureCompare = (value, expected) => {
+    const left = Buffer.from(String(value || ''), 'utf8');
+    const right = Buffer.from(String(expected || ''), 'utf8');
+
+    if (left.length !== right.length) {
+        return false;
+    }
+
+    return crypto.timingSafeEqual(left, right);
+};
 
 const canResetDatabase = (req) => {
     if (process.env.ENABLE_RESET_ENDPOINT !== 'true') {
@@ -15,11 +31,11 @@ const canResetDatabase = (req) => {
     }
 
     const providedKey = req.get('x-admin-key');
-    if (providedKey !== configuredKey) {
+    if (!secureCompare(providedKey, configuredKey)) {
         return { allowed: false, code: 401, error: 'Unauthorized' };
     }
 
-    if (IS_PRODUCTION && process.env.ALLOW_PROD_DB_RESET !== 'true') {
+    if (isProduction() && process.env.ALLOW_PROD_DB_RESET !== 'true') {
         return { allowed: false, code: 403, error: 'Reset is blocked in production' };
     }
 
@@ -94,6 +110,10 @@ router.get('/family', (req, res) => {
 router.post('/family', (req, res) => {
     try {
         const { name, color } = req.body;
+        if (!isNonEmptyString(name) || !isNonEmptyString(color)) {
+            return res.status(400).json({ error: 'Name and color are required' });
+        }
+
         const result = db.prepare('INSERT INTO family_members (name, color, points) VALUES (?, ?, 0)').run(name, color);
         res.status(201).json({ id: result.lastInsertRowid, name, color, points: 0 });
     } catch (error) {
@@ -104,8 +124,20 @@ router.post('/family', (req, res) => {
 // PUT update family member
 router.put('/family/:id', (req, res) => {
     try {
+        if (!isValidMemberId(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid family member id' });
+        }
+
         const { name, color } = req.body;
-        db.prepare('UPDATE family_members SET name = ?, color = ? WHERE id = ?').run(name, color, req.params.id);
+        if (!isNonEmptyString(name) || !isNonEmptyString(color)) {
+            return res.status(400).json({ error: 'Name and color are required' });
+        }
+
+        const result = db.prepare('UPDATE family_members SET name = ?, color = ? WHERE id = ?').run(name, color, req.params.id);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Family member not found' });
+        }
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -115,9 +147,17 @@ router.put('/family/:id', (req, res) => {
 // DELETE family member (cascades to chores and events)
 router.delete('/family/:id', (req, res) => {
     try {
+        if (!isValidMemberId(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid family member id' });
+        }
+
         db.prepare('DELETE FROM chores WHERE assigned_to = ?').run(req.params.id);
         db.prepare('DELETE FROM calendar_events WHERE member_id = ?').run(req.params.id);
-        db.prepare('DELETE FROM family_members WHERE id = ?').run(req.params.id);
+        const result = db.prepare('DELETE FROM family_members WHERE id = ?').run(req.params.id);
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Family member not found' });
+        }
+
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });

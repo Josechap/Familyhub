@@ -97,6 +97,14 @@ describe('Settings API', () => {
   describe('POST /api/settings/family', () => {
     let createdMemberId;
 
+
+    it('should return 400 for invalid family member payload', async () => {
+      await request(app)
+        .post('/api/settings/family')
+        .send({ name: '', color: '' })
+        .expect(400);
+    });
+
     it('should create a new family member', async () => {
       const response = await request(app)
         .post('/api/settings/family')
@@ -140,9 +148,13 @@ describe('Settings API', () => {
       // Clean up
       await request(app).delete(`/api/settings/family/${memberId}`);
     });
+    it('should return 404 when updating a non-existent family member', async () => {
+      await request(app)
+        .put('/api/settings/family/999999')
+        .send({ name: 'Updated Name', color: 'pastel-pink' })
+        .expect(404);
+    });
   });
-
-
 
   describe('POST /api/settings/reset-database', () => {
     const originalEnableReset = process.env.ENABLE_RESET_ENDPOINT;
@@ -177,6 +189,19 @@ describe('Settings API', () => {
   });
 
   describe('DELETE /api/settings/family/:id', () => {
+
+    it('should return 400 for invalid family member id', async () => {
+      await request(app)
+        .delete('/api/settings/family/not-a-number')
+        .expect(400);
+    });
+
+    it('should return 404 for non-existent family member', async () => {
+      await request(app)
+        .delete('/api/settings/family/999999')
+        .expect(404);
+    });
+
     it('should delete a family member', async () => {
       // First create a member to delete
       const createResponse = await request(app)
