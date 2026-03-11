@@ -23,7 +23,7 @@ const getImageUrl = (url) => {
 };
 
 const Screensaver = ({ onDismiss }) => {
-    const { screensaverPhotoInterval, localPhotosPath } = useSelector((state) => state.settings);
+    const { screensaverPhotoInterval } = useSelector((state) => state.settings);
     const { upcomingEvents } = useSelector((state) => state.dashboard);
 
     const [photos, setPhotos] = useState([]);
