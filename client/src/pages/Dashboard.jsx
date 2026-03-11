@@ -13,6 +13,7 @@ import NestCard from '../components/NestCard';
 import NestDetailView from '../components/NestDetailView';
 import EventModal from '../components/modals/EventModal';
 import MealModal from '../components/modals/MealModal';
+import { PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 // Family member colors mapping
 const familyColors = {
@@ -120,109 +121,143 @@ const Dashboard = () => {
         return bStats.weeklyTasksCompleted - aStats.weeklyTasksCompleted;
     });
 
+    const plannedMealsCount = Object.values(todayMeals || {}).filter(Boolean).length;
+
     return (
-        <div className="h-full w-full flex gap-4 animate-fade-in overflow-hidden">
-            {/* LEFT COLUMN - Upcoming Events (65% width) */}
-            <div className="w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
-                <div className="card flex-1 flex flex-col overflow-hidden">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                            <Calendar size={28} className="text-purple-400" />
+        <PageShell className="h-full animate-fade-in">
+            <PageHeader
+                icon={Trophy}
+                eyebrow="Family overview"
+                title="Family Hub"
+                description="Your day at a glance, with upcoming plans, meals, music, and weekly momentum in one shared view."
+                tone="amber"
+                stats={[
+                    { label: 'Upcoming', value: upcomingEvents.length, meta: 'events queued' },
+                    { label: 'Today tasks', value: todayTasks?.length || 0, meta: 'still open' },
+                    { label: 'Meals', value: plannedMealsCount, meta: 'planned today' },
+                ]}
+                actions={(
+                    <>
+                        <button
+                            onClick={() => navigate('/calendar')}
+                            className="module-action"
+                        >
+                            <Calendar size={18} />
+                            Open calendar
+                        </button>
+                        <button
+                            onClick={() => navigate('/tasks')}
+                            className="module-action module-action-primary"
+                        >
+                            <Star size={18} />
+                            View tasks
+                        </button>
+                    </>
+                )}
+            />
+
+            <div className="min-h-0 flex flex-1 flex-col gap-4 overflow-hidden xl:flex-row">
+                {/* LEFT COLUMN - Upcoming Events (65% width) */}
+                <div className="flex min-h-0 min-w-0 flex-[1.6] flex-col gap-3">
+                    <div className="card flex-1 flex flex-col overflow-hidden">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                <Calendar size={28} className="text-purple-400" />
+                            </div>
+                            <h2 className="text-2xl font-semibold">Upcoming Events</h2>
                         </div>
-                        <h2 className="text-2xl font-semibold">Upcoming Events</h2>
+                        <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
+                            {upcomingEvents.length > 0 ? (
+                                upcomingEvents.map((event, idx) => (
+                                    <button
+                                        key={event.id || idx}
+                                        onClick={() => setSelectedEvent(event)}
+                                        className={cn(
+                                            "w-full flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-white/10",
+                                            event.isToday ? "bg-purple-500/20" : "bg-white/5"
+                                        )}
+                                    >
+                                        {/* Color dot for family member */}
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full flex-shrink-0 mt-2",
+                                            getMemberColor(event.member, familyMembers)
+                                        )} />
+                                        {/* Date badge */}
+                                        <div className={cn(
+                                            "flex-shrink-0 w-28 text-center rounded-lg py-3 px-3",
+                                            event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
+                                        )}>
+                                            <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
+                                        </div>
+                                        {/* Event details */}
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
+                                            <p className="text-white/50 text-lg">{event.time}</p>
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="flex-1 flex items-center justify-center text-white/40">
+                                    <p>No upcoming events</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
-                        {upcomingEvents.length > 0 ? (
-                            upcomingEvents.map((event, idx) => (
+
+                    {/* Today's Meals */}
+                    <div className="card">
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
+                                <Utensils size={22} className="text-success" />
+                            </div>
+                            <span className="font-semibold text-xl">Today's Meals</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                            {[
+                                { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-400' },
+                                { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-400' },
+                                { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-400' },
+                                { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-400' },
+                            ].map(meal => (
                                 <button
-                                    key={event.id || idx}
-                                    onClick={() => setSelectedEvent(event)}
-                                    className={cn(
-                                        "w-full flex items-start gap-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-white/10",
-                                        event.isToday ? "bg-purple-500/20" : "bg-white/5"
-                                    )}
+                                    key={meal.key}
+                                    onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
+                                    className="text-center p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
                                 >
-                                    {/* Color dot for family member */}
-                                    <div className={cn(
-                                        "w-4 h-4 rounded-full flex-shrink-0 mt-2",
-                                        getMemberColor(event.member, familyMembers)
-                                    )} />
-                                    {/* Date badge */}
-                                    <div className={cn(
-                                        "flex-shrink-0 w-28 text-center rounded-lg py-3 px-3",
-                                        event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
-                                    )}>
-                                        <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
-                                    </div>
-                                    {/* Event details */}
-                                    <div className="flex-1 min-w-0 text-left">
-                                        <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
-                                        <p className="text-white/50 text-lg">{event.time}</p>
-                                    </div>
+                                    <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
+                                    <p className="text-base text-white/50 truncate mt-2">
+                                        {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
+                                    </p>
                                 </button>
-                            ))
-                        ) : (
-                            <div className="flex-1 flex items-center justify-center text-white/40">
-                                <p>No upcoming events</p>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
+                <div className="flex min-h-0 flex-1 flex-col gap-3">
+                    {/* Time & Weather Card - Compact */}
+                    <div className="card text-center py-4">
+                        <p className="text-white/60 text-base mb-1">{getGreeting()}</p>
+                        <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
+                        <p className="text-white/60 text-base mt-1">{date}</p>
+
+                        {weather && (
+                            <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
+                                <span className="text-3xl">{weather.icon}</span>
+                                <div className="text-left">
+                                    <span className="text-xl font-semibold">{weather.temp}°F</span>
+                                    <p className="text-white/50 text-sm">{weather.condition}</p>
+                                </div>
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* Today's Meals */}
-                <div className="card">
-                    <div className="flex items-center gap-4 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                            <Utensils size={22} className="text-success" />
-                        </div>
-                        <span className="font-semibold text-xl">Today's Meals</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                        {[
-                            { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-400' },
-                            { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-400' },
-                            { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-400' },
-                            { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-400' },
-                        ].map(meal => (
-                            <button
-                                key={meal.key}
-                                onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                className="text-center p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-                            >
-                                <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
-                                <p className="text-base text-white/50 truncate mt-2">
-                                    {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
-                                </p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+                    {/* Nest Thermostat Card */}
+                    <NestCard onOpenDetail={() => setShowNestDetail(true)} />
 
-            {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
-            <div className="flex-1 flex flex-col gap-3">
-                {/* Time & Weather Card - Compact */}
-                <div className="card text-center py-4">
-                    <p className="text-white/60 text-base mb-1">{getGreeting()}</p>
-                    <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
-                    <p className="text-white/60 text-base mt-1">{date}</p>
-
-                    {weather && (
-                        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
-                            <span className="text-3xl">{weather.icon}</span>
-                            <div className="text-left">
-                                <span className="text-xl font-semibold">{weather.temp}°F</span>
-                                <p className="text-white/50 text-sm">{weather.condition}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Nest Thermostat Card */}
-                <NestCard onOpenDetail={() => setShowNestDetail(true)} />
-
-                {/* Now Playing / Playlists - 25% height */}
-                <div className="card h-[25%] flex flex-col overflow-hidden">
+                    {/* Now Playing / Playlists - 25% height */}
+                    <div className="card h-[25%] flex flex-col overflow-hidden">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
@@ -275,10 +310,10 @@ const Dashboard = () => {
                             </div>
                         </div>
                     )}
-                </div>
+                    </div>
 
-                {/* Weekly Scoreboard - 45% height, 2-column grid */}
-                <div className="card h-[45%] flex flex-col overflow-hidden">
+                    {/* Weekly Scoreboard - 45% height, 2-column grid */}
+                    <div className="card h-[45%] flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
                         <Trophy size={28} className="text-warning" />
@@ -321,6 +356,7 @@ const Dashboard = () => {
                             );
                         })}
                     </div>
+                    </div>
                 </div>
             </div>
 
@@ -347,7 +383,7 @@ const Dashboard = () => {
                     onClose={() => setSelectedMeal(null)}
                 />
             )}
-        </div>
+        </PageShell>
     );
 };
 

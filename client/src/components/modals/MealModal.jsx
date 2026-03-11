@@ -29,7 +29,7 @@ const MealModal = ({ meal, mealType, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div
-                className="card w-full max-w-md animate-scale-in"
+                className="module-modal max-w-md animate-scale-in"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -43,7 +43,7 @@ const MealModal = ({ meal, mealType, onClose }) => {
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target"
+                        className="module-icon-button"
                     >
                         <X size={20} />
                     </button>
@@ -80,13 +80,13 @@ const MealModal = ({ meal, mealType, onClose }) => {
                 <div className="flex gap-3">
                     <button
                         onClick={handleChangeMeal}
-                        className="flex-1 py-3 bg-white/10 text-white rounded-xl font-medium hover:bg-white/20 transition-colors touch-target"
+                        className="module-action flex-1"
                     >
                         Change Meal
                     </button>
                     <button
                         onClick={handleViewRecipe}
-                        className="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors touch-target flex items-center justify-center gap-2"
+                        className="module-action module-action-primary flex-1"
                     >
                         <ChefHat size={18} />
                         View Recipe

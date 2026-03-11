@@ -25,42 +25,47 @@ const BottomNav = () => {
     };
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/10">
-            <div className="flex items-center justify-around h-20 max-w-lg mx-auto px-4">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.path;
+        <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3">
+            <div
+                className="mx-auto max-w-2xl rounded-[2rem] glass px-2 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.32)]"
+                style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+                <div className="grid grid-cols-6 gap-1">
+                    {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path;
 
-                    return (
-                        <button
-                            key={item.id}
-                            onClick={() => handleNav(item.id, item.path)}
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 touch-target no-select",
-                                isActive
-                                    ? "text-primary"
-                                    : "text-white/50 hover:text-white/80 active:scale-95"
-                            )}
-                        >
-                            <div className={cn(
-                                "p-2 rounded-xl transition-all duration-200",
-                                isActive && "bg-primary/20"
-                            )}>
-                                <Icon
-                                    size={24}
-                                    strokeWidth={isActive ? 2.5 : 2}
-                                    className="transition-all duration-200"
-                                />
-                            </div>
-                            <span className={cn(
-                                "text-xs font-medium transition-all duration-200",
-                                isActive ? "opacity-100" : "opacity-0 h-0"
-                            )}>
-                                {item.label}
-                            </span>
-                        </button>
-                    );
-                })}
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNav(item.id, item.path)}
+                                className={cn(
+                                    "flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all duration-200 touch-target no-select",
+                                    isActive
+                                        ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                                        : "text-white/50 hover:bg-white/5 hover:text-white/80 active:scale-95"
+                                )}
+                            >
+                                <div className={cn(
+                                    "rounded-xl p-2 transition-all duration-200",
+                                    isActive ? "bg-primary/20 text-primary" : ""
+                                )}>
+                                    <Icon
+                                        size={22}
+                                        strokeWidth={isActive ? 2.5 : 2}
+                                        className="transition-all duration-200"
+                                    />
+                                </div>
+                                <span className={cn(
+                                    "text-[11px] font-medium leading-none transition-all duration-200",
+                                    isActive ? "opacity-100" : "opacity-60"
+                                )}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </nav>
     );

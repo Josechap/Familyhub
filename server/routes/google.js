@@ -3,6 +3,7 @@ const router = express.Router();
 const { google } = require('googleapis');
 const db = require('../db/database');
 const { SCOPES, getOAuth2Client, getAuthenticatedClient } = require('../lib/googleAuth');
+const { fetchGoogleCalendarEvents } = require('../lib/googleCalendar');
 
 // GET /auth - Redirect to Google OAuth
 router.get('/auth', (req, res) => {
@@ -90,89 +91,16 @@ router.get('/status', (req, res) => {
     }
 });
 
-// Helper to parse [Name] prefix from event title
-const parseMemberFromTitle = (title) => {
-    const match = title.match(/^\[([^\]]+)\]\s*/);
-    if (match) {
-        return {
-            member: match[1],
-            cleanTitle: title.replace(match[0], ''),
-        };
-    }
-    return { member: null, cleanTitle: title };
-};
-
 // GET /calendar/events - Fetch Google Calendar events
 router.get('/calendar/events', async (req, res) => {
     try {
-        const auth = await getAuthenticatedClient();
-        if (!auth) {
-            return res.status(401).json({ error: 'Not connected to Google' });
-        }
-
-        const calendar = google.calendar({ version: 'v3', auth });
-
-        // Get settings for manual mappings and family members for colors
-        const settings = {};
-        db.prepare('SELECT key, value FROM settings').all().forEach(row => {
-            settings[row.key] = row.value;
-        });
-        const familyMembers = db.prepare('SELECT * FROM family_members').all();
-        const memberColorMap = {};
-        familyMembers.forEach(m => {
-            memberColorMap[m.name] = m.color;
-        });
-
-        // Get events for the next 28 days (4 weeks)
-        const now = new Date();
-        const fourWeeksLater = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000);
-
-        const response = await calendar.events.list({
-            calendarId: 'primary',
-            timeMin: now.toISOString(),
-            timeMax: fourWeeksLater.toISOString(),
-            singleEvents: true,
-            orderBy: 'startTime',
-            maxResults: 200,
-        });
-
-        const events = response.data.items.map(event => {
-            const start = event.start.dateTime || event.start.date;
-            const startDate = new Date(start);
-            const rawTitle = event.summary || 'Untitled';
-            const eventId = event.id;
-
-            // Check for manual mapping first (stored as calendarEventMapping_{eventId})
-            let assignedMember = settings[`calendarEventMapping_${eventId}`];
-            let cleanTitle = rawTitle;
-
-            // If no manual mapping, try [Name] prefix parsing
-            if (!assignedMember) {
-                const parsed = parseMemberFromTitle(rawTitle);
-                assignedMember = parsed.member || 'Family';
-                cleanTitle = parsed.cleanTitle;
-            }
-
-            // Get color from family member or default
-            const color = memberColorMap[assignedMember] || 'google-blue';
-
-            return {
-                id: `google-${eventId}`,
-                googleEventId: eventId,
-                title: cleanTitle,
-                date: startDate.toISOString().split('T')[0],
-                startHour: event.start.dateTime ? startDate.getHours() + startDate.getMinutes() / 60 : 9,
-                duration: event.end?.dateTime && event.start?.dateTime
-                    ? (new Date(event.end.dateTime) - new Date(event.start.dateTime)) / (1000 * 60 * 60)
-                    : 1,
-                color: color,
-                source: 'google',
-                member: assignedMember,
-            };
-        });
-
+        const events = await fetchGoogleCalendarEvents({ includePrepMatches: true });
         res.json(events);
     } catch (error) {
+        if (error.message === 'Not connected to Google') {
+            return res.status(401).json({ error: error.message });
+        }
+
         console.error('Calendar fetch error:', error);
         res.status(500).json({ error: error.message });
     }

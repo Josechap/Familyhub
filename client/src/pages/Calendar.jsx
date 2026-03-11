@@ -5,6 +5,7 @@ import { fetchCalendarData } from '../features/calendarSlice';
 import { cn } from '../lib/utils';
 import { API_BASE } from '../lib/config';
 import EventModal from '../components/modals/EventModal';
+import { EmptyState, PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 // Family member colors mapping
 const familyColors = {
@@ -95,68 +96,78 @@ const Calendar = () => {
     }
 
     return (
-        <div className="h-full w-full flex flex-col gap-4 animate-fade-in">
-            {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold">Calendar</h1>
-                <div className="flex items-center gap-2">
-                    {/* Week navigation */}
-                    <button
-                        onClick={() => { setWeekOffset(Math.max(0, weekOffset - 1)); setSelectedDayIndex(0); }}
-                        disabled={weekOffset === 0}
-                        className={cn(
-                            "p-2 rounded-xl transition-colors touch-target",
-                            weekOffset === 0
-                                ? "text-white/20 cursor-not-allowed"
-                                : "hover:bg-white/10 text-white"
-                        )}
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-                    <span className="text-sm text-white/60 min-w-[80px] text-center">
-                        {weekOffset === 0 ? 'This Week' : weekOffset === 1 ? 'Next Week' : `Week +${weekOffset}`}
-                    </span>
-                    <button
-                        onClick={() => { setWeekOffset(Math.min(3, weekOffset + 1)); setSelectedDayIndex(0); }}
-                        disabled={weekOffset === 3}
-                        className={cn(
-                            "p-2 rounded-xl transition-colors touch-target",
-                            weekOffset === 3
-                                ? "text-white/20 cursor-not-allowed"
-                                : "hover:bg-white/10 text-white"
-                        )}
-                    >
-                        <ChevronRight size={24} />
-                    </button>
-                    <button
-                        onClick={() => setMultiDayView(!multiDayView)}
-                        className={cn(
-                            "px-4 py-2 rounded-xl text-sm font-medium transition-all touch-target ml-2",
-                            multiDayView
-                                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                : "bg-white/10 text-white/60 hover:bg-white/20"
-                        )}
-                    >
-                        {multiDayView ? 'Week View' : 'Day View'}
-                    </button>
-                </div>
-            </div>
+        <PageShell className="h-full animate-fade-in">
+            <PageHeader
+                icon={CalendarIcon}
+                eyebrow="Scheduling"
+                title="Calendar"
+                description="Track the week, assign family events, and keep dinner plans in the same timeline."
+                tone="sky"
+                stats={[
+                    { label: 'Loaded events', value: events.length, meta: 'on deck' },
+                    { label: 'Dinner slots', value: dinnerSlots.length, meta: 'planned meals' },
+                    { label: 'Selected day', value: dayEvents.length, meta: 'events shown' },
+                ]}
+                actions={(
+                    <>
+                        <div className="module-toolbar">
+                            <button
+                                onClick={() => { setWeekOffset(Math.max(0, weekOffset - 1)); setSelectedDayIndex(0); }}
+                                disabled={weekOffset === 0}
+                                className={cn(
+                                    'module-icon-button',
+                                    weekOffset === 0 && 'cursor-not-allowed opacity-35'
+                                )}
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            <span className="module-inline-chip min-w-[118px] justify-center">
+                                {weekOffset === 0 ? 'This week' : weekOffset === 1 ? 'Next week' : `Week +${weekOffset}`}
+                            </span>
+                            <button
+                                onClick={() => { setWeekOffset(Math.min(3, weekOffset + 1)); setSelectedDayIndex(0); }}
+                                disabled={weekOffset === 3}
+                                className={cn(
+                                    'module-icon-button',
+                                    weekOffset === 3 && 'cursor-not-allowed opacity-35'
+                                )}
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                        <div className="module-toolbar">
+                            <button
+                                onClick={() => setMultiDayView(false)}
+                                className={cn('module-pill', !multiDayView && 'module-pill-active')}
+                            >
+                                Day view
+                            </button>
+                            <button
+                                onClick={() => setMultiDayView(true)}
+                                className={cn('module-pill', multiDayView && 'module-pill-active')}
+                            >
+                                Week view
+                            </button>
+                        </div>
+                    </>
+                )}
+            />
 
             {!multiDayView ? (
                 <>
                     {/* Day Selector Pills - Single Day View */}
-                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                    <div className="module-toolbar overflow-x-auto hide-scrollbar pb-2">
                         {dates.map((d, idx) => (
                             <button
                                 key={d.date}
                                 onClick={() => setSelectedDayIndex(idx)}
                                 className={cn(
-                                    "flex flex-col items-center px-5 py-3 rounded-2xl transition-all min-w-[80px] touch-target",
+                                    'flex min-w-[84px] flex-col items-center rounded-2xl px-5 py-3 transition-all touch-target',
                                     idx === selectedDayIndex
-                                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+                                        ? 'module-pill-active bg-primary/20 text-white scale-105'
                                         : d.isToday
-                                            ? "bg-primary/20 text-primary border border-primary/30"
-                                            : "bg-white/5 text-white/60 hover:bg-white/10"
+                                            ? 'border border-primary/30 bg-primary/10 text-primary'
+                                            : 'text-white/60 hover:bg-white/5'
                                 )}
                             >
                                 <span className="text-xs font-medium uppercase tracking-wide opacity-80">{d.dayName}</span>
@@ -204,11 +215,11 @@ const Calendar = () => {
 
                         {/* Events */}
                         {dayEvents.length === 0 && !dinner ? (
-                            <div className="card text-center py-16">
-                                <CalendarIcon size={56} className="mx-auto text-white/10 mb-4" />
-                                <p className="text-white/40 text-lg font-medium">No events scheduled</p>
-                                <p className="text-white/30 text-sm mt-2">Enjoy your free day!</p>
-                            </div>
+                            <EmptyState
+                                icon={CalendarIcon}
+                                title="No events scheduled"
+                                description="This day is clear. Enjoy the breathing room or use Google Calendar sync to bring more events in."
+                            />
                         ) : (
                             dayEvents.map((event, idx) => {
                                 const members = event.members || [event.member];
@@ -352,7 +363,7 @@ const Calendar = () => {
                     onAssign={handleAssignEvent}
                 />
             )}
-        </div>
+        </PageShell>
     );
 };
 

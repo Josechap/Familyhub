@@ -1,6 +1,7 @@
 const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
+const { runDatabaseMigrations } = require('../lib/databaseMigrations');
 
 const dbPath = path.join(__dirname, 'familyhub.db');
 const db = new Database(dbPath);
@@ -15,6 +16,7 @@ db.pragma('foreign_keys = ON');
 const schemaPath = path.join(__dirname, 'schema.sql');
 const schema = fs.readFileSync(schemaPath, 'utf8');
 db.exec(schema);
+runDatabaseMigrations(db);
 
 // Seed initial data if tables are empty
 const seedData = () => {
@@ -55,13 +57,17 @@ const seedData = () => {
         );
 
         // Insert chores
-        const insertChore = db.prepare('INSERT INTO chores (title, points, assigned_to, completed, recurring) VALUES (?, ?, ?, ?, ?)');
-        insertChore.run('Take out trash', 10, 3, 0, 'weekly');
-        insertChore.run('Load dishwasher', 10, 3, 0, 'daily');
-        insertChore.run('Fold laundry', 15, 2, 0, 'weekly');
-        insertChore.run('Vacuum living room', 20, 1, 0, 'weekly');
-        insertChore.run('Walk the dog', 15, 1, 1, 'daily');
-        insertChore.run('Water plants', 5, 2, 1, 'daily');
+        const insertChore = db.prepare(`
+            INSERT INTO chores (
+                title, points, assigned_to, completed, recurring, schedule_type, days_of_week, due_time, cycle_key, active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        insertChore.run('Take out trash', 10, 3, 0, 'weekly', 'weekly', '["sun"]', '19:00', null, 1);
+        insertChore.run('Load dishwasher', 10, 3, 0, 'daily', 'daily', '[]', '20:00', null, 1);
+        insertChore.run('Fold laundry', 15, 2, 0, 'weekly', 'weekly', '["sat"]', '11:00', null, 1);
+        insertChore.run('Vacuum living room', 20, 1, 0, 'weekly', 'weekly', '["fri"]', '17:00', null, 1);
+        insertChore.run('Walk the dog', 15, 1, 1, 'daily', 'daily', '[]', '07:00', null, 1);
+        insertChore.run('Water plants', 5, 2, 1, 'specific_days', 'specific_days', '["mon","thu"]', '18:00', null, 1);
 
         // Insert today's dinner
         const today = new Date().toISOString().split('T')[0];
@@ -69,14 +75,17 @@ const seedData = () => {
         insertDinner.run(today, 1, 'Tacos Al Pastor');
 
         // Insert calendar events
-        const insertEvent = db.prepare('INSERT INTO calendar_events (title, date, start_hour, duration, member_id, color) VALUES (?, ?, ?, ?, ?, ?)');
+        const insertEvent = db.prepare(`
+            INSERT INTO calendar_events (title, date, start_hour, duration, member_id, color, event_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
         const eventTemplates = [
-            { title: 'Soccer Practice', duration: 1.5, memberId: 3, color: 'pastel-green' },
-            { title: 'Work Meeting', duration: 2, memberId: 1, color: 'pastel-blue' },
-            { title: 'Piano Lesson', duration: 1, memberId: 3, color: 'pastel-green' },
-            { title: 'Grocery Shopping', duration: 1, memberId: 2, color: 'pastel-pink' },
-            { title: 'Doctor Appointment', duration: 1, memberId: 2, color: 'pastel-pink' },
-            { title: 'Dance Class', duration: 1, memberId: 3, color: 'pastel-green' },
+            { title: 'Soccer Practice', duration: 1.5, memberId: 3, color: 'pastel-green', eventType: 'sports' },
+            { title: 'Work Meeting', duration: 2, memberId: 1, color: 'pastel-blue', eventType: 'work' },
+            { title: 'Piano Lesson', duration: 1, memberId: 3, color: 'pastel-green', eventType: 'lesson' },
+            { title: 'Grocery Shopping', duration: 1, memberId: 2, color: 'pastel-pink', eventType: 'errand' },
+            { title: 'Doctor Appointment', duration: 1, memberId: 2, color: 'pastel-pink', eventType: 'appointment' },
+            { title: 'Dance Class', duration: 1, memberId: 3, color: 'pastel-green', eventType: 'lesson' },
         ];
 
         // Add events for the next 7 days
@@ -90,8 +99,29 @@ const seedData = () => {
             for (let i = 0; i < numEvents; i++) {
                 const event = eventTemplates[Math.floor(Math.random() * eventTemplates.length)];
                 const hour = 8 + Math.floor(Math.random() * 10); // 8am to 6pm
-                insertEvent.run(event.title, dateStr, hour, event.duration, event.memberId, event.color);
+                insertEvent.run(event.title, dateStr, hour, event.duration, event.memberId, event.color, event.eventType);
             }
+        }
+
+        const prepTemplateCount = db.prepare('SELECT COUNT(*) as count FROM prep_templates').get();
+        if (prepTemplateCount.count === 0) {
+            const insertTemplate = db.prepare(`
+                INSERT INTO prep_templates (title, trigger_type, trigger_value, member_id)
+                VALUES (?, ?, ?, ?)
+            `);
+            const insertPrepItem = db.prepare(`
+                INSERT INTO prep_items (template_id, label, sort_order)
+                VALUES (?, ?, ?)
+            `);
+
+            const soccerTemplate = insertTemplate.run('Soccer practice', 'title_keyword', 'soccer', 3).lastInsertRowid;
+            insertPrepItem.run(soccerTemplate, 'Water bottle', 1);
+            insertPrepItem.run(soccerTemplate, 'Cleats', 2);
+            insertPrepItem.run(soccerTemplate, 'Shin guards', 3);
+
+            const doctorTemplate = insertTemplate.run('Doctor appointment', 'event_type', 'appointment', null).lastInsertRowid;
+            insertPrepItem.run(doctorTemplate, 'Insurance card', 1);
+            insertPrepItem.run(doctorTemplate, 'Medication list', 2);
         }
 
         console.log('Seed data inserted successfully!');

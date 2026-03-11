@@ -15,6 +15,7 @@ import {
 } from '../features/recipesSlice';
 import { setMealAsync } from '../features/mealsSlice';
 import { cn } from '../lib/utils';
+import { EmptyState, PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 // Cooking Mode Component - Fully responsive immersive experience
 const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) => {
@@ -130,7 +131,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-            <div className="card max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col animate-scale-in">
+            <div className="module-modal max-w-2xl w-full max-h-[85vh] flex flex-col animate-scale-in">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
@@ -152,7 +153,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onToggleFavorite(recipe.id)}
-                            className="p-2 rounded-full hover:bg-white/10 transition-colors touch-target"
+                            className="module-icon-button"
                         >
                             <Heart
                                 size={24}
@@ -161,7 +162,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-full hover:bg-white/10 transition-colors touch-target"
+                            className="module-icon-button"
                         >
                             <X size={24} />
                         </button>
@@ -216,13 +217,13 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowMealPicker(false)}
-                                className="flex-1 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20"
+                                className="module-action flex-1 text-sm"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handlePlanMeal}
-                                className="flex-1 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600"
+                                className="module-action module-action-primary flex-1 text-sm"
                             >
                                 Add to Meal Plan
                             </button>
@@ -276,14 +277,14 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                     <div className="flex gap-3">
                         <button
                             onClick={() => setShowMealPicker(true)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-500/20 text-purple-300 rounded-xl font-medium hover:bg-purple-500/30 transition-colors touch-target"
+                            className="module-action flex-1 text-purple-300"
                         >
                             <Calendar size={20} />
                             Plan Meal
                         </button>
                         <button
                             onClick={onStartCooking}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors touch-target"
+                            className="module-action module-action-primary flex-1"
                         >
                             <Play size={20} />
                             Start Cooking
@@ -338,8 +339,10 @@ const Recipes = () => {
         );
     }
 
+    const favoriteCount = recipes.filter(recipe => recipe.isFavorite).length;
+
     return (
-        <div className="h-full w-full flex flex-col gap-4 animate-fade-in">
+        <PageShell className="h-full animate-fade-in">
             {/* Cooking Mode Overlay */}
             {cookingMode && selectedRecipe && (
                 <CookingMode
@@ -374,11 +377,18 @@ const Recipes = () => {
                 />
             )}
 
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Recipes</h1>
-                <span className="text-white/50 text-sm">{filteredRecipes.length} recipes</span>
-            </div>
+            <PageHeader
+                icon={ChefHat}
+                eyebrow="Kitchen library"
+                title="Recipes"
+                description="Browse synced and local recipes, save favorites, and turn any dish directly into a meal plan."
+                tone="amber"
+                stats={[
+                    { label: 'Visible', value: filteredRecipes.length, meta: 'matching results' },
+                    { label: 'Favorites', value: favoriteCount, meta: 'starred recipes' },
+                    { label: 'Categories', value: categories.length - 1, meta: 'usable filters' },
+                ]}
+            />
 
             {/* Search */}
             <div className="relative">
@@ -388,21 +398,21 @@ const Recipes = () => {
                     placeholder="Search recipes..."
                     value={searchQuery}
                     onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                    className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                    className="module-input pl-12"
                 />
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+            <div className="module-toolbar overflow-x-auto hide-scrollbar pb-2">
                 {categories.map((cat) => (
                     <button
                         key={cat}
                         onClick={() => dispatch(setFilterCategory(cat))}
                         className={cn(
-                            "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap touch-target capitalize",
+                            'module-pill whitespace-nowrap capitalize',
                             filterCategory === cat
-                                ? "bg-primary text-white"
-                                : "bg-white/5 text-white/60 hover:bg-white/10"
+                                ? 'module-pill-active'
+                                : ''
                         )}
                     >
                         {cat}
@@ -486,14 +496,13 @@ const Recipes = () => {
 
                 {/* Empty state */}
                 {filteredRecipes.length === 0 && (
-                    <div className="text-center py-16">
-                        <div className="text-6xl mb-4">🍳</div>
-                        <p className="text-white/40 text-lg">No recipes found</p>
-                        <p className="text-white/30 text-sm mt-1">Try a different search or category</p>
-                    </div>
+                    <EmptyState
+                        title="No recipes found"
+                        description="Try a broader search, remove a category filter, or sync more recipes from Paprika."
+                    />
                 )}
             </div>
-        </div>
+        </PageShell>
     );
 };
 

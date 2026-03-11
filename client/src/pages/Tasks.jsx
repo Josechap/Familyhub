@@ -4,6 +4,7 @@ import { Star, Check, Trophy, Plus, X, Loader2, ArrowRightLeft, BarChart3, ListT
 import { fetchTasks, toggleChoreAsync, completeGoogleTaskAsync } from '../features/tasksSlice';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
+import { PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 // Lazy load TaskAnalytics (includes Recharts)
 const TaskAnalytics = React.lazy(() => import('../components/TaskAnalytics'));
@@ -53,10 +54,10 @@ const TransferTaskModal = ({ task, onTransfer, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-md animate-scale-in">
+            <div className="module-modal max-w-md animate-scale-in">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold">Transfer Task</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
+                    <button onClick={onClose} className="module-icon-button">
                         <X size={24} />
                     </button>
                 </div>
@@ -80,10 +81,10 @@ const TransferTaskModal = ({ task, onTransfer, onClose }) => {
                                     key={list.id}
                                     onClick={() => setSelectedList(list.id)}
                                     className={cn(
-                                        "w-full p-3 rounded-xl text-left transition-all",
+                                        'w-full rounded-2xl p-3 text-left transition-all',
                                         selectedList === list.id
-                                            ? "bg-primary text-white"
-                                            : "bg-white/5 hover:bg-white/10"
+                                            ? 'module-pill-active bg-primary/20 text-white'
+                                            : 'bg-white/5 hover:bg-white/10'
                                     )}
                                 >
                                     {list.title}
@@ -95,10 +96,10 @@ const TransferTaskModal = ({ task, onTransfer, onClose }) => {
                             onClick={handleTransfer}
                             disabled={!selectedList || transferring}
                             className={cn(
-                                "w-full py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 touch-target",
+                                'module-action w-full',
                                 selectedList && !transferring
-                                    ? "bg-primary text-white hover:bg-primary/80"
-                                    : "bg-white/10 text-white/40 cursor-not-allowed"
+                                    ? 'module-action-primary'
+                                    : 'cursor-not-allowed opacity-45'
                             )}
                         >
                             {transferring ? (
@@ -185,6 +186,8 @@ const Tasks = () => {
         ? familyMembers.filter(m => m.id === selectedMember)
         : familyMembers;
 
+    const completedTasks = allTasks.filter(task => task.completed || task.status === 'completed').length;
+
     // Loading state
     if (loading && chores.length === 0 && googleTasks.length === 0) {
         return (
@@ -195,7 +198,7 @@ const Tasks = () => {
     }
 
     return (
-        <div className="h-full w-full flex flex-col gap-3 animate-fade-in">
+        <PageShell className="h-full animate-fade-in">
             {/* Transfer Task Modal */}
             {transferringTask && (
                 <TransferTaskModal
@@ -205,36 +208,36 @@ const Tasks = () => {
                 />
             )}
 
-            {/* Header with Tabs */}
-            <div className="flex items-center justify-between gap-4">
-                <h1 className="text-3xl font-semibold">Tasks</h1>
-                <div className="flex bg-white/10 rounded-xl p-1.5">
-                    <button
-                        onClick={() => setActiveTab('tasks')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-lg text-lg font-medium transition-all",
-                            activeTab === 'tasks'
-                                ? "bg-primary text-white"
-                                : "text-white/60 hover:text-white"
-                        )}
-                    >
-                        <ListTodo size={22} />
-                        Tasks
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('analytics')}
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 rounded-lg text-lg font-medium transition-all",
-                            activeTab === 'analytics'
-                                ? "bg-primary text-white"
-                                : "text-white/60 hover:text-white"
-                        )}
-                    >
-                        <BarChart3 size={22} />
-                        Analytics
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                icon={ListTodo}
+                eyebrow="Chores and points"
+                title="Tasks"
+                description="See pending chores, transfer Google tasks between family lists, and track progress with analytics."
+                tone="emerald"
+                stats={[
+                    { label: 'All tasks', value: allTasks.length, meta: 'combined lists' },
+                    { label: 'Completed', value: completedTasks, meta: 'already done' },
+                    { label: 'Members', value: familyMembers.length, meta: 'on the board' },
+                ]}
+                actions={(
+                    <div className="module-toolbar">
+                        <button
+                            onClick={() => setActiveTab('tasks')}
+                            className={cn('module-pill', activeTab === 'tasks' && 'module-pill-active')}
+                        >
+                            <ListTodo size={18} />
+                            Tasks
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('analytics')}
+                            className={cn('module-pill', activeTab === 'analytics' && 'module-pill-active')}
+                        >
+                            <BarChart3 size={18} />
+                            Analytics
+                        </button>
+                    </div>
+                )}
+            />
 
             {/* Analytics View */}
             {activeTab === 'analytics' && (
@@ -251,14 +254,14 @@ const Tasks = () => {
             {activeTab === 'tasks' && (
                 <>
                     {/* Member Filter Pills - Compact */}
-                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                    <div className="module-toolbar overflow-x-auto hide-scrollbar pb-2">
                         <button
                             onClick={() => setSelectedMember(null)}
                             className={cn(
-                                "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
+                                'module-pill whitespace-nowrap',
                                 !selectedMember
-                                    ? "bg-primary text-white"
-                                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                                    ? 'module-pill-active'
+                                    : ''
                             )}
                         >
                             All
@@ -271,7 +274,7 @@ const Tasks = () => {
                                     key={member.id}
                                     onClick={() => setSelectedMember(isSelected ? null : member.id)}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap touch-target",
+                                        'module-pill whitespace-nowrap',
                                         isSelected
                                             ? `${colors.bg} text-white`
                                             : `${colors.light} ${colors.text} hover:opacity-80`
@@ -284,20 +287,21 @@ const Tasks = () => {
                     </div>
 
                     {/* Member Cards - Responsive grid that fills the width */}
-                    <div className="flex-1 overflow-x-auto overflow-y-hidden gap-4 touch-scroll hide-scrollbar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                        {displayMembers.map((member, idx) => {
-                            const colors = familyColors[member.color] || familyColors['pastel-blue'];
-                            const stats = getMemberStats(member.name);
-                            const tasks = getTasksByMember(member.name);
-                            const pendingTasks = tasks.filter(t => !t.completed && t.status !== 'completed');
-                            const completedTasks = tasks.filter(t => t.completed || t.status === 'completed');
+                    <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                            {displayMembers.map((member, idx) => {
+                                const colors = familyColors[member.color] || familyColors['pastel-blue'];
+                                const stats = getMemberStats(member.name);
+                                const tasks = getTasksByMember(member.name);
+                                const pendingTasks = tasks.filter(t => !t.completed && t.status !== 'completed');
+                                const completedTasks = tasks.filter(t => t.completed || t.status === 'completed');
 
-                            return (
-                                <div
-                                    key={member.id}
-                                    className="card animate-slide-up flex flex-col min-h-[200px]"
-                                    style={{ animationDelay: `${idx * 50}ms` }}
-                                >
+                                return (
+                                    <div
+                                        key={member.id}
+                                        className="card animate-slide-up flex flex-col min-h-[200px]"
+                                        style={{ animationDelay: `${idx * 50}ms` }}
+                                    >
                                     {/* Member Header - Larger */}
                                     <div className="flex items-center gap-4 mb-4">
                                         <div className={cn(
@@ -416,9 +420,10 @@ const Tasks = () => {
                                             <span className="font-semibold">Perfect!</span>
                                         </div>
                                     )}
-                                </div>
-                            );
-                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </>
             )}
@@ -445,7 +450,7 @@ const Tasks = () => {
                     ))}
                 </div>
             )}
-        </div>
+        </PageShell>
     );
 };
 

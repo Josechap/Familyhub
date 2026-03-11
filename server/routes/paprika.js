@@ -1,50 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
-const { encrypt, decrypt, isEncrypted } = require('../utils/crypto');
+const {
+    getPaprikaCredentials,
+    savePaprikaCredentials,
+    clearPaprikaCredentials,
+} = require('../lib/paprikaCredentials');
 
 // Paprika API base URL
 const PAPRIKA_API = 'https://www.paprikaapp.com/api/v2';
-
-// Get stored credentials (decrypts if encrypted)
-const getCredentials = () => {
-    try {
-        const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('paprika_credentials');
-        if (row) {
-            const value = row.value;
-
-            // Check if credentials are encrypted
-            if (isEncrypted(value)) {
-                // Decrypt and parse
-                const decrypted = decrypt(value);
-                return JSON.parse(decrypted);
-            } else {
-                // Legacy plaintext credentials - migrate to encrypted
-                console.log('Migrating Paprika credentials to encrypted format...');
-                const credentials = JSON.parse(value);
-                const encrypted = encrypt(value);
-                db.prepare('UPDATE settings SET value = ? WHERE key = ?').run(encrypted, 'paprika_credentials');
-                console.log('✅ Paprika credentials encrypted successfully');
-                return credentials;
-            }
-        }
-    } catch (error) {
-        console.error('Error getting Paprika credentials:', error);
-    }
-    return null;
-};
-
-// Save credentials with token (encrypted)
-const saveCredentials = (email, password, token) => {
-    const credentials = JSON.stringify({ email, password, token });
-    const encryptedCredentials = encrypt(credentials);
-    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('paprika_credentials', encryptedCredentials);
-};
-
-// Clear credentials
-const clearCredentials = () => {
-    db.prepare('DELETE FROM settings WHERE key = ?').run('paprika_credentials');
-};
 
 // POST /connect - Connect to Paprika with credentials
 router.post('/connect', async (req, res) => {
@@ -81,7 +45,7 @@ router.post('/connect', async (req, res) => {
             return res.status(401).json({ error: 'No token received from Paprika' });
         }
 
-        saveCredentials(email, password, token);
+        savePaprikaCredentials(db, email, password, token);
         res.json({ success: true, message: 'Connected to Paprika' });
     } catch (error) {
         console.error('Paprika connect error:', error);
@@ -92,7 +56,7 @@ router.post('/connect', async (req, res) => {
 // GET /status - Check connection status
 router.get('/status', async (req, res) => {
     try {
-        const credentials = getCredentials();
+        const credentials = getPaprikaCredentials(db);
         if (!credentials || !credentials.token) {
             return res.json({ connected: false });
         }
@@ -118,7 +82,7 @@ router.get('/status', async (req, res) => {
 // GET /recipes - Fetch all recipes from Paprika
 router.get('/recipes', async (req, res) => {
     try {
-        const credentials = getCredentials();
+        const credentials = getPaprikaCredentials(db);
         if (!credentials || !credentials.token) {
             return res.status(401).json({ error: 'Not connected to Paprika' });
         }
@@ -194,7 +158,7 @@ router.get('/recipes', async (req, res) => {
 // POST /disconnect - Remove Paprika connection
 router.post('/disconnect', (req, res) => {
     try {
-        clearCredentials();
+        clearPaprikaCredentials(db);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });

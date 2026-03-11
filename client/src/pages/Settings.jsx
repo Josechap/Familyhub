@@ -13,6 +13,7 @@ import {
 } from '../features/settingsSlice';
 import { setScreensaverActive } from '../features/appSlice';
 import { cn } from '../lib/utils';
+import { PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 const colorOptions = [
     { name: 'pastel-blue', hex: '#3B82F6' },
@@ -38,10 +39,10 @@ const MemberModal = ({ member, onSave, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-md animate-scale-in">
+            <div className="module-modal max-w-md animate-scale-in">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold">{member ? 'Edit Member' : 'Add Member'}</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
+                    <button onClick={onClose} className="module-icon-button">
                         <X size={24} />
                     </button>
                 </div>
@@ -53,7 +54,7 @@ const MemberModal = ({ member, onSave, onClose }) => {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                            className="module-input"
                             placeholder="Enter name"
                             autoFocus
                         />
@@ -80,13 +81,13 @@ const MemberModal = ({ member, onSave, onClose }) => {
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors touch-target"
+                        className="module-action flex-1"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
-                        className="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action module-action-primary flex-1"
                     >
                         <Check size={18} />
                         Save
@@ -161,14 +162,14 @@ const GoogleIntegration = () => {
                     <button
                         onClick={handleSync}
                         disabled={syncing}
-                        className="flex-1 py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action flex-1"
                     >
                         <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
                         Sync
                     </button>
                     <button
                         onClick={handleDisconnect}
-                        className="flex-1 py-3 bg-red-500/20 text-red-400 rounded-xl font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action module-action-danger flex-1"
                     >
                         <Unlink size={18} />
                         Disconnect
@@ -181,7 +182,7 @@ const GoogleIntegration = () => {
     return (
         <button
             onClick={handleConnect}
-            className="w-full py-4 bg-white/5 border-2 border-white/10 rounded-xl font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-3 touch-target"
+            className="module-action w-full"
         >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -277,7 +278,7 @@ const LocalPhotosConfig = () => {
                     <button
                         onClick={handleClear}
                         disabled={saving}
-                        className="p-2 text-white/40 hover:text-red-400 transition-colors"
+                        className="module-icon-button h-10 w-10"
                     >
                         <X size={18} />
                     </button>
@@ -300,12 +301,12 @@ const LocalPhotosConfig = () => {
                             value={inputPath}
                             onChange={(e) => setInputPath(e.target.value)}
                             placeholder="/path/to/photos"
-                            className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40 text-sm"
+                            className="module-input flex-1 text-sm"
                         />
                         <button
                             onClick={handleSave}
                             disabled={saving || !inputPath.trim()}
-                            className="px-4 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="module-action module-action-primary disabled:opacity-50"
                         >
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                             Save
@@ -408,14 +409,14 @@ const PaprikaIntegration = () => {
                     <button
                         onClick={handleSync}
                         disabled={syncing}
-                        className="flex-1 py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action flex-1"
                     >
                         <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
                         Sync
                     </button>
                     <button
                         onClick={handleDisconnect}
-                        className="flex-1 py-3 bg-red-500/20 text-red-400 rounded-xl font-medium hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action module-action-danger flex-1"
                     >
                         <Unlink size={18} />
                         Disconnect
@@ -435,19 +436,19 @@ const PaprikaIntegration = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                className="module-input"
             />
             <input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                className="module-input"
             />
             <button
                 onClick={handleConnect}
                 disabled={connecting}
-                className="w-full py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors flex items-center justify-center gap-2 touch-target"
+                className="module-action w-full border-orange-400/30 bg-orange-500 text-white hover:bg-orange-600"
             >
                 {connecting ? <Loader2 size={18} className="animate-spin" /> : <Link size={18} />}
                 Connect Paprika
@@ -506,7 +507,7 @@ const Settings = () => {
     }
 
     return (
-        <div className="h-full w-full flex flex-col gap-4 animate-fade-in overflow-y-auto touch-scroll">
+        <PageShell className="h-full animate-fade-in overflow-y-auto touch-scroll">
             {/* Modals */}
             {(editingMember || showAddModal) && (
                 <MemberModal
@@ -519,7 +520,18 @@ const Settings = () => {
                 />
             )}
 
-            <h1 className="text-2xl font-semibold">Settings</h1>
+            <PageHeader
+                icon={Monitor}
+                eyebrow="System controls"
+                title="Settings"
+                description="Configure appearance, integrations, screensaver behavior, family members, and recovery actions from one control surface."
+                tone="slate"
+                stats={[
+                    { label: 'Members', value: familyMembers.length, meta: 'configured' },
+                    { label: 'Theme', value: themeMode, meta: 'active mode' },
+                    { label: 'Saver', value: `${screensaverTimeout}m`, meta: 'idle timeout' },
+                ]}
+            />
 
             {/* Appearance Section */}
             <div className="card">
@@ -604,7 +616,7 @@ const Settings = () => {
                             placeholder="e.g., Austin, TX or 78701"
                             defaultValue={location || ''}
                             onBlur={(e) => dispatch(updateSettings({ location: e.target.value }))}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                            className="module-input"
                         />
                     </div>
 
@@ -626,7 +638,7 @@ const Settings = () => {
                             placeholder="Enter your API key"
                             defaultValue={weatherApiKey || ''}
                             onBlur={(e) => dispatch(updateSettings({ weatherApiKey: e.target.value }))}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                            className="module-input"
                         />
                     </div>
 
@@ -715,7 +727,7 @@ const Settings = () => {
                     {/* Test Screensaver Button */}
                     <button
                         onClick={() => dispatch(setScreensaverActive(true))}
-                        className="w-full py-3 bg-cyan-500/20 text-cyan-400 rounded-xl font-medium hover:bg-cyan-500/30 transition-colors flex items-center justify-center gap-2 touch-target"
+                        className="module-action w-full text-cyan-400"
                     >
                         <Play size={18} />
                         Test Screensaver
@@ -774,7 +786,7 @@ const Settings = () => {
 
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="w-full py-3 border-2 border-dashed border-white/20 rounded-xl text-white/60 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2 touch-target"
+                    className="module-action w-full border-dashed"
                 >
                     <Plus size={20} />
                     Add Member
@@ -850,7 +862,7 @@ const Settings = () => {
                                 }
                             }}
                             disabled={resetting}
-                            className="py-3 px-6 bg-red-500/20 text-red-400 border border-red-500/40 rounded-xl font-medium hover:bg-red-500/30 transition-colors flex items-center gap-2 touch-target"
+                            className="module-action module-action-danger"
                         >
                             {resetting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
                             {resetting ? 'Resetting...' : 'Reset Database'}
@@ -865,9 +877,8 @@ const Settings = () => {
                     💡 Connect your Google account to sync calendar events and tasks. Connect Paprika to sync your recipes.
                 </p>
             </div>
-        </div>
+        </PageShell>
     );
 };
 
 export default Settings;
-

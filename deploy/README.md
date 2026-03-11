@@ -45,6 +45,17 @@ ingress:
     service: http://localhost:3001
 ```
 
+## Passwordless sudo for service restarts
+
+The `update-apps.sh` script uses `sudo` to restart services. To avoid password prompts (especially during unattended boot), add a sudoers rule:
+
+```bash
+sudo tee /etc/sudoers.d/app-updates << 'EOF'
+joschapa ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart familyhub, /usr/bin/systemctl restart hypertrophyai
+EOF
+sudo chmod 440 /etc/sudoers.d/app-updates
+```
+
 ## Auto-Update
 
 The `app-update.service` runs on boot before Familyhub starts, pulling the latest code from GitHub.

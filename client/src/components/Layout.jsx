@@ -86,8 +86,10 @@ const Layout = ({ children }) => {
 
     return (
         <div className="min-h-screen transition-colors duration-200">
-            <main className="h-screen overflow-y-auto touch-scroll pb-safe px-4 pt-4">
-                {children}
+            <main className="h-screen overflow-hidden px-3 pb-safe pt-3 sm:px-4 sm:pt-4">
+                <div className="mx-auto flex h-full w-full max-w-[1680px] flex-col">
+                    {children}
+                </div>
             </main>
             <BottomNav />
 

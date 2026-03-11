@@ -13,6 +13,7 @@ import {
     toggleShoppingListItem,
 } from '../features/mealsSlice';
 import api from '../lib/api';
+import { PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 // Helper to get week start (Monday)
 const getWeekStart = (date) => {
@@ -75,7 +76,7 @@ const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
+            <div className="module-modal w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-in">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -84,7 +85,7 @@ const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
                             {mealTypeConfig?.emoji} {mealTypeConfig?.label} on {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
+                    <button onClick={onClose} className="module-icon-button">
                         <X size={24} />
                     </button>
                 </div>
@@ -97,7 +98,7 @@ const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
                         placeholder="Search recipes..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                        className="module-input pl-12"
                     />
                 </div>
 
@@ -152,10 +153,10 @@ const ShoppingListModal = ({ onClose }) => {
     if (!shoppingList.items || shoppingList.items.length === 0) {
         return (
             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="card w-full max-w-lg">
+                <div className="module-modal max-w-lg">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold">Shopping List</h2>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <button onClick={onClose} className="module-icon-button">
                             <X size={24} />
                         </button>
                     </div>
@@ -169,7 +170,7 @@ const ShoppingListModal = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
+            <div className="module-modal w-full max-w-2xl max-h-[80vh] flex flex-col animate-scale-in">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -178,7 +179,7 @@ const ShoppingListModal = ({ onClose }) => {
                             {shoppingList.mealCount} meals · {shoppingList.items.length} items · {checkedCount} checked
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
+                    <button onClick={onClose} className="module-icon-button">
                         <X size={24} />
                     </button>
                 </div>
@@ -297,7 +298,7 @@ const MealPlanning = () => {
     const possibleMeals = 7 * 4; // 7 days × 4 meal types
 
     return (
-        <div className="h-full w-full flex flex-col gap-4 animate-fade-in">
+        <PageShell className="h-full animate-fade-in">
             {/* Recipe Picker Modal */}
             {showRecipePicker && selectedDate && selectedMealType && (
                 <RecipePicker
@@ -313,42 +314,45 @@ const MealPlanning = () => {
                 <ShoppingListModal onClose={() => setShowShoppingList(false)} />
             )}
 
-            {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h1 className="text-2xl font-semibold">Meal Planning</h1>
-                    <p className="text-white/50 text-sm">{weekRange}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleGenerateShoppingList}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-success text-white rounded-xl hover:bg-success/80 transition-colors touch-target"
-                    >
-                        <ShoppingCart size={18} />
-                        Shopping List
-                    </button>
-                    {!isCurrentWeek && (
+            <PageHeader
+                icon={Calendar}
+                eyebrow="Weekly planning"
+                title="Meal Planning"
+                description="Lay out the full week, reuse recipes quickly, and generate a shopping list from the meals that are locked in."
+                tone="rose"
+                stats={[
+                    { label: 'Week', value: weekRange, meta: '' },
+                    { label: 'Planned', value: totalMeals, meta: 'meal slots filled' },
+                    { label: 'Coverage', value: `${Math.round((totalMeals / possibleMeals) * 100)}%`, meta: 'week complete' },
+                ]}
+                actions={(
+                    <>
                         <button
-                            onClick={goToToday}
-                            className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/80 transition-colors touch-target"
+                            onClick={handleGenerateShoppingList}
+                            className="module-action module-action-success"
                         >
-                            This Week
+                            <ShoppingCart size={18} />
+                            Shopping List
                         </button>
-                    )}
-                    <button
-                        onClick={prevWeek}
-                        className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors touch-target"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button
-                        onClick={nextWeek}
-                        className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors touch-target"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
-                </div>
-            </div>
+                        {!isCurrentWeek && (
+                            <button
+                                onClick={goToToday}
+                                className="module-action module-action-primary"
+                            >
+                                This Week
+                            </button>
+                        )}
+                        <div className="module-toolbar">
+                            <button onClick={prevWeek} className="module-icon-button">
+                                <ChevronLeft size={20} />
+                            </button>
+                            <button onClick={nextWeek} className="module-icon-button">
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    </>
+                )}
+            />
 
             {/* Week Grid - Responsive */}
             <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar">
@@ -472,7 +476,7 @@ const MealPlanning = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </PageShell>
     );
 };
 

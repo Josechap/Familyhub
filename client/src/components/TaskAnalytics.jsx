@@ -145,16 +145,16 @@ const TaskAnalytics = ({ familyMembers }) => {
             </div>
 
             {/* Time Range Selector */}
-            <div className="flex gap-2">
+            <div className="module-toolbar">
                 {[7, 14, 30].map((days) => (
                     <button
                         key={days}
                         onClick={() => setSelectedDays(days)}
                         className={cn(
-                            "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+                            'module-pill',
                             selectedDays === days
-                                ? "bg-primary text-white"
-                                : "bg-white/10 text-white/60 hover:bg-white/20"
+                                ? 'module-pill-active'
+                                : ''
                         )}
                     >
                         {days} days

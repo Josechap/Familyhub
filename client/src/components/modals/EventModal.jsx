@@ -49,7 +49,7 @@ const EventModal = ({ event, familyMembers = [], onClose, onAssign }) => {
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div
-                className="card w-full max-w-md animate-scale-in"
+                className="module-modal max-w-md animate-scale-in"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header with color bar */}
@@ -60,7 +60,7 @@ const EventModal = ({ event, familyMembers = [], onClose, onAssign }) => {
                     <h2 className="text-xl font-semibold pr-4">{event.title}</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target"
+                        className="module-icon-button"
                     >
                         <X size={20} />
                     </button>
@@ -121,7 +121,7 @@ const EventModal = ({ event, familyMembers = [], onClose, onAssign }) => {
                             value={assignedTo}
                             onChange={(e) => handleAssign(e.target.value)}
                             disabled={saving}
-                            className="w-full px-4 py-3 bg-white/5 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white"
+                            className="module-select"
                         >
                             <option value="Family">Family (Everyone)</option>
                             {familyMembers.map(member => (
@@ -142,7 +142,7 @@ const EventModal = ({ event, familyMembers = [], onClose, onAssign }) => {
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="w-full mt-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/80 transition-colors touch-target"
+                    className="module-action module-action-primary mt-6 w-full"
                 >
                     Done
                 </button>
