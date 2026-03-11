@@ -122,18 +122,20 @@ const Dashboard = () => {
     const maxWeeklyTasks = Math.max(...sortedMembers.map((member) => getMemberWeeklyStats(member.id).weeklyTasksCompleted), 1);
 
     return (
-        <div className="relative h-full w-full flex gap-4 animate-fade-in overflow-hidden">
-            <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-family-purple/20 blur-3xl" />
+        <div className="relative h-full w-full flex gap-5 animate-fade-in overflow-hidden">
+            <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-family-purple/25 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.12),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.16),transparent_38%)]" />
             {/* LEFT COLUMN - Upcoming Events (65% width) */}
             <div className="relative z-10 w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
-                <div className="card flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm">
+                <div className="card relative flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                             <Calendar size={28} className="text-purple-400" />
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-2xl font-semibold">Upcoming Events</h2>
+                            <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upcoming Events</h2>
                             <p className="text-sm text-white/50">Tap an event to view details</p>
                         </div>
                         <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
@@ -148,7 +150,7 @@ const Dashboard = () => {
                                     key={event.id || idx}
                                     onClick={() => setSelectedEvent(event)}
                                     className={cn(
-                                        "w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)]",
+                                        "group w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5",
                                         event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
                                     )}
                                 >
@@ -169,7 +171,7 @@ const Dashboard = () => {
                                         <p className="font-semibold text-white truncate text-2xl">{event.title}</p>
                                         <p className="text-white/50 text-lg">{event.time}</p>
                                     </div>
-                                    <ChevronRight size={18} className="text-white/40 mt-3" />
+                                    <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
                                 </button>
                             ))
                         ) : (
@@ -181,7 +183,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Today's Meals */}
-                <div className="card border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm">
+                <div className="card relative border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     <div className="flex items-center gap-4 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
                             <Utensils size={22} className="text-success" />
@@ -198,7 +201,7 @@ const Dashboard = () => {
                             <button
                                 key={meal.key}
                                 onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                className={cn("text-center p-3 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-0.5 bg-gradient-to-br", meal.tint)}
+                                className={cn("text-center p-3 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] bg-gradient-to-br", meal.tint)}
                             >
                                 <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
                                 <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
@@ -215,9 +218,10 @@ const Dashboard = () => {
             {/* RIGHT COLUMN - Clock, Sonos (25%), Scoreboard (50%) */}
             <div className="relative z-10 flex-1 flex flex-col gap-3">
                 {/* Time & Weather Card - Compact */}
-                <div className="card text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03]">
+                <div className="card relative text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.24)] overflow-hidden">
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
                     <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2"><Waves size={16} className="text-primary" />{getGreeting()}</p>
-                    <h1 className="text-5xl text-white font-display tracking-tight">{time}</h1>
+                    <h1 className="text-6xl text-white font-display tracking-tight drop-shadow-[0_4px_16px_rgba(99,102,241,0.35)]">{time}</h1>
                     <p className="text-white/60 text-base mt-1">{date}</p>
 
                     {weather && (
@@ -235,7 +239,7 @@ const Dashboard = () => {
                 <NestCard onOpenDetail={() => setShowNestDetail(true)} />
 
                 {/* Now Playing / Playlists - 25% height */}
-                <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03]">
+                <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                             <Music size={20} className="text-orange-400" />
@@ -258,10 +262,10 @@ const Dashboard = () => {
                                 <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10 hover:scale-105">
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
                                     <Play size={24} />
                                 </button>
-                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10 hover:scale-105">
+                                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
                                     <SkipForward size={24} />
                                 </button>
                             </div>
@@ -279,7 +283,7 @@ const Dashboard = () => {
                                 ].map(playlist => (
                                     <button
                                         key={playlist.name}
-                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20"
+                                        className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
                                     >
                                         <span className="text-2xl">{playlist.emoji}</span>
                                         <span className="font-medium text-base truncate">{playlist.name}</span>
@@ -291,7 +295,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Weekly Scoreboard - 45% height, 2-column grid */}
-                <div className="card h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03]">
+                <div className="card relative h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
@@ -313,7 +318,7 @@ const Dashboard = () => {
                                 <button
                                     key={member.id}
                                     onClick={() => navigate('/tasks')}
-                                    className="relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
+                                    className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "ring-1 ring-warning/30 bg-warning/10")}
                                 >
                                     <div className={cn(
                                         "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
