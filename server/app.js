@@ -79,7 +79,39 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    next();
+});
+
+const apiRateWindowMs = 15 * 60 * 1000;
+const apiRateMax = Number(process.env.API_RATE_LIMIT_MAX || 300);
+const requestBuckets = new Map();
+
+app.use('/api', (req, res, next) => {
+    const key = req.ip || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const bucket = requestBuckets.get(key) || { count: 0, windowStart: now };
+
+    if (now - bucket.windowStart > apiRateWindowMs) {
+        bucket.count = 0;
+        bucket.windowStart = now;
+    }
+
+    bucket.count += 1;
+    requestBuckets.set(key, bucket);
+
+    if (bucket.count > apiRateMax) {
+        return res.status(429).json({ error: 'Too many requests' });
+    }
+
+    next();
+});
+
+app.use(express.json({ limit: '1mb' }));
 
 // Routes
 const recipesRouter = require('./routes/recipes');
