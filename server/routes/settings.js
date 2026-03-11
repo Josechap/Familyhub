@@ -9,6 +9,7 @@ const defaultSettings = {
     weeklyGoal: '500',
     weatherApiKey: '',
     location: '',
+    themeMode: 'auto',
 };
 
 // GET all settings (filters sensitive data)
@@ -93,6 +94,8 @@ router.delete('/family/:id', (req, res) => {
     try {
         db.prepare('DELETE FROM chores WHERE assigned_to = ?').run(req.params.id);
         db.prepare('DELETE FROM calendar_events WHERE member_id = ?').run(req.params.id);
+        db.prepare('UPDATE announcements SET member_id = NULL WHERE member_id = ?').run(req.params.id);
+        db.prepare('UPDATE prep_templates SET member_id = NULL WHERE member_id = ?').run(req.params.id);
         db.prepare('DELETE FROM family_members WHERE id = ?').run(req.params.id);
         res.json({ success: true });
     } catch (error) {
@@ -110,18 +113,22 @@ router.post('/reset-database', (req, res) => {
             db.prepare('DELETE FROM chores').run();
             db.prepare('DELETE FROM calendar_events').run();
             db.prepare('DELETE FROM task_completions').run();
+            db.prepare('DELETE FROM announcements').run();
+            db.prepare('DELETE FROM prep_items').run();
+            db.prepare('DELETE FROM prep_templates').run();
 
             // 2. Tables referencing recipes
             db.prepare('DELETE FROM meal_slots').run();
             db.prepare('DELETE FROM meal_history').run();
             db.prepare('DELETE FROM dinner_slots').run();
+            db.prepare('DELETE FROM shopping_items').run();
 
             // 3. Now delete parent tables
             db.prepare('DELETE FROM family_members').run();
             db.prepare('DELETE FROM recipes').run();
 
             // Reset SQLite sequences so IDs start fresh
-            db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('family_members', 'chores', 'calendar_events', 'recipes', 'meal_slots', 'meal_history', 'dinner_slots', 'task_completions')").run();
+            db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('family_members', 'chores', 'calendar_events', 'recipes', 'meal_slots', 'meal_history', 'dinner_slots', 'task_completions', 'announcements', 'shopping_items', 'prep_templates', 'prep_items')").run();
         });
 
         reset();

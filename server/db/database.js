@@ -103,28 +103,41 @@ const seedData = () => {
             }
         }
 
-        const prepTemplateCount = db.prepare('SELECT COUNT(*) as count FROM prep_templates').get();
-        if (prepTemplateCount.count === 0) {
-            const insertTemplate = db.prepare(`
-                INSERT INTO prep_templates (title, trigger_type, trigger_value, member_id)
-                VALUES (?, ?, ?, ?)
-            `);
-            const insertPrepItem = db.prepare(`
-                INSERT INTO prep_items (template_id, label, sort_order)
-                VALUES (?, ?, ?)
-            `);
-
-            const soccerTemplate = insertTemplate.run('Soccer practice', 'title_keyword', 'soccer', 3).lastInsertRowid;
-            insertPrepItem.run(soccerTemplate, 'Water bottle', 1);
-            insertPrepItem.run(soccerTemplate, 'Cleats', 2);
-            insertPrepItem.run(soccerTemplate, 'Shin guards', 3);
-
-            const doctorTemplate = insertTemplate.run('Doctor appointment', 'event_type', 'appointment', null).lastInsertRowid;
-            insertPrepItem.run(doctorTemplate, 'Insurance card', 1);
-            insertPrepItem.run(doctorTemplate, 'Medication list', 2);
-        }
-
         console.log('Seed data inserted successfully!');
+    }
+
+    const prepTemplateCount = db.prepare('SELECT COUNT(*) as count FROM prep_templates').get();
+    if (prepTemplateCount.count === 0) {
+        const memberIds = db.prepare('SELECT id, name FROM family_members ORDER BY id').all();
+        const kidMember = memberIds.find((member) => /kid|child/i.test(member.name)) || memberIds[0] || null;
+
+        const insertTemplate = db.prepare(`
+            INSERT INTO prep_templates (title, trigger_type, trigger_value, member_id)
+            VALUES (?, ?, ?, ?)
+        `);
+        const insertPrepItem = db.prepare(`
+            INSERT INTO prep_items (template_id, label, sort_order)
+            VALUES (?, ?, ?)
+        `);
+
+        const soccerTemplate = insertTemplate.run(
+            'Soccer practice',
+            'title_keyword',
+            'soccer',
+            kidMember?.id || null
+        ).lastInsertRowid;
+        insertPrepItem.run(soccerTemplate, 'Water bottle', 1);
+        insertPrepItem.run(soccerTemplate, 'Cleats', 2);
+        insertPrepItem.run(soccerTemplate, 'Shin guards', 3);
+
+        const doctorTemplate = insertTemplate.run(
+            'Doctor appointment',
+            'event_type',
+            'appointment',
+            null
+        ).lastInsertRowid;
+        insertPrepItem.run(doctorTemplate, 'Insurance card', 1);
+        insertPrepItem.run(doctorTemplate, 'Medication list', 2);
     }
 };
 

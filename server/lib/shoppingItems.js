@@ -126,7 +126,7 @@ const upsertShoppingItemsFromMeals = (db, start, end) => {
     `);
 
     const existingByLabel = new Map(
-        db.prepare('SELECT normalized_label, checked, notes FROM shopping_items').all()
+        db.prepare('SELECT normalized_label, meal_dates, checked, notes FROM shopping_items').all()
             .map((row) => [row.normalized_label, row])
     );
 

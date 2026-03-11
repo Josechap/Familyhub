@@ -21,6 +21,25 @@ export const api = {
         return res.json();
     },
 
+    async createTask(task) {
+        const res = await fetch(`${API_BASE}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(task),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to create task');
+        }
+        return res.json();
+    },
+
+    async deleteTask(id) {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete task');
+        return res.json();
+    },
+
     async getFamilyMembers() {
         const res = await fetch(`${API_BASE}/tasks/family`);
         if (!res.ok) throw new Error('Failed to fetch family');
@@ -64,6 +83,12 @@ export const api = {
     async getDinnerSlots() {
         const res = await fetch(`${API_BASE}/calendar/dinner`);
         if (!res.ok) throw new Error('Failed to fetch dinner slots');
+        return res.json();
+    },
+
+    async getDashboardToday() {
+        const res = await fetch(`${API_BASE}/dashboard/today`);
+        if (!res.ok) throw new Error('Failed to fetch dashboard today data');
         return res.json();
     },
 
@@ -247,9 +272,49 @@ export const api = {
     },
 
     async generateShoppingList(dateRange) {
-        const { start, end } = dateRange;
-        const res = await fetch(`${API_BASE}/meals/shopping-list?start=${start}&end=${end}`);
+        const res = await fetch(`${API_BASE}/shopping-items/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dateRange),
+        });
         if (!res.ok) throw new Error('Failed to generate shopping list');
+        return res.json();
+    },
+
+    async getShoppingItems() {
+        const res = await fetch(`${API_BASE}/shopping-items`);
+        if (!res.ok) throw new Error('Failed to fetch shopping items');
+        return res.json();
+    },
+
+    async addShoppingItem(item) {
+        const res = await fetch(`${API_BASE}/shopping-items`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to add shopping item');
+        }
+        return res.json();
+    },
+
+    async updateShoppingItem(id, updates) {
+        const res = await fetch(`${API_BASE}/shopping-items/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+        if (!res.ok) throw new Error('Failed to update shopping item');
+        return res.json();
+    },
+
+    async deleteShoppingItem(id) {
+        const res = await fetch(`${API_BASE}/shopping-items/${id}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to delete shopping item');
         return res.json();
     },
 
@@ -389,57 +454,116 @@ export const api = {
         }
     },
 
+    async getAnnouncements(options = {}) {
+        const params = new URLSearchParams();
+        if (options.active) params.set('active', '1');
+        if (options.memberId) params.set('memberId', options.memberId);
+        const query = params.toString();
+        const res = await fetch(`${API_BASE}/announcements${query ? `?${query}` : ''}`);
+        if (!res.ok) throw new Error('Failed to fetch announcements');
+        return res.json();
+    },
+
+    async createAnnouncement(payload) {
+        const res = await fetch(`${API_BASE}/announcements`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to create announcement');
+        }
+        return res.json();
+    },
+
+    async updateAnnouncement(id, payload) {
+        const res = await fetch(`${API_BASE}/announcements/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to update announcement');
+        return res.json();
+    },
+
+    async dismissAnnouncement(id) {
+        const res = await fetch(`${API_BASE}/announcements/${id}/dismiss`, {
+            method: 'POST',
+        });
+        if (!res.ok) throw new Error('Failed to dismiss announcement');
+        return res.json();
+    },
+
+    async deleteAnnouncement(id) {
+        const res = await fetch(`${API_BASE}/announcements/${id}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to delete announcement');
+        return res.json();
+    },
+
+    async getPrepTemplates() {
+        const res = await fetch(`${API_BASE}/prep-templates`);
+        if (!res.ok) throw new Error('Failed to fetch prep templates');
+        return res.json();
+    },
+
+    async createPrepTemplate(payload) {
+        const res = await fetch(`${API_BASE}/prep-templates`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Failed to create prep template');
+        }
+        return res.json();
+    },
+
+    async updatePrepTemplate(id, payload) {
+        const res = await fetch(`${API_BASE}/prep-templates/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to update prep template');
+        return res.json();
+    },
+
+    async deletePrepTemplate(id) {
+        const res = await fetch(`${API_BASE}/prep-templates/${id}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to delete prep template');
+        return res.json();
+    },
+
     // Nest Thermostat
     async getNestDevices() {
         try {
             const res = await fetch(`${API_BASE}/nest/devices`);
-            if (!res.ok) {
-                // Return mock data for development
-                return {
-                    connected: true,
-                    devices: [
-                        { id: 'mock-1', name: 'Living Room', type: 'thermostat' },
-                        { id: 'mock-2', name: 'Upstairs', type: 'thermostat' },
-                    ]
-                };
-            }
+            if (!res.ok) return { connected: false, devices: [] };
             return res.json();
         } catch {
-            // Return mock data if API not available
-            return {
-                connected: true,
-                devices: [
-                    { id: 'mock-1', name: 'Living Room', type: 'thermostat' },
-                    { id: 'mock-2', name: 'Upstairs', type: 'thermostat' },
-                ]
-            };
+            return { connected: false, devices: [] };
         }
     },
 
     async getNestState(deviceId) {
         try {
             const res = await fetch(`${API_BASE}/nest/devices/${deviceId}`);
-            if (!res.ok) {
-                // Return mock data for development
-                return {
-                    currentTemp: 72,
-                    targetTemp: 70,
-                    humidity: 45,
-                    mode: 'HEAT',
-                    hvacStatus: 'heating',
-                    isOnline: true,
-                };
-            }
+            if (!res.ok) throw new Error('Nest not connected');
             return res.json();
         } catch {
-            // Return mock data if API not available
             return {
-                currentTemp: 72,
-                targetTemp: 70,
+                currentTemp: null,
+                targetTemp: null,
                 humidity: 45,
-                mode: 'HEAT',
-                hvacStatus: 'heating',
-                isOnline: true,
+                mode: 'OFF',
+                hvacStatus: 'idle',
+                isOnline: false,
             };
         }
     },
@@ -451,13 +575,10 @@ export const api = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ temperature }),
             });
-            if (!res.ok) {
-                // Mock response
-                return { targetTemp: temperature };
-            }
+            if (!res.ok) throw new Error('Failed to update Nest temperature');
             return res.json();
         } catch {
-            return { targetTemp: temperature };
+            return { targetTemp: null };
         }
     },
 
@@ -468,13 +589,10 @@ export const api = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode }),
             });
-            if (!res.ok) {
-                // Mock response
-                return { mode };
-            }
+            if (!res.ok) throw new Error('Failed to update Nest mode');
             return res.json();
         } catch {
-            return { mode };
+            return { mode: 'OFF' };
         }
     },
 
