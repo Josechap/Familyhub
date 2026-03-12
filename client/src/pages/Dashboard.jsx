@@ -189,8 +189,8 @@ const Dashboard = () => {
     ];
 
     return (
-        <PageShell className="h-full animate-fade-in">
-            <div className="flex h-full min-h-0 flex-col gap-4">
+        <PageShell className="animate-fade-in lg:h-full">
+            <div className="flex min-h-0 flex-col gap-4 lg:h-full">
                 <div className="grid gap-4 xl:grid-cols-[1.14fr_0.86fr]">
                     <section className="module-hero">
                         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -201,7 +201,7 @@ const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <h1 className="text-5xl font-semibold tracking-tight sm:text-6xl">{time}</h1>
+                                    <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">{time}</h1>
                                     <p className="mt-2 text-base text-white/58 sm:text-lg">{date}</p>
                                 </div>
 
@@ -390,7 +390,7 @@ const Dashboard = () => {
                                 </button>
                             </div>
 
-                            <div className="module-note mt-4 flex items-center justify-between gap-4">
+                            <div className="module-note mt-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                                 <div>
                                     <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Today focus</p>
                                     <p className="mt-1 text-sm text-white/65">
@@ -422,21 +422,22 @@ const Dashboard = () => {
                                                 event.isToday && 'border-primary/25 bg-primary/10'
                                             )}
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <div className={cn(
-                                                    'mt-1 h-3.5 w-3.5 flex-shrink-0 rounded-full',
-                                                    getMemberColor(event.member, familyMembers)
-                                                )} />
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                                                <div className="flex items-center gap-3 sm:flex-shrink-0">
+                                                    <div className={cn(
+                                                        'h-3.5 w-3.5 flex-shrink-0 rounded-full',
+                                                        getMemberColor(event.member, familyMembers)
+                                                    )} />
 
-                                                <div className={cn(
-                                                    'w-24 flex-shrink-0 rounded-2xl border px-3 py-2 text-center text-sm font-semibold',
-                                                    event.isToday
-                                                        ? 'border-primary/20 bg-primary/15 text-primary'
-                                                        : 'border-white/10 bg-white/5 text-white/62'
-                                                )}>
-                                                    {formatEventDate(event.date)}
+                                                    <div className={cn(
+                                                        'rounded-2xl border px-3 py-2 text-center text-sm font-semibold sm:min-w-24',
+                                                        event.isToday
+                                                            ? 'border-primary/20 bg-primary/15 text-primary'
+                                                            : 'border-white/10 bg-white/5 text-white/62'
+                                                    )}>
+                                                        {formatEventDate(event.date)}
+                                                    </div>
                                                 </div>
-
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <p className="truncate text-lg font-semibold">{event.title}</p>
@@ -454,7 +455,7 @@ const Dashboard = () => {
                                                     )}
                                                 </div>
 
-                                                <ChevronRight size={18} className="mt-2 flex-shrink-0 text-white/35 transition-transform group-hover:translate-x-1" />
+                                                <ChevronRight size={18} className="hidden flex-shrink-0 text-white/35 transition-transform group-hover:translate-x-1 sm:mt-2 sm:block" />
                                             </div>
                                         </button>
                                     ))
@@ -523,7 +524,7 @@ const Dashboard = () => {
                                         <ShoppingCart size={20} />
                                     </div>
                                     <p className="mt-4 text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Shopping pulse</p>
-                                    <p className="mt-3 text-5xl font-semibold tracking-tight">{shopping?.uncheckedCount || 0}</p>
+                                    <p className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{shopping?.uncheckedCount || 0}</p>
                                     <p className="mt-2 text-sm text-white/55">Unchecked shopping items still open.</p>
                                 </div>
 
@@ -557,8 +558,8 @@ const Dashboard = () => {
                             </div>
 
                             {playerState?.track && playerState.state === 'PLAYING' ? (
-                                <div className="mt-5 flex items-center gap-4">
-                                    <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                                <div className="mt-5 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                                    <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 sm:h-24 sm:w-24">
                                         {playerState.track.art ? (
                                             <img src={playerState.track.art} alt="Album art" className="h-full w-full object-cover" />
                                         ) : (

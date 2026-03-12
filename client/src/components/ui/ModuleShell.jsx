@@ -34,7 +34,7 @@ export const PageShell = ({ children, className }) => {
             <div className="pointer-events-none absolute -left-16 top-0 h-56 w-56 rounded-full bg-primary/12 blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-family-purple/10 blur-3xl" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            <div className="relative flex h-full min-h-0 flex-col gap-4 sm:gap-5">
+            <div className="relative flex min-h-0 flex-col gap-4 sm:gap-5 lg:h-full">
                 {children}
             </div>
         </div>

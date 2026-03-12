@@ -425,7 +425,7 @@ const MealPlanning = () => {
     }
 
     return (
-        <PageShell className="h-full animate-fade-in">
+        <PageShell className="animate-fade-in lg:h-full">
             {recipePickerContext && (
                 <RecipePicker
                     date={recipePickerContext.date}

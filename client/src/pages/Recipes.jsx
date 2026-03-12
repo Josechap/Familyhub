@@ -141,9 +141,9 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
     const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/70 p-3 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
             <div
-                className="module-modal flex max-h-[88vh] w-full max-w-5xl flex-col animate-scale-in lg:grid lg:grid-cols-[0.92fr_1.08fr] lg:gap-0 lg:p-0"
+                className="module-modal my-4 flex w-full max-w-5xl flex-col animate-scale-in lg:grid lg:max-h-[88vh] lg:grid-cols-[0.92fr_1.08fr] lg:gap-0 lg:p-0"
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="relative overflow-hidden border-b border-white/10 p-5 lg:border-b-0 lg:border-r lg:p-6">
@@ -175,7 +175,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                         </div>
 
                         <div className="mt-5">
-                            <h2 className="text-3xl font-semibold tracking-tight">{recipe.title}</h2>
+                            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{recipe.title}</h2>
                             <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                 <div className="module-metric">
                                     <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Total time</p>
@@ -191,7 +191,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                 </div>
                             </div>
 
-                            <div className="mt-5 flex gap-3">
+                            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                                 <button
                                     onClick={() => setShowMealPicker(true)}
                                     className="module-action flex-1 text-violet-300"
@@ -211,14 +211,14 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                     </div>
                 </div>
 
-                <div className="min-h-0 p-5 lg:p-6">
+                <div className="min-h-0 overflow-y-auto p-5 lg:p-6">
                     {showMealPicker && (
                         <div className="module-note mb-5">
                             <h4 className="flex items-center gap-2 font-semibold text-violet-300">
                                 <Calendar size={16} />
                                 Plan this meal
                             </h4>
-                            <div className="mt-4 grid grid-cols-7 gap-2">
+                            <div className="hide-scrollbar mt-4 flex gap-2 overflow-x-auto pb-1">
                                 {nextDays.map((dateStr) => {
                                     const d = new Date(`${dateStr}T12:00:00`);
                                     const isToday = dateStr === new Date().toISOString().split('T')[0];
@@ -227,7 +227,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                             key={dateStr}
                                             onClick={() => setSelectedDate(dateStr)}
                                             className={cn(
-                                                'rounded-2xl border px-2 py-2 text-center transition-all',
+                                                'min-w-[76px] flex-shrink-0 rounded-2xl border px-2 py-2 text-center transition-all',
                                                 selectedDate === dateStr
                                                     ? 'border-primary/30 bg-primary/15 text-white'
                                                     : 'border-white/10 bg-white/5 hover:bg-white/10'
@@ -256,7 +256,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                 ))}
                             </div>
 
-                            <div className="mt-4 flex gap-3">
+                            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                                 <button onClick={() => setShowMealPicker(false)} className="module-action flex-1">
                                     Cancel
                                 </button>
@@ -275,7 +275,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                 </span>
                                 Ingredients
                             </h3>
-                            <div className="hide-scrollbar max-h-[45vh] space-y-2 overflow-y-auto">
+                            <div className="hide-scrollbar space-y-2 lg:max-h-[45vh] lg:overflow-y-auto">
                                 {recipe.ingredients.map((ingredient, idx) => (
                                     <div key={idx} className="module-list-item px-3 py-3">
                                         <div className="flex items-start gap-3">
@@ -294,7 +294,7 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                 </span>
                                 Steps
                             </h3>
-                            <div className="hide-scrollbar max-h-[45vh] space-y-2 overflow-y-auto">
+                            <div className="hide-scrollbar space-y-2 lg:max-h-[45vh] lg:overflow-y-auto">
                                 {recipe.steps.map((step, idx) => (
                                     <div key={idx} className="module-list-item px-3 py-3">
                                         <div className="flex items-start gap-3">
@@ -434,7 +434,7 @@ const Recipes = () => {
     }
 
     return (
-        <PageShell className="h-full animate-fade-in">
+        <PageShell className="animate-fade-in lg:h-full">
             {cookingMode && selectedRecipe && (
                 <CookingMode
                     recipe={selectedRecipe}

@@ -3,6 +3,7 @@
 
 :root {
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-clearance: 6rem;
   color-scheme: dark;
 }
 
@@ -473,6 +474,14 @@ body.light .module-action-danger {
   @apply min-h-[44px] min-w-[44px];
 }
 
+.bottom-nav-button {
+  min-height: 56px;
+}
+
+.bottom-nav-label {
+  max-width: 100%;
+}
+
 .no-select {
   -webkit-user-select: none;
   user-select: none;
@@ -512,6 +521,21 @@ body.light .module-action-danger {
 
 body.light .skeleton {
   @apply bg-slate-200;
+}
+
+@media (max-width: 380px) {
+  :root {
+    --bottom-nav-clearance: 5rem;
+  }
+
+  .bottom-nav-button {
+    min-height: 52px;
+    gap: 0.125rem;
+  }
+
+  .bottom-nav-label {
+    display: none;
+  }
 }
 
 @keyframes strikethrough {

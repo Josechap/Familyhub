@@ -86,8 +86,8 @@ const Layout = ({ children }) => {
 
     return (
         <div className="min-h-screen transition-colors duration-200">
-            <main className="h-screen overflow-hidden px-3 pb-safe pt-3 sm:px-4 sm:pt-4">
-                <div className="mx-auto flex h-full w-full max-w-[1680px] flex-col">
+            <main className="min-h-screen overflow-x-hidden overflow-y-auto px-3 pt-3 [padding-bottom:calc(var(--bottom-nav-clearance)+var(--safe-area-bottom))] sm:px-4 sm:pt-4 lg:h-screen lg:overflow-hidden lg:pb-24">
+                <div className="mx-auto flex w-full max-w-[1680px] flex-col lg:h-full">
                     {children}
                 </div>
             </main>
