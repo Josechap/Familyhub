@@ -72,7 +72,7 @@ const NestCard = ({ onOpenDetail }) => {
     if (!connected && !loading) {
         return (
             <div
-                className="card py-3 flex items-center justify-center gap-3 text-white/40 cursor-pointer hover:bg-white/5 transition-colors"
+                className="card flex items-center justify-center gap-3 py-4 text-white/45 transition-colors hover:bg-white/5"
                 onClick={onOpenDetail}
             >
                 <Thermometer size={20} className="opacity-50" />
@@ -84,7 +84,7 @@ const NestCard = ({ onOpenDetail }) => {
     // Loading state
     if (loading && devices.length === 0) {
         return (
-            <div className="card py-3 flex items-center justify-center gap-3 text-white/40">
+            <div className="card flex items-center justify-center gap-3 py-4 text-white/45">
                 <Thermometer size={20} className="opacity-50 animate-pulse" />
                 <span>Loading...</span>
             </div>
@@ -93,62 +93,69 @@ const NestCard = ({ onOpenDetail }) => {
 
     return (
         <div
-            className="card py-3 px-4 cursor-pointer hover:bg-white/5 transition-colors"
+            className="card cursor-pointer px-5 py-4 transition-colors hover:bg-white/5"
             onClick={onOpenDetail}
         >
-            <div className="flex items-center gap-4">
-                {/* Mode Icon */}
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", modeDisplay.bg)}>
-                    <ModeIcon size={20} className={modeDisplay.color} />
-                </div>
-
-                {/* Current Temp */}
-                <div className="flex-shrink-0">
-                    <div className="text-3xl font-bold">{thermostatState.currentTemp ?? '--'}°</div>
-                    <div className="text-white/40 text-xs">Inside</div>
-                </div>
-
-                {/* Divider */}
-                <div className="h-10 w-px bg-white/10 flex-shrink-0"></div>
-
-                {/* Target Temp with Controls */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); handleTempChange(-1); }}
-                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                        disabled={thermostatState.mode === 'OFF'}
-                    >
-                        <ChevronDown size={16} />
-                    </button>
-                    <div className="text-center min-w-[50px]">
-                        <div className={cn(
-                            "text-2xl font-bold",
-                            thermostatState.hvacStatus === 'heating' && "text-orange-400",
-                            thermostatState.hvacStatus === 'cooling' && "text-blue-400",
-                            thermostatState.hvacStatus === 'idle' && "text-white/70"
-                        )}>
-                            {displayTargetTemp ?? '--'}°
-                        </div>
+            <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl flex-shrink-0", modeDisplay.bg)}>
+                        <ModeIcon size={20} className={modeDisplay.color} />
                     </div>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); handleTempChange(1); }}
-                        className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                        disabled={thermostatState.mode === 'OFF'}
-                    >
-                        <ChevronUp size={16} />
-                    </button>
+                    <div>
+                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Home climate</p>
+                        <p className="mt-1 text-lg font-semibold text-white/85">
+                            {thermostatState.mode === 'OFF' ? 'System off' : thermostatState.mode.toLowerCase()}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Status */}
                 <div className={cn(
-                    "ml-auto text-sm font-medium flex-shrink-0",
-                    thermostatState.hvacStatus === 'heating' && "text-orange-400",
-                    thermostatState.hvacStatus === 'cooling' && "text-blue-400",
-                    thermostatState.hvacStatus === 'idle' && "text-white/40"
+                    "rounded-full border px-3 py-1 text-sm font-medium",
+                    thermostatState.hvacStatus === 'heating' && "border-orange-500/20 bg-orange-500/10 text-orange-300",
+                    thermostatState.hvacStatus === 'cooling' && "border-blue-500/20 bg-blue-500/10 text-blue-300",
+                    thermostatState.hvacStatus === 'idle' && "border-white/10 bg-white/5 text-white/55",
+                    thermostatState.mode === 'OFF' && "border-white/10 bg-white/5 text-white/55"
                 )}>
                     {thermostatState.mode === 'OFF' ? 'Off' :
                      thermostatState.hvacStatus === 'idle' ? 'Idle' :
                      thermostatState.hvacStatus === 'heating' ? 'Heating' : 'Cooling'}
+                </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Inside</p>
+                        <p className="mt-2 text-3xl font-semibold">{thermostatState.currentTemp ?? '--'}°</p>
+                    </div>
+                    <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Target</p>
+                        <p className="mt-2 text-3xl font-semibold">{displayTargetTemp ?? '--'}°</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Adjust target</p>
+                        <p className="mt-1 text-sm text-white/55">Tap to change by one degree.</p>
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleTempChange(-1); }}
+                            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                            disabled={thermostatState.mode === 'OFF'}
+                        >
+                            <ChevronDown size={16} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleTempChange(1); }}
+                            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                            disabled={thermostatState.mode === 'OFF'}
+                        >
+                            <ChevronUp size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

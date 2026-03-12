@@ -11,7 +11,20 @@ import {
 import { fetchSettings } from '../features/settingsSlice';
 import { fetchSonosDevices, fetchSonosState } from '../features/sonosSlice';
 import { fetchNestDevices } from '../features/nestSlice';
-import { Music, Calendar, Utensils, Play, SkipForward, Star, Trophy, ChevronRight, Sparkles, Waves, Crown, ShoppingCart } from 'lucide-react';
+import {
+    Calendar,
+    CheckSquare,
+    ChevronRight,
+    CloudSun,
+    Crown,
+    Music,
+    ShoppingCart,
+    Sparkles,
+    Star,
+    Trophy,
+    Utensils,
+    Waves,
+} from 'lucide-react';
 import api from '../lib/api';
 import TodayStrip from '../components/TodayStrip';
 import NestCard from '../components/NestCard';
@@ -19,6 +32,7 @@ import NestDetailView from '../components/NestDetailView';
 import EventModal from '../components/modals/EventModal';
 import MealModal from '../components/modals/MealModal';
 import { API_BASE } from '../lib/config';
+import { EmptyState, PageShell, SurfacePanel } from '../components/ui/ModuleShell';
 
 const familyColors = {
     'pastel-blue': 'bg-family-blue',
@@ -28,6 +42,40 @@ const familyColors = {
     'pastel-yellow': 'bg-family-orange',
     'pastel-orange': 'bg-family-orange',
 };
+
+const mealCards = [
+    {
+        key: 'breakfast',
+        label: 'Breakfast',
+        emoji: '🍳',
+        accent: 'bg-amber-500/15 text-amber-300 border-amber-500/20',
+    },
+    {
+        key: 'lunch',
+        label: 'Lunch',
+        emoji: '🥗',
+        accent: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+    },
+    {
+        key: 'dinner',
+        label: 'Dinner',
+        emoji: '🍽️',
+        accent: 'bg-sky-500/15 text-sky-300 border-sky-500/20',
+    },
+    {
+        key: 'snack',
+        label: 'Snack',
+        emoji: '🍎',
+        accent: 'bg-rose-500/15 text-rose-300 border-rose-500/20',
+    },
+];
+
+const playlistSuggestions = [
+    { name: 'Morning Reset', mood: 'Warm-up the house' },
+    { name: 'Dinner Prep', mood: 'Calm background mix' },
+    { name: 'Focus Block', mood: 'Low-distraction energy' },
+    { name: 'Family Wind Down', mood: 'Easy evening handoff' },
+];
 
 const getMemberColor = (memberName, familyMembers) => {
     const member = familyMembers.find((item) => item.name === memberName);
@@ -89,11 +137,11 @@ const Dashboard = () => {
     };
 
     const getGreeting = () => {
-        if (hours < 5) return 'Good Night';
-        if (hours < 12) return 'Good Morning';
-        if (hours < 17) return 'Good Afternoon';
-        if (hours < 21) return 'Good Evening';
-        return 'Good Night';
+        if (hours < 5) return 'Good night';
+        if (hours < 12) return 'Good morning';
+        if (hours < 17) return 'Good afternoon';
+        if (hours < 21) return 'Good evening';
+        return 'Good night';
     };
 
     useEffect(() => {
@@ -131,303 +179,495 @@ const Dashboard = () => {
         return bStats.weeklyTasksCompleted - aStats.weeklyTasksCompleted;
     });
     const maxWeeklyTasks = Math.max(...sortedMembers.map((member) => getMemberWeeklyStats(member.id).weeklyTasksCompleted), 1);
-    const mealsPlannedCount = ['breakfast', 'lunch', 'dinner', 'snack'].filter((key) => todayMeals?.[key]).length;
+    const mealsPlannedCount = mealCards.filter((meal) => todayMeals?.[meal.key]).length;
     const topPerformer = sortedMembers[0];
+    const heroMetrics = [
+        { label: 'Upcoming events', value: upcomingEvents.length, icon: Calendar },
+        { label: 'Routines due', value: todayTasks.length, icon: CheckSquare },
+        { label: 'Meals planned', value: mealsPlannedCount, icon: Utensils },
+        { label: 'Shopping left', value: shopping?.uncheckedCount || 0, icon: ShoppingCart },
+    ];
 
     return (
-        <div className="relative h-full w-full flex flex-col gap-4 animate-fade-in overflow-hidden">
-            <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-28 right-0 h-80 w-80 rounded-full bg-family-purple/25 blur-3xl" />
-            <div className="pointer-events-none absolute inset-0 opacity-30 [background:radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.12),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.16),transparent_38%)]" />
+        <PageShell className="h-full animate-fade-in">
+            <div className="flex h-full min-h-0 flex-col gap-4">
+                <div className="grid gap-4 xl:grid-cols-[1.14fr_0.86fr]">
+                    <section className="module-hero">
+                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                            <div className="space-y-4">
+                                <div className="module-inline-chip w-fit">
+                                    <Waves size={14} className="text-primary" />
+                                    {getGreeting()}
+                                </div>
 
-            <TodayStrip
-                announcements={announcements}
-                tasks={todayTasks}
-                shopping={shopping}
-                clothing={clothing}
-                prepAgenda={prepAgenda}
-                onDismissAnnouncement={handleDismissAnnouncement}
-            />
+                                <div>
+                                    <h1 className="text-5xl font-semibold tracking-tight sm:text-6xl">{time}</h1>
+                                    <p className="mt-2 text-base text-white/58 sm:text-lg">{date}</p>
+                                </div>
 
-            <div className="relative z-10 flex-1 flex gap-5 overflow-hidden min-h-0">
-                {/* LEFT COLUMN - Upcoming Events (65% width) */}
-                <div className="w-[65%] flex-shrink-0 flex flex-col gap-3 min-w-0">
-                    <div className="card relative flex-1 flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                                <Calendar size={28} className="text-purple-400" />
-                            </div>
-                            <div className="flex-1">
-                                <h2 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Upcoming Events</h2>
-                                <p className="text-sm text-white/50">Tap an event to view details</p>
-                            </div>
-                            <button
-                                onClick={() => navigate('/calendar')}
-                                className="text-sm text-white/55 hover:text-white transition-colors"
-                            >
-                                Open Calendar
-                            </button>
-                        </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="module-note">
+                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Today focus</p>
+                                        <p className="mt-2 text-base font-medium text-white/82">
+                                            {upcomingEvents.length > 0
+                                                ? `You have ${upcomingEvents.length} event${upcomingEvents.length === 1 ? '' : 's'} queued.`
+                                                : 'No calendar pressure right now.'}
+                                        </p>
+                                        <p className="mt-2 text-sm text-white/52">
+                                            {mealsPlannedCount}/4 meals are planned and {todayTasks.length} routines are in motion.
+                                        </p>
+                                    </div>
 
-                        <div className="mb-3 rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 to-white/0 px-4 py-3 flex items-center justify-between">
-                            <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today focus</p>
-                                <p className="text-sm text-white/70">{mealsPlannedCount}/4 meals planned</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Top performer</p>
-                                <p className="text-sm text-warning inline-flex items-center gap-1 justify-end"><Crown size={12} />{topPerformer?.name?.split(' ')[0] || 'No data'}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-2 hide-scrollbar">
-                            {upcomingEvents.length > 0 ? (
-                                upcomingEvents.map((event, idx) => (
-                                    <button
-                                        key={event.id || idx}
-                                        onClick={() => setSelectedEvent(event)}
-                                        className={cn(
-                                            "group w-full flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer hover:bg-white/10 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:-translate-y-0.5",
-                                            event.isToday ? "bg-gradient-to-r from-purple-500/25 to-indigo-500/15 border border-purple-300/25" : "bg-white/5 border border-white/5"
+                                    <div className="module-note">
+                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Weather</p>
+                                        {weather ? (
+                                            <div className="mt-2 flex items-center gap-3">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
+                                                    {weather.icon}
+                                                </div>
+                                                <div>
+                                                    <p className="text-xl font-semibold text-white">{weather.temp}°F</p>
+                                                    <p className="text-sm text-white/55">{weather.condition}</p>
+                                                    {clothing?.main && (
+                                                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/35">
+                                                            Wear: {clothing.main}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-2 flex items-center gap-2 text-sm text-white/52">
+                                                <CloudSun size={16} />
+                                                Configure weather in Settings for live conditions.
+                                            </div>
                                         )}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => navigate('/calendar')}
+                                        className="module-action module-action-primary"
                                     >
-                                        {/* Color dot for family member */}
-                                        <div className={cn(
-                                            "w-4 h-4 rounded-full flex-shrink-0 mt-2",
-                                            getMemberColor(event.member, familyMembers)
-                                        )} />
-                                        {/* Date badge */}
-                                        <div className={cn(
-                                            "flex-shrink-0 w-28 text-center rounded-xl py-3 px-3 border border-white/10",
-                                            event.isToday ? "bg-purple-500/30 text-purple-300" : "bg-white/10 text-white/60"
-                                        )}>
-                                            <div className="text-lg font-semibold">{formatEventDate(event.date)}</div>
-                                        </div>
-                                        {/* Event details */}
-                                        <div className="flex-1 min-w-0 text-left">
-                                            <p className="font-semibold text-white truncate text-xl">{event.title}</p>
-                                            <p className="text-white/50 text-base">{event.time}</p>
-                                            {event.prepMatches?.length > 0 && (
-                                                <p className="text-xs text-violet-300 mt-1">
-                                                    Prep ready: {event.prepMatches[0].title}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <ChevronRight size={18} className="text-white/40 mt-3 transition-transform duration-200 group-hover:translate-x-1" />
+                                        <Calendar size={18} />
+                                        Open Calendar
                                     </button>
-                                ))
-                            ) : (
-                                <div className="flex-1 flex items-center justify-center text-white/40">
-                                    <p>No upcoming events</p>
+                                    <button
+                                        onClick={() => navigate('/meals')}
+                                        className="module-action"
+                                    >
+                                        <Utensils size={18} />
+                                        Open Meals
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                {heroMetrics.map((metric) => {
+                                    const Icon = metric.icon;
+
+                                    return (
+                                        <div key={metric.label} className="module-metric">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">{metric.label}</p>
+                                                    <p className="mt-3 text-3xl font-semibold tracking-tight">{metric.value}</p>
+                                                </div>
+                                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/72">
+                                                    <Icon size={18} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </section>
+
+                    <SurfacePanel>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="module-kicker">Family pulse</p>
+                                <h2 className="text-2xl font-semibold">Weekly momentum</h2>
+                                <p className="mt-1 text-sm text-white/55">
+                                    A quick snapshot of who is carrying the most completions this week.
+                                </p>
+                            </div>
+                            {topPerformer && (
+                                <div className="flex items-center gap-2 rounded-full border border-warning/20 bg-warning/10 px-3 py-1.5 text-warning">
+                                    <Crown size={14} />
+                                    <span className="text-sm font-semibold">{topPerformer.name.split(' ')[0]}</span>
                                 </div>
                             )}
                         </div>
 
-                        <div className="mt-3 flex items-center gap-2">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm text-white/70 border border-white/15">
-                                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                                {upcomingEvents.length} scheduled
-                            </span>
-                        </div>
-                    </div>
+                        <div className="mt-5 space-y-3">
+                            {sortedMembers.length === 0 ? (
+                                <EmptyState
+                                    icon={Sparkles}
+                                    title="No family members yet"
+                                    description="Add family members in Settings to unlock points and weekly momentum."
+                                />
+                            ) : (
+                                sortedMembers.slice(0, 4).map((member, index) => {
+                                    const weekly = getMemberWeeklyStats(member.id);
+                                    const colorClass = familyColors[member.color] || 'bg-family-blue';
+                                    const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
 
-                    {/* Today's Meals */}
-                    <div className="card relative border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                                <Utensils size={22} className="text-success" />
-                            </div>
-                            <span className="font-semibold text-xl">Today's Meals</span>
+                                    return (
+                                        <button
+                                            key={member.id}
+                                            onClick={() => navigate('/tasks')}
+                                            className={cn(
+                                                'module-list-item w-full text-left',
+                                                index === 0 && 'border-warning/25 bg-warning/10'
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={cn(
+                                                    'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white',
+                                                    colorClass
+                                                )}>
+                                                    {member.name[0]}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="truncate font-semibold">{member.name}</p>
+                                                        {index === 0 && (
+                                                            <span className="rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-warning">
+                                                                Leader
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/52">
+                                                        <span className="text-emerald-300">{weekly.weeklyTasksCompleted} tasks</span>
+                                                        <span className="inline-flex items-center gap-1 text-warning">
+                                                            <Star size={12} className="fill-warning" />
+                                                            {member.points} pts
+                                                        </span>
+                                                    </div>
+                                                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+                                                        <div
+                                                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-violet-400"
+                                                            style={{ width: `${taskProgress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            )}
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
-                            {[
-                                { key: 'breakfast', emoji: '🍳', label: 'Breakfast', color: 'text-yellow-300', tint: 'from-yellow-500/15 to-transparent' },
-                                { key: 'lunch', emoji: '🥗', label: 'Lunch', color: 'text-green-300', tint: 'from-green-500/15 to-transparent' },
-                                { key: 'dinner', emoji: '🍽️', label: 'Dinner', color: 'text-blue-300', tint: 'from-blue-500/15 to-transparent' },
-                                { key: 'snack', emoji: '🍎', label: 'Snack', color: 'text-pink-300', tint: 'from-pink-500/15 to-transparent' },
-                            ].map((meal) => (
-                                <button
-                                    key={meal.key}
-                                    onClick={() => todayMeals?.[meal.key] ? setSelectedMeal({ meal: todayMeals[meal.key], type: meal.key }) : navigate('/meals')}
-                                    className={cn("text-center p-3 rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/5 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.22)] bg-gradient-to-br", meal.tint)}
-                                >
-                                    <span className="text-3xl">{todayMeals?.[meal.key]?.recipeEmoji || meal.emoji}</span>
-                                    <p className={cn('text-xs mt-1 uppercase tracking-wide', meal.color)}>{meal.label}</p>
-                                    <p className="text-base text-white/50 truncate mt-1">
-                                        {todayMeals?.[meal.key]?.recipeTitle || 'Not set'}
-                                    </p>
-                                    {!todayMeals?.[meal.key] && <p className="text-xs text-primary mt-1">Set meal</p>}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Shopping Pulse */}
-                    <button
-                        onClick={() => navigate('/meals')}
-                        className="card relative text-left hover:bg-white/10 transition-colors border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] backdrop-blur-sm shadow-[0_16px_35px_rgba(0,0,0,0.22)]"
-                    >
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="w-10 h-10 rounded-lg bg-sky-500/20 flex items-center justify-center">
-                                <ShoppingCart size={22} className="text-sky-300" />
-                            </div>
-                            <span className="font-semibold text-xl">Shopping Pulse</span>
-                        </div>
-                        <p className="text-5xl font-semibold">{shopping?.uncheckedCount || 0}</p>
-                        <p className="text-white/50 mt-2">unchecked shopping items</p>
-                        <p className="text-xs text-white/35 mt-4">Open Meals to review and edit the persistent list.</p>
-                    </button>
+                    </SurfacePanel>
                 </div>
 
-                {/* RIGHT COLUMN - Clock, Nest, Sonos, Scoreboard */}
-                <div className="flex-1 flex flex-col gap-3">
-                    {/* Time & Weather Card */}
-                    <div className="card relative text-center py-4 border border-white/10 bg-gradient-to-br from-primary/20 via-primary/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.24)] overflow-hidden">
-                        <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
-                        <p className="text-white/60 text-base mb-1 inline-flex items-center justify-center gap-2"><Waves size={16} className="text-primary" />{getGreeting()}</p>
-                        <h1 className="text-6xl text-white font-display tracking-tight drop-shadow-[0_4px_16px_rgba(99,102,241,0.35)]">{time}</h1>
-                        <p className="text-white/60 text-base mt-1">{date}</p>
+                <TodayStrip
+                    announcements={announcements}
+                    tasks={todayTasks}
+                    shopping={shopping}
+                    clothing={clothing}
+                    prepAgenda={prepAgenda}
+                    onDismissAnnouncement={handleDismissAnnouncement}
+                />
 
-                        {weather && (
-                            <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-white/10">
-                                <span className="px-2 py-1 rounded-full text-xs bg-white/10 border border-white/15 text-white/70">Live</span>
-                                <span className="text-3xl">{weather.icon}</span>
-                                <div className="text-left">
-                                    <span className="text-xl font-semibold">{weather.temp}°F</span>
-                                    <p className="text-white/50 text-sm">{weather.condition}</p>
+                <div className="grid flex-1 min-h-0 gap-4 xl:grid-cols-[1.14fr_0.86fr]">
+                    <div className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_auto]">
+                        <SurfacePanel className="flex min-h-0 flex-col">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="module-kicker">Calendar agenda</p>
+                                    <h2 className="text-2xl font-semibold">Upcoming events</h2>
+                                    <p className="mt-1 text-sm text-white/55">
+                                        Tap an event to inspect details or reassign it to someone else.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => navigate('/calendar')}
+                                    className="module-action"
+                                >
+                                    Open
+                                </button>
+                            </div>
+
+                            <div className="module-note mt-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Today focus</p>
+                                    <p className="mt-1 text-sm text-white/65">
+                                        {upcomingEvents.length > 0
+                                            ? `First on deck: ${upcomingEvents[0].title}`
+                                            : 'No events are scheduled right now.'}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Meals planned</p>
+                                    <p className="mt-1 text-sm font-semibold text-white/82">{mealsPlannedCount}/4</p>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="mt-5 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
+                                {upcomingEvents.length === 0 ? (
+                                    <EmptyState
+                                        icon={Calendar}
+                                        title="No upcoming events"
+                                        description="The board is clear for now. Open Calendar to pull in new plans or assign existing ones."
+                                    />
+                                ) : (
+                                    upcomingEvents.map((event, idx) => (
+                                        <button
+                                            key={event.id || idx}
+                                            onClick={() => setSelectedEvent(event)}
+                                            className={cn(
+                                                'module-list-item group w-full text-left',
+                                                event.isToday && 'border-primary/25 bg-primary/10'
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={cn(
+                                                    'mt-1 h-3.5 w-3.5 flex-shrink-0 rounded-full',
+                                                    getMemberColor(event.member, familyMembers)
+                                                )} />
+
+                                                <div className={cn(
+                                                    'w-24 flex-shrink-0 rounded-2xl border px-3 py-2 text-center text-sm font-semibold',
+                                                    event.isToday
+                                                        ? 'border-primary/20 bg-primary/15 text-primary'
+                                                        : 'border-white/10 bg-white/5 text-white/62'
+                                                )}>
+                                                    {formatEventDate(event.date)}
+                                                </div>
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="truncate text-lg font-semibold">{event.title}</p>
+                                                        {event.isToday && (
+                                                            <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-primary">
+                                                                Today
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-1 text-sm text-white/52">{event.time}</p>
+                                                    {event.prepMatches?.length > 0 && (
+                                                        <p className="mt-2 text-xs uppercase tracking-[0.16em] text-violet-300">
+                                                            Prep ready: {event.prepMatches[0].title}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <ChevronRight size={18} className="mt-2 flex-shrink-0 text-white/35 transition-transform group-hover:translate-x-1" />
+                                            </div>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </SurfacePanel>
+
+                        <div className="grid gap-4 lg:grid-cols-[1fr_0.72fr]">
+                            <SurfacePanel>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="module-kicker">Meal board</p>
+                                        <h2 className="text-2xl font-semibold">Today&apos;s meals</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate('/meals')}
+                                        className="module-action"
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
+
+                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                                    {mealCards.map((meal) => {
+                                        const mealData = todayMeals?.[meal.key];
+
+                                        return (
+                                            <button
+                                                key={meal.key}
+                                                onClick={() => (
+                                                    mealData
+                                                        ? setSelectedMeal({ meal: mealData, type: meal.key })
+                                                        : navigate('/meals')
+                                                )}
+                                                className={cn(
+                                                    'rounded-3xl border p-4 text-left transition-all',
+                                                    mealData
+                                                        ? `${meal.accent} shadow-[0_14px_30px_rgba(0,0,0,0.16)]`
+                                                        : 'border-white/10 bg-white/5 hover:bg-white/8'
+                                                )}
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">{meal.label}</p>
+                                                        <p className="mt-3 text-2xl">{mealData?.recipeEmoji || meal.emoji}</p>
+                                                        <p className="mt-3 truncate text-base font-semibold text-white">
+                                                            {mealData?.recipeTitle || 'Add meal'}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-white/52">
+                                                            {mealData ? 'Tap for recipe details' : 'Choose a recipe for this slot'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </SurfacePanel>
+
+                            <button
+                                onClick={() => navigate('/meals')}
+                                className="module-panel flex flex-col justify-between text-left"
+                            >
+                                <div>
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-sky-500/15 text-sky-300">
+                                        <ShoppingCart size={20} />
+                                    </div>
+                                    <p className="mt-4 text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Shopping pulse</p>
+                                    <p className="mt-3 text-5xl font-semibold tracking-tight">{shopping?.uncheckedCount || 0}</p>
+                                    <p className="mt-2 text-sm text-white/55">Unchecked shopping items still open.</p>
+                                </div>
+
+                                <p className="mt-6 text-sm text-white/48">
+                                    Open Meals to review generated items and make manual edits.
+                                </p>
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Nest Thermostat Card */}
-                    {nestConnected && (
-                        <NestCard onOpenDetail={() => setShowNestDetail(true)} />
-                    )}
+                    <div className={cn(
+                        'grid min-h-0 gap-4',
+                        nestConnected ? 'xl:grid-rows-[auto_auto_minmax(0,1fr)]' : 'xl:grid-rows-[auto_minmax(0,1fr)]'
+                    )}>
+                        {nestConnected && (
+                            <NestCard onOpenDetail={() => setShowNestDetail(true)} />
+                        )}
 
-                    {/* Now Playing / Playlists */}
-                    <div className="card h-[25%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-orange-500/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                                <Music size={20} className="text-orange-400" />
+                        <SurfacePanel>
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="module-kicker">Music</p>
+                                    <h2 className="text-2xl font-semibold">Listening now</h2>
+                                    <p className="mt-1 text-sm text-white/55">
+                                        A lighter view of current playback so it doesn&apos;t overpower the rest of the dashboard.
+                                    </p>
+                                </div>
+                                {playerState?.state && (
+                                    <span className="module-badge">{playerState.state.toLowerCase()}</span>
+                                )}
                             </div>
-                            <div>
-                                <h2 className="font-semibold text-xl">Music</h2>
-                                <p className="text-xs uppercase tracking-[0.16em] text-white/45">Now playing</p>
-                            </div>
-                        </div>
 
-                        {playerState?.track && playerState.state === 'PLAYING' ? (
-                            /* Currently Playing */
-                            <div className="flex-1 flex items-center gap-4">
-                                <div className="w-20 h-20 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
-                                    {playerState.track.art ? (
-                                        <img src={playerState.track.art} alt="Album" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <Music size={32} className="text-white/30" />
-                                    )}
+                            {playerState?.track && playerState.state === 'PLAYING' ? (
+                                <div className="mt-5 flex items-center gap-4">
+                                    <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                                        {playerState.track.art ? (
+                                            <img src={playerState.track.art} alt="Album art" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <Music size={34} className="text-white/30" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-xl font-semibold">{playerState.track.title || 'Unknown track'}</p>
+                                        <p className="mt-1 truncate text-base text-white/55">{playerState.track.artist || 'Unknown artist'}</p>
+                                        <p className="mt-3 text-sm text-white/45">
+                                            Playback is active on the connected Sonos device.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-xl truncate">{playerState.track.title || 'Unknown'}</p>
-                                    <p className="text-white/50 text-lg truncate">{playerState.track.artist || 'Unknown Artist'}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
-                                        <Play size={24} />
-                                    </button>
-                                    <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/10 hover:scale-110 hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)]">
-                                        <SkipForward size={24} />
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            /* Quick Playlists when not playing */
-                            <div className="flex-1 flex flex-col">
-                                <p className="text-white/50 text-base mb-3">Quick Play</p>
-                                <div className="grid grid-cols-2 gap-2 flex-1">
-                                    {[
-                                        { name: 'Chill Vibes', emoji: '🎧' },
-                                        { name: 'Party Mix', emoji: '🎉' },
-                                        { name: 'Focus', emoji: '🎯' },
-                                        { name: 'Kids', emoji: '🧒' },
-                                    ].map((playlist) => (
-                                        <button
-                                            key={playlist.name}
-                                            className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5"
-                                        >
-                                            <span className="text-2xl">{playlist.emoji}</span>
-                                            <span className="font-medium text-base truncate">{playlist.name}</span>
-                                        </button>
+                            ) : (
+                                <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                                    {playlistSuggestions.map((playlist) => (
+                                        <div key={playlist.name} className="module-list-item px-3 py-3">
+                                            <p className="font-semibold">{playlist.name}</p>
+                                            <p className="mt-1 text-sm text-white/48">{playlist.mood}</p>
+                                        </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </SurfacePanel>
 
-                    {/* Weekly Scoreboard */}
-                    <div className="card relative h-[45%] flex flex-col overflow-hidden border border-white/10 bg-gradient-to-br from-warning/10 to-white/[0.03] shadow-[0_16px_35px_rgba(0,0,0,0.22)]">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 className="font-semibold text-2xl">Weekly Scoreboard</h2>
-                                <p className="text-sm text-white/50">This week's momentum</p>
+                        <SurfacePanel className="flex min-h-0 flex-col">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="module-kicker">Scoreboard</p>
+                                    <h2 className="text-2xl font-semibold">Weekly standings</h2>
+                                    <p className="mt-1 text-sm text-white/55">
+                                        Points and completions at a glance, without the old visual noise.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-full border border-warning/20 bg-warning/10 px-3 py-1.5 text-warning">
+                                    <Trophy size={16} />
+                                    <span className="text-sm font-semibold">Live</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning/20 border border-warning/30">
-                                <Sparkles size={14} className="text-warning" />
-                                <Trophy size={18} className="text-warning" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto">
-                            {sortedMembers.slice(0, 6).map((member, idx) => {
-                                const weekly = getMemberWeeklyStats(member.id);
-                                const colorClass = familyColors[member.color] || 'bg-family-blue';
-                                const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
-                                const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
 
-                                return (
-                                    <button
-                                        key={member.id}
-                                        onClick={() => navigate('/tasks')}
-                                        className={cn("relative flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-200 cursor-pointer text-left border border-white/5 hover:border-white/20 hover:-translate-y-0.5", idx === 0 && "col-span-2 ring-1 ring-warning/30 bg-warning/10")}
-                                    >
-                                        <div className={cn(
-                                            "w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl relative",
-                                            colorClass
-                                        )}>
-                                            {member.name[0]}
-                                            {isLeader && (
-                                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-warning rounded-full flex items-center justify-center">
-                                                    <Trophy size={12} className="text-white" />
+                            <div className="mt-5 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
+                                {sortedMembers.length === 0 ? (
+                                    <EmptyState
+                                        icon={Trophy}
+                                        title="No standings yet"
+                                        description="Add family members and complete routines to see the board fill in."
+                                    />
+                                ) : (
+                                    sortedMembers.slice(0, 6).map((member, idx) => {
+                                        const weekly = getMemberWeeklyStats(member.id);
+                                        const colorClass = familyColors[member.color] || 'bg-family-blue';
+                                        const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
+                                        const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
+
+                                        return (
+                                            <button
+                                                key={member.id}
+                                                onClick={() => navigate('/tasks')}
+                                                className={cn(
+                                                    'module-list-item w-full text-left',
+                                                    isLeader && 'border-warning/25 bg-warning/10'
+                                                )}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <div className={cn(
+                                                        'relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white',
+                                                        colorClass
+                                                    )}>
+                                                        {member.name[0]}
+                                                        {isLeader && (
+                                                            <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-warning text-white">
+                                                                <Trophy size={11} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="truncate font-semibold">{member.name}</p>
+                                                            {idx < 3 && (
+                                                                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-white/45">
+                                                                    #{idx + 1}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+                                                            <span className="font-semibold text-emerald-300">{weekly.weeklyTasksCompleted} tasks</span>
+                                                            <span className="inline-flex items-center gap-1 font-semibold text-warning">
+                                                                <Star size={12} className="fill-warning" />
+                                                                {member.points} pts
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+                                                            <div
+                                                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-violet-400"
+                                                                style={{ width: `${taskProgress}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-semibold text-lg truncate">{member.name.split(' ')[0]}</p>
-                                                {idx < 3 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white/60">#{idx + 1}</span>}
-                                            </div>
-                                            {idx === 0 && <p className="text-xs text-white/55 mt-0.5">Leading this week with consistent completions</p>}
-                                            <div className="flex items-center gap-2 text-base">
-                                                <span className="text-success font-bold">{weekly.weeklyTasksCompleted}</span>
-                                                <span className="text-white/30">|</span>
-                                                <div className="flex items-center gap-1">
-                                                    <Star size={14} className="text-warning fill-warning" />
-                                                    <span className="text-warning font-bold">{member.points}</span>
-                                                </div>
-                                            </div>
-                                            <div className="h-1.5 rounded-full bg-white/10 mt-2 overflow-hidden">
-                                                <div
-                                                    className="h-full rounded-full bg-gradient-to-r from-success via-family-blue to-family-purple transition-all duration-500 shadow-[0_0_16px_rgba(80,200,120,0.45)]"
-                                                    style={{ width: `${taskProgress}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </SurfacePanel>
                     </div>
                 </div>
             </div>
@@ -452,7 +692,7 @@ const Dashboard = () => {
                     onClose={() => setSelectedMeal(null)}
                 />
             )}
-        </div>
+        </PageShell>
     );
 };
 

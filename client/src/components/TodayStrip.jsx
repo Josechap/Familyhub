@@ -46,7 +46,7 @@ const TodayStrip = ({
     return (
         <div className={cn(
             'grid gap-3',
-            variant === 'dashboard' ? 'grid-cols-1 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'
+            variant === 'dashboard' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'
         )}>
             <SectionCard
                 title="Announcements"

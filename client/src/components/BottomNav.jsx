@@ -27,7 +27,7 @@ const BottomNav = () => {
     return (
         <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3">
             <div
-                className="mx-auto max-w-2xl rounded-[2rem] glass px-2 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.32)]"
+                className="mx-auto max-w-2xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03)),rgba(8,12,20,0.94)] px-2 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.34)] backdrop-blur-2xl"
                 style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
             >
                 <div className="grid grid-cols-6 gap-1">
@@ -42,13 +42,13 @@ const BottomNav = () => {
                                 className={cn(
                                     "flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all duration-200 touch-target no-select",
                                     isActive
-                                        ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                                        ? "bg-[linear-gradient(135deg,rgba(79,70,229,0.26),rgba(14,165,233,0.14)),rgba(255,255,255,0.05)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                                         : "text-white/50 hover:bg-white/5 hover:text-white/80 active:scale-95"
                                 )}
                             >
                                 <div className={cn(
                                     "rounded-xl p-2 transition-all duration-200",
-                                    isActive ? "bg-primary/20 text-primary" : ""
+                                    isActive ? "bg-white/10 text-white" : ""
                                 )}>
                                     <Icon
                                         size={22}
