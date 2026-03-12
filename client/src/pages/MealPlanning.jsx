@@ -1,30 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+    CalendarDays,
+    Check,
     ChevronLeft,
     ChevronRight,
-    X,
-    Search,
+    Clock3,
     Loader2,
-    ShoppingCart,
     Plus,
+    Search,
+    ShoppingCart,
+    Sparkles,
     Trash2,
-    Check,
+    UtensilsCrossed,
+    X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import {
-    fetchMeals,
-    setMealAsync,
-    removeMealAsync,
-    closeRecipePicker,
-    setWeekStart as setWeekStartAction,
-    generateShoppingList,
-    fetchShoppingList,
-    updateShoppingListItem,
     addShoppingListItem,
     deleteShoppingListItem,
+    fetchMeals,
+    fetchShoppingList,
+    generateShoppingList,
+    removeMealAsync,
+    setMealAsync,
+    setWeekStart as setWeekStartAction,
+    updateShoppingListItem,
 } from '../features/mealsSlice';
 import api from '../lib/api';
+import { EmptyState, PageHeader, PageShell, SurfacePanel } from '../components/ui/ModuleShell';
 
 const getWeekStart = (date) => {
     const current = new Date(date);
@@ -38,10 +42,34 @@ const getWeekStart = (date) => {
 const formatDate = (date) => date.toISOString().split('T')[0];
 
 const MEAL_TYPES = [
-    { key: 'breakfast', label: 'Breakfast', emoji: '🍳' },
-    { key: 'lunch', label: 'Lunch', emoji: '🥗' },
-    { key: 'dinner', label: 'Dinner', emoji: '🍽️' },
-    { key: 'snack', label: 'Snack', emoji: '🍎' },
+    {
+        key: 'breakfast',
+        label: 'Breakfast',
+        emoji: '🍳',
+        badge: 'bg-amber-500/15 text-amber-300',
+        border: 'border-amber-500/20',
+    },
+    {
+        key: 'lunch',
+        label: 'Lunch',
+        emoji: '🥗',
+        badge: 'bg-emerald-500/15 text-emerald-300',
+        border: 'border-emerald-500/20',
+    },
+    {
+        key: 'dinner',
+        label: 'Dinner',
+        emoji: '🍽️',
+        badge: 'bg-sky-500/15 text-sky-300',
+        border: 'border-sky-500/20',
+    },
+    {
+        key: 'snack',
+        label: 'Snack',
+        emoji: '🍎',
+        badge: 'bg-rose-500/15 text-rose-300',
+        border: 'border-rose-500/20',
+    },
 ];
 
 const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
@@ -81,56 +109,80 @@ const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
     );
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
-                <div className="flex items-center justify-between mb-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="module-modal flex max-h-[80vh] max-w-3xl flex-col animate-scale-in"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold">Choose a Recipe</h2>
-                        <p className="text-sm text-white/50">
-                            {mealType} on {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <p className="module-kicker">Meal assignment</p>
+                        <h2 className="text-2xl font-semibold">Choose a recipe</h2>
+                        <p className="mt-1 text-sm text-white/55">
+                            {mealType} on {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
-                        <X size={24} />
+                    <button onClick={onClose} className="module-icon-button">
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="relative mb-4">
+                <div className="relative mt-5">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
                     <input
                         type="text"
                         placeholder="Search recipes..."
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                        className="module-input pl-12"
                     />
                 </div>
 
-                <div className="flex-1 overflow-y-auto touch-scroll">
+                <div className="mt-5 flex-1 overflow-y-auto touch-scroll hide-scrollbar">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="animate-spin text-white/40" size={32} />
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="text-center text-white/40 py-12">No recipes found</div>
+                        <EmptyState
+                            title="No recipes found"
+                            description="Try a broader search or sync more recipes from Paprika."
+                        />
                     ) : (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-3 md:grid-cols-2">
                             {filtered.map((recipe) => (
                                 <button
                                     key={recipe.id}
                                     onClick={() => onSelect(recipe)}
-                                    className="flex items-center gap-3 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors text-left touch-target"
+                                    className="module-list-item flex items-center gap-3 text-left"
                                 >
                                     {recipe.photoUrl ? (
-                                        <img src={recipe.photoUrl} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                                        <img
+                                            src={recipe.photoUrl}
+                                            alt=""
+                                            className="h-16 w-16 rounded-2xl object-cover"
+                                        />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-2xl">
+                                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-purple-500/30 text-3xl">
                                             {recipe.emoji || '🍽️'}
                                         </div>
                                     )}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-medium truncate">{recipe.title}</div>
-                                        {recipe.paprikaSource && <div className="text-xs text-orange-400">Paprika</div>}
+
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate font-semibold">{recipe.title}</p>
+                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/45">
+                                            {recipe.paprikaSource && (
+                                                <span className="rounded-full border border-orange-400/20 bg-orange-500/10 px-2.5 py-1 text-orange-300">
+                                                    Paprika
+                                                </span>
+                                            )}
+                                            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
+                                                Tap to add
+                                            </span>
+                                        </div>
                                     </div>
                                 </button>
                             ))}
@@ -162,21 +214,28 @@ const ShoppingListModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="card w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
-                <div className="flex items-center justify-between mb-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="module-modal flex max-h-[82vh] max-w-3xl flex-col animate-scale-in"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold">Shopping List</h2>
-                        <p className="text-sm text-white/50">
-                            {shoppingList.uncheckedCount} unchecked of {shoppingList.items.length}
+                        <p className="module-kicker">Generated from meals</p>
+                        <h2 className="text-2xl font-semibold">Shopping list</h2>
+                        <p className="mt-1 text-sm text-white/55">
+                            {shoppingList.uncheckedCount} unchecked of {shoppingList.items.length} total items.
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors touch-target">
-                        <X size={24} />
+                    <button onClick={onClose} className="module-icon-button">
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="flex gap-2 mb-4">
+                <div className="mt-5 flex gap-2">
                     <input
                         type="text"
                         value={draftLabel}
@@ -188,50 +247,52 @@ const ShoppingListModal = ({ onClose }) => {
                             }
                         }}
                         placeholder="Add an item"
-                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-white/40"
+                        className="module-input flex-1"
                     />
-                    <button
-                        onClick={handleAddItem}
-                        className="px-4 py-3 rounded-xl bg-primary text-white hover:bg-primary/80 transition-colors"
-                    >
+                    <button onClick={handleAddItem} className="module-action module-action-primary">
                         <Plus size={18} />
+                        Add
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto touch-scroll space-y-2">
+                <div className="mt-5 flex-1 overflow-y-auto space-y-2 touch-scroll hide-scrollbar">
                     {shoppingList.items.length === 0 ? (
-                        <p className="text-white/50 text-center py-8">No items in shopping list</p>
+                        <EmptyState
+                            icon={ShoppingCart}
+                            title="No items yet"
+                            description="Generate a list from the current meal plan or add a few staples manually."
+                        />
                     ) : (
                         shoppingList.items.map((item) => (
                             <div
                                 key={item.id}
-                                className={cn(
-                                    'flex items-start gap-3 p-3 bg-white/5 rounded-xl transition-all',
-                                    item.checked && 'opacity-50'
-                                )}
+                                className={cn('module-list-item flex items-start gap-3', item.checked && 'opacity-55')}
                             >
                                 <button
                                     onClick={() => handleToggleItem(item)}
                                     className={cn(
-                                        'mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors touch-target flex-shrink-0',
+                                        'mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border transition-all',
                                         item.checked
-                                            ? 'bg-success border-success'
-                                            : 'border-white/30 hover:border-success'
+                                            ? 'border-success bg-success text-white'
+                                            : 'border-white/15 bg-white/5 text-white/60 hover:border-success hover:text-success'
                                     )}
                                 >
-                                    {item.checked && <Check size={16} />}
+                                    <Check size={16} />
                                 </button>
-                                <div className="flex-1">
-                                    <div className={cn('font-medium', item.checked && 'line-through')}>
+
+                                <div className="min-w-0 flex-1">
+                                    <p className={cn('font-semibold', item.checked && 'line-through text-white/45')}>
                                         {item.label}
-                                    </div>
-                                    <div className="text-xs text-white/50 mt-1">
-                                        {item.category} {item.mealDates?.length > 0 ? `• ${item.mealDates.length} planned day(s)` : ''}
-                                    </div>
+                                    </p>
+                                    <p className="mt-1 text-sm text-white/45">
+                                        {item.category || 'General'}
+                                        {item.mealDates?.length > 0 ? ` • ${item.mealDates.length} planned day(s)` : ''}
+                                    </p>
                                 </div>
+
                                 <button
                                     onClick={() => dispatch(deleteShoppingListItem(item.id))}
-                                    className="p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-red-400 transition-colors"
+                                    className="module-icon-button h-10 w-10 text-white/45 hover:text-danger"
                                 >
                                     <Trash2 size={16} />
                                 </button>
@@ -246,15 +307,7 @@ const ShoppingListModal = ({ onClose }) => {
 
 const MealPlanning = () => {
     const dispatch = useDispatch();
-    const {
-        meals,
-        loading,
-        shoppingList,
-        showRecipePicker,
-        selectedDate,
-        selectedMealType,
-        weekStart: reduxWeekStart,
-    } = useSelector((state) => state.meals);
+    const { meals, loading, shoppingList, weekStart: reduxWeekStart } = useSelector((state) => state.meals);
     const [showShoppingList, setShowShoppingList] = useState(false);
     const [recipePickerContext, setRecipePickerContext] = useState(null);
 
@@ -301,11 +354,9 @@ const MealPlanning = () => {
             recipe,
         }));
         setRecipePickerContext(null);
-        dispatch(closeRecipePicker());
     };
 
-    const handleRemoveMeal = (date, mealType, event) => {
-        event.stopPropagation();
+    const handleRemoveMeal = (date, mealType) => {
         dispatch(removeMealAsync({ date, mealType }));
     };
 
@@ -320,10 +371,61 @@ const MealPlanning = () => {
     const today = formatDate(new Date());
     const isCurrentWeek = formatDate(getWeekStart(new Date())) === formatDate(weekStart);
     const totalMeals = Object.values(meals).reduce((count, dayMeals) => count + Object.keys(dayMeals).length, 0);
-    const possibleMeals = 7 * 4;
+    const possibleMeals = 7 * MEAL_TYPES.length;
+    const coverage = Math.round((totalMeals / possibleMeals) * 100);
+
+    const mealCountsByType = useMemo(() => (
+        MEAL_TYPES.map((mealType) => ({
+            ...mealType,
+            count: Object.values(meals).reduce((count, dayMeals) => (
+                dayMeals[mealType.key] ? count + 1 : count
+            ), 0),
+        }))
+    ), [meals]);
+
+    const plannedTimeline = useMemo(() => (
+        weekDays.flatMap((day) => {
+            const dateStr = formatDate(day);
+            const dayMeals = meals[dateStr] || {};
+
+            return MEAL_TYPES.map((mealType) => {
+                const meal = dayMeals[mealType.key];
+                if (!meal) return null;
+
+                return {
+                    id: `${dateStr}-${mealType.key}`,
+                    dateStr,
+                    dateLabel: day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    mealType,
+                    meal,
+                };
+            }).filter(Boolean);
+        })
+    ), [meals, weekDays]);
+
+    const busiestDay = useMemo(() => (
+        weekDays
+            .map((day) => {
+                const dateStr = formatDate(day);
+                const plannedCount = Object.keys(meals[dateStr] || {}).length;
+                return {
+                    label: day.toLocaleDateString('en-US', { weekday: 'long' }),
+                    plannedCount,
+                };
+            })
+            .sort((a, b) => b.plannedCount - a.plannedCount)[0]
+    ), [meals, weekDays]);
+
+    if (loading && Object.keys(meals).length === 0) {
+        return (
+            <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="animate-spin text-white/40" size={48} />
+            </div>
+        );
+    }
 
     return (
-        <div className="h-full w-full flex flex-col gap-4 animate-fade-in">
+        <PageShell className="h-full animate-fade-in">
             {recipePickerContext && (
                 <RecipePicker
                     date={recipePickerContext.date}
@@ -337,129 +439,314 @@ const MealPlanning = () => {
                 <ShoppingListModal onClose={() => setShowShoppingList(false)} />
             )}
 
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h1 className="text-2xl font-semibold">Meal Planning</h1>
-                    <p className="text-white/50 text-sm">{weekRange}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleGenerateShoppingList}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-success text-white rounded-xl hover:bg-success/80 transition-colors touch-target"
-                    >
-                        <ShoppingCart size={18} />
-                        Shopping List
-                        {shoppingList.uncheckedCount > 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs">
-                                {shoppingList.uncheckedCount}
+            <PageHeader
+                icon={UtensilsCrossed}
+                eyebrow="Weekly menu board"
+                title="Meal Planning"
+                description="Plan the week like the dashboard plans the day: quick signals, strong hierarchy, and the shopping context close to the board."
+                tone="amber"
+                stats={[
+                    { label: 'Planned', value: totalMeals, meta: `${possibleMeals} available slots` },
+                    { label: 'Coverage', value: `${coverage}%`, meta: 'week completion' },
+                    { label: 'Shopping', value: shoppingList.items.length, meta: 'generated items' },
+                    { label: 'Unchecked', value: shoppingList.uncheckedCount, meta: 'still to buy' },
+                ]}
+                actions={(
+                    <>
+                        <div className="module-toolbar">
+                            <button onClick={prevWeek} className="module-icon-button">
+                                <ChevronLeft size={18} />
+                            </button>
+                            <span className="module-inline-chip min-w-[150px] justify-center">
+                                <CalendarDays size={14} />
+                                {weekRange}
                             </span>
+                            <button onClick={nextWeek} className="module-icon-button">
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                        {!isCurrentWeek && (
+                            <button onClick={goToToday} className="module-action">
+                                This Week
+                            </button>
                         )}
-                    </button>
-                    {!isCurrentWeek && (
                         <button
-                            onClick={goToToday}
-                            className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl hover:bg-primary/80 transition-colors touch-target"
+                            onClick={handleGenerateShoppingList}
+                            className="module-action module-action-success"
                         >
-                            This Week
+                            <ShoppingCart size={18} />
+                            {shoppingList.loading ? 'Refreshing...' : 'Shopping List'}
                         </button>
-                    )}
-                    <button
-                        onClick={prevWeek}
-                        className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors touch-target"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button
-                        onClick={nextWeek}
-                        className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors touch-target"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
-                </div>
-            </div>
+                    </>
+                )}
+            />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="card">
-                    <p className="text-sm text-white/50">Meals planned</p>
-                    <p className="text-3xl font-semibold mt-1">{totalMeals}</p>
-                </div>
-                <div className="card">
-                    <p className="text-sm text-white/50">Coverage</p>
-                    <p className="text-3xl font-semibold mt-1">{Math.round((totalMeals / possibleMeals) * 100)}%</p>
-                </div>
-                <div className="card">
-                    <p className="text-sm text-white/50">Shopping items</p>
-                    <p className="text-3xl font-semibold mt-1">{shoppingList.items.length}</p>
-                </div>
-                <div className="card">
-                    <p className="text-sm text-white/50">Unchecked</p>
-                    <p className="text-3xl font-semibold mt-1">{shoppingList.uncheckedCount}</p>
-                </div>
-            </div>
+            <div className="grid flex-1 min-h-0 gap-4 xl:grid-cols-[1.24fr_0.76fr]">
+                <SurfacePanel className="flex min-h-0 flex-col">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <p className="module-kicker">Week board</p>
+                            <h2 className="text-2xl font-semibold">Plan by day</h2>
+                            <p className="mt-1 text-sm text-white/55">
+                                Tap any slot to swap in a recipe. Filled slots stay editable without leaving the board.
+                            </p>
+                        </div>
+                        <div className="module-inline-chip">
+                            <Sparkles size={14} className="text-primary" />
+                            {isCurrentWeek ? 'Current week' : 'Preview week'}
+                        </div>
+                    </div>
 
-            <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-                    {weekDays.map((day) => {
-                        const dateStr = formatDate(day);
-                        const dayMeals = meals[dateStr] || {};
-                        const isToday = dateStr === today;
+                    <div className="mt-5 flex-1 overflow-y-auto touch-scroll hide-scrollbar">
+                        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-7">
+                            {weekDays.map((day) => {
+                                const dateStr = formatDate(day);
+                                const dayMeals = meals[dateStr] || {};
+                                const isToday = dateStr === today;
+                                const plannedCount = Object.keys(dayMeals).length;
 
-                        return (
-                            <div
-                                key={dateStr}
-                                className={cn(
-                                    'card min-h-[280px] flex flex-col',
-                                    isToday && 'ring-2 ring-primary/60'
-                                )}
-                            >
-                                <div className="mb-3">
-                                    <p className="text-sm text-white/50">{day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                                    <p className="text-xl font-semibold">{day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                                </div>
+                                return (
+                                    <div
+                                        key={dateStr}
+                                        className={cn(
+                                            'relative overflow-hidden rounded-3xl border p-4 transition-all',
+                                            isToday
+                                                ? 'border-primary/30 bg-gradient-to-br from-primary/18 via-primary/8 to-white/[0.03] shadow-glow'
+                                                : 'border-white/10 bg-white/[0.04]'
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-xs uppercase tracking-[0.18em] text-white/45">
+                                                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                                                </p>
+                                                <p className="mt-1 text-2xl font-semibold">
+                                                    {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                </p>
+                                                <p className={cn('mt-1 text-sm', isToday ? 'text-primary' : 'text-white/45')}>
+                                                    {isToday ? 'Today' : `${plannedCount} planned`}
+                                                </p>
+                                            </div>
+                                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-semibold text-white/70">
+                                                {plannedCount}/{MEAL_TYPES.length}
+                                            </span>
+                                        </div>
 
-                                <div className="space-y-2 flex-1">
-                                    {MEAL_TYPES.map((mealType) => {
-                                        const meal = dayMeals[mealType.key];
-                                        return (
-                                            <button
-                                                key={mealType.key}
-                                                onClick={() => setRecipePickerContext({ date: dateStr, mealType: mealType.key })}
-                                                className="w-full p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors text-left"
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs text-white/40 uppercase tracking-wide">
-                                                            {mealType.emoji} {mealType.label}
-                                                        </p>
-                                                        <p className="font-medium truncate mt-1">
-                                                            {meal?.recipeTitle || 'Add meal'}
-                                                        </p>
-                                                    </div>
-                                                    {meal && (
+                                        <div className="mt-4 space-y-2">
+                                            {MEAL_TYPES.map((mealType) => {
+                                                const meal = dayMeals[mealType.key];
+
+                                                return (
+                                                    <div key={mealType.key} className="relative">
                                                         <button
-                                                            onClick={(event) => handleRemoveMeal(dateStr, mealType.key, event)}
-                                                            className="p-1 rounded-full hover:bg-white/10 text-white/40 hover:text-red-400 transition-colors"
+                                                            onClick={() => setRecipePickerContext({ date: dateStr, mealType: mealType.key })}
+                                                            className={cn(
+                                                                'w-full rounded-2xl border p-3 text-left transition-all',
+                                                                meal
+                                                                    ? `${mealType.border} ${mealType.badge}`
+                                                                    : 'border-white/10 bg-white/5 hover:bg-white/10'
+                                                            )}
                                                         >
-                                                            <X size={14} />
+                                                            <div className="flex items-start gap-3 pr-8">
+                                                                <div className={cn(
+                                                                    'flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl',
+                                                                    meal ? 'bg-white/10 text-white' : mealType.badge
+                                                                )}>
+                                                                    {meal?.recipePhoto ? (
+                                                                        <img
+                                                                            src={meal.recipePhoto}
+                                                                            alt=""
+                                                                            className="h-full w-full object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-2xl">{meal?.recipeEmoji || mealType.emoji}</span>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/55">
+                                                                        {mealType.label}
+                                                                    </p>
+                                                                    <p className="mt-1 truncate font-semibold text-white">
+                                                                        {meal?.recipeTitle || 'Add meal'}
+                                                                    </p>
+                                                                    <p className="mt-1 text-xs text-white/50">
+                                                                        {meal ? 'Tap to replace this plan' : 'Pick a recipe for this slot'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                         </button>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+
+                                                        {meal && (
+                                                            <button
+                                                                onClick={() => handleRemoveMeal(dateStr, mealType.key)}
+                                                                className="module-icon-button absolute right-2 top-2 h-9 w-9 text-white/55 hover:text-danger"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </SurfacePanel>
+
+                <div className="grid min-h-0 gap-4 xl:grid-rows-[auto_auto_minmax(0,1fr)]">
+                    <SurfacePanel>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="module-kicker">Coverage by meal</p>
+                                <h2 className="text-2xl font-semibold">Planning focus</h2>
+                                <p className="mt-1 text-sm text-white/55">
+                                    Spot the weak parts of the week before they become last-minute decisions.
+                                </p>
                             </div>
-                        );
-                    })}
+                            <span className="module-badge">{possibleMeals - totalMeals} open slots</span>
+                        </div>
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                            {mealCountsByType.map((mealType) => (
+                                <div key={mealType.key} className="module-metric">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn('flex h-11 w-11 items-center justify-center rounded-2xl text-xl', mealType.badge)}>
+                                            {mealType.emoji}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">{mealType.label}</p>
+                                            <p className="text-sm text-white/45">{mealType.count} planned</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="module-note mt-4">
+                            {busiestDay?.plannedCount > 0
+                                ? `${busiestDay.label} currently has the most planned meals at ${busiestDay.plannedCount}.`
+                                : 'Nothing is planned yet this week. Start with dinner anchors and fill breakfast or lunch around them.'}
+                        </div>
+                    </SurfacePanel>
+
+                    <SurfacePanel>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="module-kicker">Shopping pulse</p>
+                                <h2 className="text-2xl font-semibold">List preview</h2>
+                                <p className="mt-1 text-sm text-white/55">
+                                    Meal-generated items stay persistent and editable until they are checked off.
+                                </p>
+                            </div>
+                            <button onClick={() => setShowShoppingList(true)} className="module-action">
+                                Open
+                            </button>
+                        </div>
+
+                        <div className="mt-5 space-y-2">
+                            {shoppingList.items.length === 0 ? (
+                                <EmptyState
+                                    icon={ShoppingCart}
+                                    title="Shopping list is empty"
+                                    description="Generate a list from this week’s meals when you are ready to shop."
+                                />
+                            ) : (
+                                shoppingList.items.slice(0, 5).map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className={cn('module-list-item flex items-center gap-3', item.checked && 'opacity-55')}
+                                    >
+                                        <div className={cn(
+                                            'flex h-9 w-9 items-center justify-center rounded-2xl border',
+                                            item.checked
+                                                ? 'border-success bg-success text-white'
+                                                : 'border-white/10 bg-white/5 text-white/45'
+                                        )}>
+                                            <Check size={14} />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className={cn('truncate font-medium', item.checked && 'line-through text-white/45')}>
+                                                {item.label}
+                                            </p>
+                                            <p className="text-sm text-white/45">{item.category || 'General'}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </SurfacePanel>
+
+                    <SurfacePanel className="flex min-h-0 flex-col">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="module-kicker">Planned meals</p>
+                                <h2 className="text-2xl font-semibold">Upcoming lineup</h2>
+                                <p className="mt-1 text-sm text-white/55">
+                                    A quick scroll through everything already on the calendar for this week.
+                                </p>
+                            </div>
+                            <span className="module-badge">{plannedTimeline.length} meals</span>
+                        </div>
+
+                        <div className="mt-5 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
+                            {plannedTimeline.length === 0 ? (
+                                <EmptyState
+                                    icon={UtensilsCrossed}
+                                    title="No meals planned yet"
+                                    description="Start with the highest-friction days first, then build the rest of the week around them."
+                                />
+                            ) : (
+                                plannedTimeline.map((entry) => (
+                                    <div key={entry.id} className="module-list-item">
+                                        <div className="flex items-start gap-3">
+                                            <div className={cn(
+                                                'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-xl',
+                                                entry.mealType.badge
+                                            )}>
+                                                {entry.meal.recipePhoto ? (
+                                                    <img
+                                                        src={entry.meal.recipePhoto}
+                                                        alt=""
+                                                        className="h-full w-full rounded-2xl object-cover"
+                                                    />
+                                                ) : (
+                                                    entry.meal.recipeEmoji || entry.mealType.emoji
+                                                )}
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate font-semibold">{entry.meal.recipeTitle}</p>
+                                                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/45">
+                                                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
+                                                        {entry.mealType.label}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
+                                                        <Clock3 size={12} />
+                                                        {entry.dateLabel}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </SurfacePanel>
                 </div>
             </div>
 
-            {loading && (
-                <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
-                    <Loader2 className="animate-spin text-white/30" size={40} />
+            {loading && Object.keys(meals).length > 0 && (
+                <div className="pointer-events-none fixed inset-x-0 top-6 z-40 flex justify-center">
+                    <div className="module-inline-chip bg-black/30">
+                        <Loader2 size={14} className="animate-spin" />
+                        Refreshing meal plan
+                    </div>
                 </div>
             )}
-        </div>
+        </PageShell>
     );
 };
 

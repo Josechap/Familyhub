@@ -13,12 +13,13 @@ html {
 }
 
 body {
-  @apply font-sans antialiased text-white selection:bg-primary/30;
+  @apply font-sans antialiased text-white selection:bg-primary/30 leading-[1.42];
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(245, 158, 11, 0.14), transparent 28%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 26%),
-    linear-gradient(180deg, #08090f 0%, #0d1017 45%, #121722 100%);
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 22%),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 20%),
+    radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.08), transparent 24%),
+    linear-gradient(180deg, #06080d 0%, #0b0f16 44%, #111827 100%);
 }
 
 body::before,
@@ -30,23 +31,23 @@ body::after {
   z-index: -1;
   border-radius: 9999px;
   filter: blur(80px);
-  opacity: 0.7;
+  opacity: 0.55;
 }
 
 body::before {
-  top: -120px;
-  right: -80px;
-  width: 320px;
-  height: 320px;
-  background: rgba(99, 102, 241, 0.2);
+  top: -140px;
+  right: -100px;
+  width: 360px;
+  height: 360px;
+  background: rgba(99, 102, 241, 0.16);
 }
 
 body::after {
-  bottom: 80px;
+  bottom: 40px;
   left: -120px;
-  width: 300px;
-  height: 300px;
-  background: rgba(245, 158, 11, 0.18);
+  width: 280px;
+  height: 280px;
+  background: rgba(245, 158, 11, 0.14);
 }
 
 #root {
@@ -59,9 +60,9 @@ body.light {
   color-scheme: light;
   color: #0f172a !important;
   background:
-    radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 32%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #edf2f7 55%, #e2e8f0 100%);
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 22%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 18%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 58%, #e2e8f0 100%);
 }
 
 body.light::before {
@@ -83,7 +84,7 @@ body.light [class*="text-white"] {
 }
 
 body.light [class*="text-white/"] {
-  color: #475569;
+  color: #334155;
 }
 
 body.light [class*="border-white"] {
@@ -127,13 +128,15 @@ a,
 }
 
 .page-shell {
-  @apply relative isolate min-h-full overflow-hidden rounded-4xl border border-white/10 p-4 sm:p-5 backdrop-blur-xl;
+  @apply relative isolate min-h-full overflow-hidden rounded-4xl border border-white/10 p-4 sm:p-5 lg:p-6 backdrop-blur-xl;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
-    rgba(10, 13, 20, 0.72);
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+    rgba(9, 12, 19, 0.9);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 28px 60px rgba(0, 0, 0, 0.25);
+    0 30px 70px rgba(0, 0, 0, 0.32);
 }
 
 .page-shell::before {
@@ -142,48 +145,87 @@ a,
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 30%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 28%);
+}
+
+.page-shell::after {
+  content: "";
+  position: absolute;
+  inset: auto auto -110px -110px;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+  border-radius: 9999px;
+  background: rgba(245, 158, 11, 0.06);
+  filter: blur(80px);
 }
 
 body.light .page-shell {
   border-color: rgba(148, 163, 184, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.82)),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.1), transparent 20%),
+    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.07), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.86)),
     rgba(255, 255, 255, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 24px 48px rgba(148, 163, 184, 0.18);
+    0 24px 48px rgba(148, 163, 184, 0.16);
 }
 
 .module-hero {
   @apply relative overflow-hidden rounded-4xl border border-white/10 px-5 py-5 sm:px-6 sm:py-6;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.02);
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(13, 18, 28, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 20px 45px rgba(0, 0, 0, 0.22);
+    0 22px 48px rgba(0, 0, 0, 0.3);
+}
+
+.module-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 18%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.06), transparent 28%);
+}
+
+.module-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 1.5rem 0 1.5rem;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
 }
 
 .module-kicker {
-  @apply text-[0.72rem] uppercase tracking-[0.28em] text-white/45;
+  @apply text-[0.72rem] uppercase tracking-[0.28em] text-white/50;
 }
 
 .module-stat {
   @apply min-w-[150px] rounded-3xl border border-white/10 px-4 py-3;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025)),
+    rgba(17, 24, 39, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 30px rgba(0, 0, 0, 0.2);
 }
 
 .module-panel,
 .card {
   @apply relative overflow-hidden rounded-4xl border border-white/10 p-5 backdrop-blur-xl transition-all duration-200;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.015);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(10, 14, 22, 0.84);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 16px 36px rgba(0, 0, 0, 0.22);
+    0 18px 36px rgba(0, 0, 0, 0.28);
 }
 
 .module-panel::before,
@@ -200,7 +242,7 @@ body.light .page-shell {
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 20px 40px rgba(0, 0, 0, 0.26);
+    0 22px 44px rgba(0, 0, 0, 0.3);
 }
 
 .card:active {
@@ -242,19 +284,23 @@ body.light .glass {
 }
 
 .module-toolbar {
-  @apply flex flex-wrap items-center gap-2 rounded-3xl border border-white/10 p-2 backdrop-blur-xl;
+  @apply flex flex-wrap items-center gap-2 rounded-3xl border border-white/10 p-2.5 backdrop-blur-xl;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.015);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    rgba(9, 12, 19, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 28px rgba(0, 0, 0, 0.22);
 }
 
 .module-inline-chip {
-  @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm text-white/60;
-  background: rgba(255, 255, 255, 0.05);
+  @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm text-white/70;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .module-pill {
-  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-transparent px-4 py-2.5 text-sm font-medium text-white/65 transition-all;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border border-white/8 px-4 py-2.5 text-sm font-medium text-white/75 transition-all;
+  background: rgba(255, 255, 255, 0.045);
 }
 
 .module-pill:hover {
@@ -263,12 +309,18 @@ body.light .glass {
 }
 
 .module-pill-active {
-  @apply border-primary/30 bg-primary/15 text-white shadow-glow;
+  @apply border-primary/30 text-white shadow-glow;
+  background:
+    linear-gradient(135deg, rgba(99, 102, 241, 0.26), rgba(168, 85, 247, 0.14)),
+    rgba(255, 255, 255, 0.04);
 }
 
 .module-action,
 .module-icon-button {
-  @apply border border-white/10 bg-white/5 text-white/80 transition-all;
+  @apply border border-white/10 bg-white/5 text-white/85 transition-all;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(0, 0, 0, 0.14);
 }
 
 .module-action {
@@ -281,21 +333,22 @@ body.light .glass {
 }
 
 .module-action-primary {
-  @apply border-primary/40 bg-primary text-white shadow-glow;
+  @apply border-primary/40 text-white shadow-glow;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
 }
 
 .module-action-primary:hover {
-  background: #585be7;
+  background: linear-gradient(135deg, #585be7, #6d28d9);
 }
 
 .module-action-success {
   @apply border-success/30 text-success;
-  background: rgba(16, 185, 129, 0.16);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(16, 185, 129, 0.12));
 }
 
 .module-action-danger {
   @apply border-danger/30 text-danger;
-  background: rgba(239, 68, 68, 0.12);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.08));
 }
 
 .module-icon-button {
@@ -304,7 +357,8 @@ body.light .glass {
 
 .module-input,
 .module-select {
-  @apply w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/35 outline-none transition-all;
+  @apply w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 outline-none transition-all;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .module-input:focus,
@@ -321,11 +375,58 @@ body.light .glass {
 .module-modal {
   @apply w-full overflow-hidden rounded-4xl border border-white/10 p-5 backdrop-blur-2xl;
   background:
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 28%),
     linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.92)),
     rgba(10, 13, 20, 0.92);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 32px 80px rgba(0, 0, 0, 0.45);
+}
+
+.module-metric {
+  @apply relative overflow-hidden rounded-3xl border border-white/10 px-4 py-4;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.025)),
+    rgba(255, 255, 255, 0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.module-metric::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  pointer-events: none;
+}
+
+.module-list-item {
+  @apply relative overflow-hidden rounded-3xl border border-white/10 px-4 py-3 transition-all duration-200;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.module-list-item:hover {
+  transform: translateY(-1px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.025);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+}
+
+.module-note {
+  @apply rounded-3xl border border-white/10 px-4 py-4 text-sm text-white/70;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(14, 19, 30, 0.66);
+}
+
+.module-badge {
+  @apply inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-white/50;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 body.light .module-toolbar,
@@ -336,7 +437,11 @@ body.light .module-icon-button,
 body.light .module-input,
 body.light .module-select,
 body.light .module-empty,
-body.light .module-modal {
+body.light .module-modal,
+body.light .module-metric,
+body.light .module-list-item,
+body.light .module-note,
+body.light .module-badge {
   border-color: rgba(148, 163, 184, 0.2);
   background-color: rgba(255, 255, 255, 0.74);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Heart, Clock, Users, ChevronLeft, ChevronRight, Play, X, Search, Loader2, Flame, Calendar, Plus } from 'lucide-react';
+import { Heart, Clock, Users, ChevronLeft, ChevronRight, Play, X, Search, Loader2, Flame, Calendar, Plus, ChefHat } from 'lucide-react';
 import {
     fetchRecipes,
     selectRecipe,
@@ -15,7 +15,7 @@ import {
 } from '../features/recipesSlice';
 import { setMealAsync } from '../features/mealsSlice';
 import { cn } from '../lib/utils';
-import { EmptyState, PageHeader, PageShell } from '../components/ui/ModuleShell';
+import { EmptyState, PageHeader, PageShell, SurfacePanel } from '../components/ui/ModuleShell';
 
 // Cooking Mode Component - Fully responsive immersive experience
 const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) => {
@@ -340,6 +340,7 @@ const Recipes = () => {
     }
 
     const favoriteCount = recipes.filter(recipe => recipe.isFavorite).length;
+    const paprikaCount = recipes.filter(recipe => recipe.paprikaSource).length;
 
     return (
         <PageShell className="h-full animate-fade-in">
@@ -388,37 +389,53 @@ const Recipes = () => {
                     { label: 'Favorites', value: favoriteCount, meta: 'starred recipes' },
                     { label: 'Categories', value: categories.length - 1, meta: 'usable filters' },
                 ]}
+                actions={(
+                    <div className="module-inline-chip">
+                        <ChefHat size={14} className="text-warning" />
+                        {paprikaCount} synced from Paprika
+                    </div>
+                )}
             />
 
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
-                <input
-                    type="text"
-                    placeholder="Search recipes..."
-                    value={searchQuery}
-                    onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                    className="module-input pl-12"
-                />
-            </div>
+            <SurfacePanel className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="module-kicker">Find your next dish</p>
+                        <h2 className="text-2xl font-semibold">Search and filter</h2>
+                    </div>
+                    <div className="module-inline-chip">
+                        {filteredRecipes.length} visible
+                    </div>
+                </div>
 
-            {/* Category Filter Pills */}
-            <div className="module-toolbar overflow-x-auto hide-scrollbar pb-2">
-                {categories.map((cat) => (
-                    <button
-                        key={cat}
-                        onClick={() => dispatch(setFilterCategory(cat))}
-                        className={cn(
-                            'module-pill whitespace-nowrap capitalize',
-                            filterCategory === cat
-                                ? 'module-pill-active'
-                                : ''
-                        )}
-                    >
-                        {cat}
-                    </button>
-                ))}
-            </div>
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search recipes..."
+                        value={searchQuery}
+                        onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+                        className="module-input pl-12"
+                    />
+                </div>
+
+                <div className="module-toolbar overflow-x-auto hide-scrollbar pb-2">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => dispatch(setFilterCategory(cat))}
+                            className={cn(
+                                'module-pill whitespace-nowrap capitalize',
+                                filterCategory === cat
+                                    ? 'module-pill-active'
+                                    : ''
+                            )}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+            </SurfacePanel>
 
             {/* Recipe Grid */}
             <div className="flex-1 overflow-y-auto touch-scroll hide-scrollbar">

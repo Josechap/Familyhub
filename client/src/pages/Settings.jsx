@@ -532,6 +532,8 @@ const Settings = () => {
                 ]}
             />
 
+            <div className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+                <div className="space-y-4">
             {/* Appearance Section */}
             <div className="card">
                 <div className="flex items-center gap-3 mb-4">
@@ -745,6 +747,10 @@ const Settings = () => {
                 <LocalPhotosConfig />
             </div>
 
+                </div>
+
+                <div className="space-y-4">
+
             {/* Family Members Section */}
             <div className="card">
                 <div className="flex items-center gap-3 mb-4">
@@ -871,10 +877,12 @@ const Settings = () => {
             </div>
 
             {/* Quick tip */}
-            <div className="card bg-white/5">
+            <div className="module-note">
                 <p className="text-sm text-white/50">
                     💡 Connect your Google account to sync calendar events and tasks. Connect Paprika to sync your recipes.
                 </p>
+            </div>
+                </div>
             </div>
         </PageShell>
     );
