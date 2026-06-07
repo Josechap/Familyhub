@@ -29,8 +29,10 @@ app.listen(PORT, HOST, () => {
         }
         console.log('');
         console.log('API routes:');
-        console.log('  /api/recipes     /api/tasks      /api/calendar');
-        console.log('  /api/settings    /api/google     /api/paprika');
-        console.log('  /api/meals       /api/sonos      /api/health');
+        console.log('  /api/recipes       /api/tasks          /api/calendar');
+        console.log('  /api/settings      /api/google         /api/paprika');
+        console.log('  /api/meals         /api/dashboard      /api/weather');
+        console.log('  /api/shopping-items /api/announcements /api/prep-templates');
+        console.log('  /api/photos        /api/sonos          /api/health');
     }
 });

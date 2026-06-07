@@ -208,6 +208,10 @@ sudo reboot
 2. Enter your Paprika email and password
 3. Recipes will sync automatically
 
+### Sonos Control
+
+Sonos discovery is disabled by default so Familyhub can start reliably on devices or networks without multicast support. To enable Sonos on your home network, set `SONOS_ENABLED=true` in `server/.env` and restart the service.
+
 ---
 
 ## 🔧 Service Management

@@ -35,7 +35,7 @@ const validateEnvironment = () => {
         warnings.push('GOOGLE_CLIENT_ID not set - Google Calendar integration disabled');
     }
     if (!process.env.ENCRYPTION_KEY && IS_PRODUCTION) {
-        warnings.push('ENCRYPTION_KEY not set - using default (not recommended for production)');
+        errors.push('ENCRYPTION_KEY not set - required for production secret encryption');
     }
 
     if (!IS_TEST) {
@@ -122,23 +122,30 @@ const googleRouter = require('./routes/google');
 const paprikaRouter = require('./routes/paprika');
 const mealsRouter = require('./routes/meals');
 const weatherRouter = require('./routes/weather');
+const dashboardRouter = require('./routes/dashboard');
+const shoppingItemsRouter = require('./routes/shopping-items');
+const announcementsRouter = require('./routes/announcements');
+const prepTemplatesRouter = require('./routes/prep-templates');
 
 app.use('/api/recipes', recipesRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/google/photos', require('./routes/google-photos'));
 app.use('/api/google', googleRouter);
 app.use('/api/paprika', paprikaRouter);
 app.use('/api/meals', mealsRouter);
 app.use('/api/weather', weatherRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/shopping-items', shoppingItemsRouter);
+app.use('/api/announcements', announcementsRouter);
+app.use('/api/prep-templates', prepTemplatesRouter);
+app.use('/api/photos', require('./routes/local-photos'));
 
 // Skip Sonos in test mode - it does network discovery on import
 if (!IS_TEST) {
     app.use('/api/sonos', require('./routes/sonos'));
 }
-
-app.use('/api/google/photos', require('./routes/google-photos'));
-app.use('/api/photos', require('./routes/local-photos'));
 
 // Health check
 app.get('/api/health', async (req, res) => {
