@@ -579,3 +579,46 @@ body.light .skeleton {
 .kiosk-mode * {
   cursor: none !important;
 }
+
+/* 1080p kiosk dashboard density: keep the home screen glanceable on a 15.6" 1920x1080 display. */
+@media (min-width: 1280px) and (min-height: 900px) {
+  .dashboard-kiosk.page-shell {
+    padding: 1rem;
+    border-radius: 1.75rem;
+  }
+
+  .dashboard-kiosk .module-hero,
+  .dashboard-kiosk .module-panel {
+    border-radius: 1.5rem;
+    padding: 1rem;
+  }
+
+  .dashboard-kiosk .module-note,
+  .dashboard-kiosk .module-metric,
+  .dashboard-kiosk .module-list-item {
+    border-radius: 1.125rem;
+    padding: 0.75rem;
+  }
+
+  .dashboard-kiosk .module-action {
+    min-height: 2.375rem;
+    border-radius: 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .dashboard-kiosk .module-kicker {
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+  }
+
+  .dashboard-kiosk h2 {
+    font-size: 1.375rem;
+    line-height: 1.15;
+  }
+
+  .dashboard-kiosk .module-empty {
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+  }
+}
