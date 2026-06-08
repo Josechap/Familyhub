@@ -189,11 +189,11 @@ const Dashboard = () => {
     ];
 
     return (
-        <PageShell className="animate-fade-in lg:h-full">
-            <div className="flex min-h-0 flex-col gap-4 lg:h-full">
-                <div className="grid gap-4 xl:grid-cols-[1.14fr_0.86fr]">
-                    <section className="module-hero">
-                        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <PageShell className="dashboard-kiosk animate-fade-in lg:h-full">
+            <div className="flex min-h-0 flex-col gap-3 lg:h-full">
+                <div className="grid gap-3 xl:grid-cols-[1.18fr_0.82fr]">
+                    <section className="module-hero dashboard-hero">
+                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
                             <div className="space-y-4">
                                 <div className="module-inline-chip w-fit">
                                     <Waves size={14} className="text-primary" />
@@ -201,7 +201,7 @@ const Dashboard = () => {
                                 </div>
 
                                 <div>
-                                    <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">{time}</h1>
+                                    <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl 2xl:text-6xl">{time}</h1>
                                     <p className="mt-2 text-base text-white/58 sm:text-lg">{date}</p>
                                 </div>
 
@@ -262,7 +262,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
                                 {heroMetrics.map((metric) => {
                                     const Icon = metric.icon;
 
@@ -371,8 +371,8 @@ const Dashboard = () => {
                     onDismissAnnouncement={handleDismissAnnouncement}
                 />
 
-                <div className="grid flex-1 min-h-0 gap-4 xl:grid-cols-[1.14fr_0.86fr]">
-                    <div className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_auto]">
+                <div className="grid flex-1 min-h-0 gap-3 xl:grid-cols-[1.18fr_0.82fr]">
+                    <div className="grid min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_auto]">
                         <SurfacePanel className="flex min-h-0 flex-col">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
@@ -413,7 +413,7 @@ const Dashboard = () => {
                                         description="The board is clear for now. Open Calendar to pull in new plans or assign existing ones."
                                     />
                                 ) : (
-                                    upcomingEvents.map((event, idx) => (
+                                    upcomingEvents.slice(0, 4).map((event, idx) => (
                                         <button
                                             key={event.id || idx}
                                             onClick={() => setSelectedEvent(event)}
@@ -463,7 +463,7 @@ const Dashboard = () => {
                             </div>
                         </SurfacePanel>
 
-                        <div className="grid gap-4 lg:grid-cols-[1fr_0.72fr]">
+                        <div className="grid gap-3 lg:grid-cols-[1fr_0.72fr]">
                             <SurfacePanel>
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
@@ -576,7 +576,7 @@ const Dashboard = () => {
                                 </div>
                             ) : (
                                 <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                                    {playlistSuggestions.map((playlist) => (
+                                    {playlistSuggestions.slice(0, 2).map((playlist) => (
                                         <div key={playlist.name} className="module-list-item px-3 py-3">
                                             <p className="font-semibold">{playlist.name}</p>
                                             <p className="mt-1 text-sm text-white/48">{playlist.mood}</p>
@@ -609,7 +609,7 @@ const Dashboard = () => {
                                         description="Add family members and complete routines to see the board fill in."
                                     />
                                 ) : (
-                                    sortedMembers.slice(0, 6).map((member, idx) => {
+                                    sortedMembers.slice(0, 4).map((member, idx) => {
                                         const weekly = getMemberWeeklyStats(member.id);
                                         const colorClass = familyColors[member.color] || 'bg-family-blue';
                                         const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
