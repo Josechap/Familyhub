@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { google } = require('googleapis');
 const db = require('../db/database');
 const {
     formatDateKey,
@@ -8,8 +9,11 @@ const {
 } = require('../lib/familyOps');
 const { attachPrepMatches, buildPrepAgendaForDate } = require('../lib/prepTemplates');
 const { getShoppingItems } = require('../lib/shoppingItems');
+const { fetchGoogleCalendarEvents } = require('../lib/googleCalendar');
+const { getAuthenticatedClient } = require('../lib/googleAuth');
 
 const DASHBOARD_EVENT_LIMIT = 8;
+const GOOGLE_TASK_LIMIT = 50;
 
 const formatEventTime = (startHour, duration) => {
     if (startHour === null || startHour === undefined) {
@@ -45,7 +49,26 @@ const mapEvent = (event, todayKey) => ({
     source: 'local',
 });
 
-const getUpcomingEvents = (todayKey) => {
+const normalizeEvent = (event, todayKey) => ({
+    ...event,
+    id: String(event.id),
+    date: event.date,
+    startHour: event.startHour ?? event.start_hour ?? null,
+    duration: event.duration ?? 1,
+    time: event.time || formatEventTime(event.startHour ?? event.start_hour, event.duration),
+    isToday: event.date === todayKey,
+    source: event.source || 'local',
+});
+
+const sortEvents = (events) => [...events].sort((a, b) => {
+    if (a.date !== b.date) {
+        return a.date.localeCompare(b.date);
+    }
+
+    return (a.startHour ?? 99) - (b.startHour ?? 99);
+});
+
+const getLocalUpcomingEvents = (todayKey) => {
     const rows = db.prepare(`
         SELECT
             e.id,
@@ -64,7 +87,33 @@ const getUpcomingEvents = (todayKey) => {
         LIMIT ?
     `).all(todayKey, DASHBOARD_EVENT_LIMIT);
 
-    return attachPrepMatches(db, rows.map((event) => mapEvent(event, todayKey)));
+    return rows.map((event) => mapEvent(event, todayKey));
+};
+
+const getCloudUpcomingEvents = async (todayKey, now) => {
+    try {
+        const events = await fetchGoogleCalendarEvents({ includePrepMatches: false, now });
+        return {
+            events: events
+                .filter((event) => event.date >= todayKey)
+                .map((event) => normalizeEvent(event, todayKey)),
+            error: null,
+        };
+    } catch (error) {
+        if (error.message === 'Not connected to Google') {
+            return { events: [], error: null };
+        }
+
+        return { events: [], error: error.message };
+    }
+};
+
+const getConsolidatedUpcomingEvents = async (todayKey, now) => {
+    const localEvents = getLocalUpcomingEvents(todayKey).map((event) => normalizeEvent(event, todayKey));
+    const cloud = await getCloudUpcomingEvents(todayKey, now);
+    const events = attachPrepMatches(db, sortEvents([...localEvents, ...cloud.events]).slice(0, DASHBOARD_EVENT_LIMIT));
+
+    return { events, cloudError: cloud.error };
 };
 
 const getTodayMeals = (todayKey) => {
@@ -112,6 +161,79 @@ const mapTask = (task) => ({
     dueThisWeek: task.dueThisWeek,
     isRoutine: task.isRoutine,
 });
+
+const loadSettingsMap = () => {
+    const settings = {};
+    db.prepare('SELECT key, value FROM settings').all().forEach((row) => {
+        settings[row.key] = row.value;
+    });
+    return settings;
+};
+
+const getFamilyMembersById = () => new Map(
+    db.prepare('SELECT id, name, color FROM family_members').all()
+        .map((member) => [String(member.id), member])
+);
+
+const getCloudDueTasks = async (todayKey) => {
+    try {
+        const auth = await getAuthenticatedClient();
+        if (!auth) {
+            return { tasks: [], error: null };
+        }
+
+        const tasksApi = google.tasks({ version: 'v1', auth });
+        const settings = loadSettingsMap();
+        const familyMembersById = getFamilyMembersById();
+        const taskLists = await tasksApi.tasklists.list();
+
+        const lists = taskLists.data.items || [];
+        const cloudTasks = [];
+
+        for (const list of lists) {
+            const response = await tasksApi.tasks.list({
+                tasklist: list.id,
+                showCompleted: false,
+                maxResults: GOOGLE_TASK_LIMIT,
+            });
+
+            (response.data.items || []).forEach((task) => {
+                const dueDate = task.due ? task.due.split('T')[0] : null;
+                if (dueDate && dueDate > todayKey) {
+                    return;
+                }
+
+                const mappedMemberId = settings[`taskListMapping_${list.id}`] || null;
+                const mappedMember = mappedMemberId ? familyMembersById.get(String(mappedMemberId)) : null;
+
+                cloudTasks.push({
+                    id: `google-${task.id}`,
+                    googleTaskId: task.id,
+                    title: task.title,
+                    notes: task.notes || '',
+                    dueDate,
+                    dueTime: null,
+                    points: 1,
+                    completed: false,
+                    active: true,
+                    assignedTo: mappedMember?.name || list.title,
+                    assignedMemberId: mappedMemberId,
+                    color: mappedMember?.color || 'google-blue',
+                    source: 'google',
+                    listId: list.id,
+                    listName: list.title,
+                    dueToday: true,
+                    dueThisWeek: true,
+                    isRoutine: false,
+                });
+            });
+        }
+
+        return { tasks: cloudTasks, error: null };
+    } catch (error) {
+        return { tasks: [], error: error.message };
+    }
+};
 
 const getDueRoutines = (now) => {
     const rawTasks = db.prepare(`
@@ -223,10 +345,12 @@ router.get('/today', async (req, res) => {
     const todayKey = formatDateKey(now);
 
     try {
-        const nextEvents = getUpcomingEvents(todayKey);
+        const { events: nextEvents, cloudError: calendarCloudError } = await getConsolidatedUpcomingEvents(todayKey, now);
         const todayEvents = nextEvents.filter((event) => event.date === todayKey);
         const todayMeals = getTodayMeals(todayKey);
-        const dueRoutines = getDueRoutines(now);
+        const localDueRoutines = getDueRoutines(now);
+        const { tasks: cloudDueTasks, error: tasksCloudError } = await getCloudDueTasks(todayKey);
+        const dueRoutines = [...localDueRoutines, ...cloudDueTasks];
         const announcements = getActiveAnnouncements();
         const prepAgenda = buildPrepAgendaForDate(nextEvents, todayKey);
         const shopping = getShoppingItems(db);
@@ -251,6 +375,16 @@ router.get('/today', async (req, res) => {
             weather,
             clothing: getClothingRecommendation(weather),
             weatherError,
+            integrations: {
+                googleCalendar: {
+                    included: nextEvents.some((event) => event.source === 'google'),
+                    error: calendarCloudError,
+                },
+                googleTasks: {
+                    included: cloudDueTasks.length > 0,
+                    error: tasksCloudError,
+                },
+            },
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

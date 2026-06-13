@@ -16,6 +16,9 @@ describe('Frontend API route contract', () => {
     expect(response.body).toHaveProperty('announcements');
     expect(response.body).toHaveProperty('prepAgenda');
     expect(response.body).toHaveProperty('shopping');
+    expect(response.body).toHaveProperty('integrations');
+    expect(response.body.integrations).toHaveProperty('googleCalendar');
+    expect(response.body.integrations).toHaveProperty('googleTasks');
     expect(Array.isArray(response.body.todayEvents)).toBe(true);
     expect(Array.isArray(response.body.nextEvents)).toBe(true);
     expect(Array.isArray(response.body.dueRoutines)).toBe(true);
