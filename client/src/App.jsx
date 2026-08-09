@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
-import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 import Calendar from './pages/Calendar';
 import Tasks from './pages/Tasks';
 import Recipes from './pages/Recipes';
@@ -14,7 +14,7 @@ function App() {
     <ErrorBoundary>
       <Layout>
         <Routes>
-          <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+          <Route path="/" element={<ErrorBoundary><Home /></ErrorBoundary>} />
           <Route path="/calendar" element={<ErrorBoundary><Calendar /></ErrorBoundary>} />
           <Route path="/tasks" element={<ErrorBoundary><Tasks /></ErrorBoundary>} />
           <Route path="/recipes" element={<ErrorBoundary><Recipes /></ErrorBoundary>} />
