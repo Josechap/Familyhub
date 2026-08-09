@@ -529,7 +529,7 @@ const Tasks = () => {
     }
 
     return (
-        <PageShell className="animate-fade-in lg:h-full">
+        <PageShell className="animate-fade-in lg:min-h-full">
             {showRoutineModal && (
                 <RoutineModal
                     familyMembers={familyMembers}

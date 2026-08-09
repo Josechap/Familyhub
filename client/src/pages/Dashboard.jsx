@@ -189,8 +189,8 @@ const Dashboard = () => {
     ];
 
     return (
-        <PageShell className="dashboard-kiosk animate-fade-in lg:h-full">
-            <div className="flex min-h-0 flex-col gap-3 lg:h-full">
+        <PageShell className="dashboard-kiosk animate-fade-in lg:min-h-full">
+            <div className="flex min-h-0 flex-col gap-3 lg:min-h-full">
                 <div className="grid gap-3 xl:grid-cols-[1.18fr_0.82fr]">
                     <section className="module-hero dashboard-hero">
                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">

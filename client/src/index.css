@@ -129,9 +129,7 @@ a,
 }
 
 .page-shell {
-  @apply relative isolate min-h-full overflow-x-hidden overflow-y-auto rounded-4xl border border-white/10 p-4 sm:p-5 lg:p-6 backdrop-blur-xl;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  @apply relative isolate min-h-full shrink-0 overflow-hidden rounded-4xl border border-white/10 p-4 sm:p-5 lg:p-6 backdrop-blur-xl;
   background:
     radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 22%),
     radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.08), transparent 24%),

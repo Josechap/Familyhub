@@ -559,7 +559,7 @@ const Settings = () => {
     }
 
     return (
-        <PageShell className="animate-fade-in overflow-y-auto touch-scroll lg:h-full">
+        <PageShell className="animate-fade-in overflow-y-auto touch-scroll lg:min-h-full">
             {/* Modals */}
             {(editingMember || showAddModal) && (
                 <MemberModal

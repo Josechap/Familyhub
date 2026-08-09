@@ -96,7 +96,7 @@ const Calendar = () => {
     }
 
     return (
-        <PageShell className="animate-fade-in lg:h-full">
+        <PageShell className="animate-fade-in lg:min-h-full">
             <PageHeader
                 icon={CalendarIcon}
                 eyebrow="Scheduling"

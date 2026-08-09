@@ -441,7 +441,7 @@ const Recipes = () => {
     }
 
     return (
-        <PageShell className="animate-fade-in lg:h-full">
+        <PageShell className="animate-fade-in lg:min-h-full">
             {cookingMode && selectedRecipe && (
                 <CookingMode
                     recipe={selectedRecipe}
