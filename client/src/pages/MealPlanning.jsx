@@ -125,7 +125,7 @@ const RecipePicker = ({ date, mealType, onSelect, onClose }) => {
                             {mealType} on {new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                         </p>
                     </div>
-                    <button onClick={onClose} className="module-icon-button">
+                    <button onClick={onClose} aria-label="Close" className="module-icon-button">
                         <X size={20} />
                     </button>
                 </div>
@@ -230,7 +230,7 @@ const ShoppingListModal = ({ onClose }) => {
                             {shoppingList.uncheckedCount} unchecked of {shoppingList.items.length} total items.
                         </p>
                     </div>
-                    <button onClick={onClose} className="module-icon-button">
+                    <button onClick={onClose} aria-label="Close" className="module-icon-button">
                         <X size={20} />
                     </button>
                 </div>
@@ -270,6 +270,7 @@ const ShoppingListModal = ({ onClose }) => {
                             >
                                 <button
                                     onClick={() => handleToggleItem(item)}
+                                    aria-label={item.checked ? `Mark ${item.label} unchecked` : `Mark ${item.label} checked`}
                                     className={cn(
                                         'mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border transition-all',
                                         item.checked
@@ -292,6 +293,7 @@ const ShoppingListModal = ({ onClose }) => {
 
                                 <button
                                     onClick={() => dispatch(deleteShoppingListItem(item.id))}
+                                    aria-label={`Remove ${item.label}`}
                                     className="module-icon-button h-10 w-10 text-white/45 hover:text-danger"
                                 >
                                     <Trash2 size={16} />
@@ -454,14 +456,14 @@ const MealPlanning = () => {
                 actions={(
                     <>
                         <div className="module-toolbar">
-                            <button onClick={prevWeek} className="module-icon-button">
+                            <button onClick={prevWeek} aria-label="Previous week" className="module-icon-button">
                                 <ChevronLeft size={18} />
                             </button>
                             <span className="module-inline-chip min-w-[150px] justify-center">
                                 <CalendarDays size={14} />
                                 {weekRange}
                             </span>
-                            <button onClick={nextWeek} className="module-icon-button">
+                            <button onClick={nextWeek} aria-label="Next week" className="module-icon-button">
                                 <ChevronRight size={18} />
                             </button>
                         </div>
@@ -580,6 +582,7 @@ const MealPlanning = () => {
                                                         {meal && (
                                                             <button
                                                                 onClick={() => handleRemoveMeal(dateStr, mealType.key)}
+                                                                aria-label={`Remove ${mealType.label} plan`}
                                                                 className="module-icon-button absolute right-2 top-2 h-9 w-9 text-white/55 hover:text-danger"
                                                             >
                                                                 <X size={14} />

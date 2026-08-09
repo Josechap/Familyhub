@@ -43,6 +43,7 @@ const MealModal = ({ meal, mealType, onClose }) => {
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close"
                         className="module-icon-button"
                     >
                         <X size={20} />

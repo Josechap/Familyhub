@@ -13,7 +13,7 @@ import {
 } from '../features/settingsSlice';
 import { setScreensaverActive } from '../features/appSlice';
 import { cn } from '../lib/utils';
-import { PageHeader, PageShell } from '../components/ui/ModuleShell';
+import { ConfirmModal, PageHeader, PageShell } from '../components/ui/ModuleShell';
 
 const colorOptions = [
     { name: 'pastel-blue', hex: '#3B82F6' },
@@ -42,7 +42,7 @@ const MemberModal = ({ member, onSave, onClose }) => {
             <div className="module-modal max-w-md animate-scale-in">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold">{member ? 'Edit Member' : 'Add Member'}</h3>
-                    <button onClick={onClose} className="module-icon-button">
+                    <button onClick={onClose} aria-label="Close" className="module-icon-button">
                         <X size={24} />
                     </button>
                 </div>
@@ -102,6 +102,8 @@ const MemberModal = ({ member, onSave, onClose }) => {
 const GoogleIntegration = () => {
     const [status, setStatus] = useState({ connected: false, email: null, loading: true });
     const [syncing, setSyncing] = useState(false);
+    const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
 
     const checkStatus = async () => {
         try {
@@ -127,9 +129,13 @@ const GoogleIntegration = () => {
     };
 
     const handleDisconnect = async () => {
-        if (confirm('Disconnect Google account?')) {
+        setDisconnecting(true);
+        try {
             await fetch(`${API_BASE}/google/disconnect`, { method: 'POST' });
             setStatus({ connected: false, email: null, loading: false });
+            setConfirmingDisconnect(false);
+        } finally {
+            setDisconnecting(false);
         }
     };
 
@@ -149,6 +155,16 @@ const GoogleIntegration = () => {
     if (status.connected) {
         return (
             <div className="space-y-4">
+                {confirmingDisconnect && (
+                    <ConfirmModal
+                        title="Disconnect Google account?"
+                        description="Calendar and Tasks sync will stop until you reconnect."
+                        confirmLabel="Disconnect"
+                        busy={disconnecting}
+                        onConfirm={handleDisconnect}
+                        onClose={() => setConfirmingDisconnect(false)}
+                    />
+                )}
                 <div className="flex items-center gap-3 p-4 bg-success/20 rounded-xl border border-success/30">
                     <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
                         <Check className="text-success" size={20} />
@@ -168,7 +184,7 @@ const GoogleIntegration = () => {
                         Sync
                     </button>
                     <button
-                        onClick={handleDisconnect}
+                        onClick={() => setConfirmingDisconnect(true)}
                         className="module-action module-action-danger flex-1"
                     >
                         <Unlink size={18} />
@@ -277,6 +293,7 @@ const LocalPhotosConfig = () => {
                     <button
                         onClick={handleClear}
                         disabled={saving}
+                        aria-label="Clear photos folder"
                         className="module-icon-button h-10 w-10"
                     >
                         <X size={18} />
@@ -330,6 +347,8 @@ const PaprikaIntegration = () => {
     const [connecting, setConnecting] = useState(false);
     const [error, setError] = useState('');
     const [syncing, setSyncing] = useState(false);
+    const [confirmingDisconnect, setConfirmingDisconnect] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
 
     const checkStatus = async () => {
         try {
@@ -373,9 +392,13 @@ const PaprikaIntegration = () => {
     };
 
     const handleDisconnect = async () => {
-        if (confirm('Disconnect Paprika?')) {
+        setDisconnecting(true);
+        try {
             await fetch(`${API_BASE}/paprika/disconnect`, { method: 'POST' });
             setStatus({ connected: false, email: null, loading: false });
+            setConfirmingDisconnect(false);
+        } finally {
+            setDisconnecting(false);
         }
     };
 
@@ -395,6 +418,16 @@ const PaprikaIntegration = () => {
     if (status.connected) {
         return (
             <div className="space-y-4">
+                {confirmingDisconnect && (
+                    <ConfirmModal
+                        title="Disconnect Paprika?"
+                        description="Recipe sync will stop until you reconnect your account."
+                        confirmLabel="Disconnect"
+                        busy={disconnecting}
+                        onConfirm={handleDisconnect}
+                        onClose={() => setConfirmingDisconnect(false)}
+                    />
+                )}
                 <div className="flex items-center gap-3 p-4 bg-success/20 rounded-xl border border-success/30">
                     <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
                         <Check className="text-success" size={20} />
@@ -414,7 +447,7 @@ const PaprikaIntegration = () => {
                         Sync
                     </button>
                     <button
-                        onClick={handleDisconnect}
+                        onClick={() => setConfirmingDisconnect(true)}
                         className="module-action module-action-danger flex-1"
                     >
                         <Unlink size={18} />
@@ -471,6 +504,9 @@ const Settings = () => {
     const [editingMember, setEditingMember] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [resetting, setResetting] = useState(false);
+    const [resetError, setResetError] = useState('');
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [memberPendingDelete, setMemberPendingDelete] = useState(null);
 
     useEffect(() => {
         dispatch(fetchSettings());
@@ -487,8 +523,25 @@ const Settings = () => {
     };
 
     const handleDeleteMember = (id) => {
-        if (confirm('Delete this family member?')) {
-            dispatch(deleteFamilyMember(id));
+        const member = familyMembers.find((item) => item.id === id);
+        setMemberPendingDelete(member || { id });
+    };
+
+    const confirmDeleteMember = () => {
+        if (!memberPendingDelete) return;
+        dispatch(deleteFamilyMember(memberPendingDelete.id));
+        setMemberPendingDelete(null);
+    };
+
+    const handleResetDatabase = async () => {
+        setResetting(true);
+        setResetError('');
+        try {
+            await api.resetDatabase();
+            window.location.reload();
+        } catch (error) {
+            setResetError('Failed to reset database: ' + error.message);
+            setResetting(false);
         }
     };
 
@@ -515,6 +568,32 @@ const Settings = () => {
                     onClose={() => {
                         setEditingMember(null);
                         setShowAddModal(false);
+                    }}
+                />
+            )}
+
+            {memberPendingDelete && (
+                <ConfirmModal
+                    title={`Delete ${memberPendingDelete.name || 'this family member'}?`}
+                    description="This removes their points, tasks, and calendar assignments. This can't be undone."
+                    confirmLabel="Delete"
+                    onConfirm={confirmDeleteMember}
+                    onClose={() => setMemberPendingDelete(null)}
+                />
+            )}
+
+            {showResetModal && (
+                <ConfirmModal
+                    title="Reset database?"
+                    description="This permanently deletes all family members, local tasks, calendar events, recipes, meal plans, and task history. Google Calendar and Paprika data will NOT be affected (they sync from external sources). Settings and integrations will be preserved."
+                    confirmLabel="Reset Database"
+                    requireText="RESET"
+                    busy={resetting}
+                    error={resetError}
+                    onConfirm={handleResetDatabase}
+                    onClose={() => {
+                        setShowResetModal(false);
+                        setResetError('');
                     }}
                 />
             )}
@@ -762,7 +841,7 @@ const Settings = () => {
 
                 <div className="space-y-3 mb-4">
                     {familyMembers.map((member) => (
-                        <div key={member.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl group">
+                        <div key={member.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
                             <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
                                 style={{ backgroundColor: colorMap[member.color] || '#3B82F6' }}
@@ -775,13 +854,15 @@ const Settings = () => {
                             </div>
                             <button
                                 onClick={() => setEditingMember(member)}
-                                className="p-2 text-white/40 hover:text-white transition-colors opacity-0 group-hover:opacity-100 touch-target"
+                                aria-label={`Edit ${member.name}`}
+                                className="p-2 text-white/40 hover:text-white transition-colors touch-target"
                             >
                                 <Edit2 size={16} />
                             </button>
                             <button
                                 onClick={() => handleDeleteMember(member.id)}
-                                className="p-2 text-white/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 touch-target"
+                                aria-label={`Delete ${member.name}`}
+                                className="p-2 text-white/40 hover:text-red-400 transition-colors touch-target"
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -843,29 +924,7 @@ const Settings = () => {
                             This will permanently delete all family members, local tasks, calendar events, recipes, meal plans, and task history. Google Calendar and Paprika data will NOT be affected (they sync from external sources). Settings and integrations will be preserved.
                         </p>
                         <button
-                            onClick={async () => {
-                                const confirmed = confirm(
-                                    '⚠️ Are you sure you want to reset the database?\n\nThis will delete:\n• All family members\n• All local tasks and points\n• All calendar events\n• All recipes\n• All meal plans\n• All task completion history\n\nThis action cannot be undone!'
-                                );
-                                if (!confirmed) return;
-
-                                const doubleConfirm = prompt('Type "RESET" to confirm:');
-                                if (doubleConfirm !== 'RESET') {
-                                    alert('Reset cancelled.');
-                                    return;
-                                }
-
-                                setResetting(true);
-                                try {
-                                    await api.resetDatabase();
-                                    alert('Database reset successfully! The page will now reload.');
-                                    window.location.reload();
-                                } catch (error) {
-                                    alert('Failed to reset database: ' + error.message);
-                                } finally {
-                                    setResetting(false);
-                                }
-                            }}
+                            onClick={() => setShowResetModal(true)}
                             disabled={resetting}
                             className="module-action module-action-danger"
                         >

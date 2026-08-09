@@ -108,7 +108,7 @@ const TransferTaskModal = ({ task, onTransfer, onClose }) => {
                             Move <span className="font-medium text-white">{task.title}</span> into a different list.
                         </p>
                     </div>
-                    <button onClick={onClose} className="module-icon-button">
+                    <button onClick={onClose} aria-label="Close" className="module-icon-button">
                         <X size={20} />
                     </button>
                 </div>
@@ -217,7 +217,7 @@ const RoutineModal = ({ familyMembers, onSave, onClose }) => {
                             Set the owner, cadence, and points so it lands in the daily task flow correctly.
                         </p>
                     </div>
-                    <button onClick={onClose} className="module-icon-button">
+                    <button onClick={onClose} aria-label="Close" className="module-icon-button">
                         <X size={20} />
                     </button>
                 </div>
@@ -325,6 +325,7 @@ const TaskRow = ({ task, familyMembers, onToggle, onDelete }) => {
         <div className={cn('module-list-item group flex items-start gap-4', task.completed && 'opacity-60')}>
             <button
                 onClick={() => onToggle(task)}
+                aria-label={task.completed ? `Mark ${task.title} incomplete` : `Mark ${task.title} complete`}
                 className={cn(
                     'mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all',
                     task.completed
@@ -375,6 +376,7 @@ const TaskRow = ({ task, familyMembers, onToggle, onDelete }) => {
                             {onDelete && (
                                 <button
                                     onClick={() => onDelete(task.id)}
+                                    aria-label={`Delete ${task.title}`}
                                     className="module-icon-button h-10 w-10 text-white/45 hover:text-danger"
                                 >
                                     <Trash2 size={16} />
@@ -409,12 +411,14 @@ const GoogleTaskRow = ({ task, onComplete, onTransfer }) => (
             <div className="flex flex-shrink-0 items-center gap-2">
                 <button
                     onClick={() => onComplete(task)}
+                    aria-label={`Complete ${task.title}`}
                     className="module-icon-button h-10 w-10 border-success/30 bg-success/15 text-success"
                 >
                     <Check size={16} />
                 </button>
                 <button
                     onClick={() => onTransfer(task)}
+                    aria-label={`Transfer ${task.title} to another list`}
                     className="module-icon-button h-10 w-10"
                 >
                     <ArrowRightLeft size={16} />
@@ -815,15 +819,15 @@ const Tasks = () => {
                                                 <div className="mt-4 grid grid-cols-3 gap-3">
                                                     <div>
                                                         <p className="text-xl font-semibold">{snapshot.dueToday}</p>
-                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/35">Today</p>
+                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Today</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-xl font-semibold">{snapshot.dueWeek}</p>
-                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/35">Week</p>
+                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Week</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-xl font-semibold">{snapshot.recentCompletions}</p>
-                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/35">Recent</p>
+                                                        <p className="text-xs uppercase tracking-[0.18em] text-white/45">Recent</p>
                                                     </div>
                                                 </div>
                                             </div>

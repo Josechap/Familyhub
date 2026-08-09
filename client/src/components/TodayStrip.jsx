@@ -66,12 +66,13 @@ const TodayStrip = ({
                                         <p className="truncate text-sm font-semibold">{announcement.title}</p>
                                         <p className="mt-1 line-clamp-2 text-sm text-white/58">{announcement.body}</p>
                                         {announcement.memberName && (
-                                            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">For {announcement.memberName}</p>
+                                            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/45">For {announcement.memberName}</p>
                                         )}
                                     </div>
                                     {onDismissAnnouncement && (
                                         <button
                                             onClick={() => onDismissAnnouncement(announcement.id)}
+                                            aria-label={`Dismiss ${announcement.title}`}
                                             className="module-icon-button h-8 w-8 rounded-xl text-white/45"
                                         >
                                             <X size={14} />
@@ -128,7 +129,7 @@ const TodayStrip = ({
                             <p className="mt-1 text-sm text-white/55">items left to buy</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-right">
-                            <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Status</p>
+                            <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Status</p>
                             <p className="mt-1 text-sm font-medium text-sky-300">
                                 {(shopping.uncheckedCount || 0) > 0 ? 'Needs a pass' : 'All clear'}
                             </p>
@@ -156,7 +157,7 @@ const TodayStrip = ({
                             </div>
                             <p className="text-sm text-white/55">{clothing.layers}</p>
                             {clothing.accessories?.length > 0 && (
-                                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/35">
+                                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/45">
                                     {clothing.accessories.join(' • ')}
                                 </p>
                             )}
@@ -172,7 +173,7 @@ const TodayStrip = ({
                             {prepAgenda.slice(0, variant === 'dashboard' ? 4 : 6).map((item) => (
                                 <div key={item.id} className="module-list-item px-3 py-2.5">
                                     <p className="truncate text-sm font-medium text-white/80">{item.label}</p>
-                                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/35">
+                                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
                                         {item.eventTitle}
                                     </p>
                                 </div>

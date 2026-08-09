@@ -94,6 +94,7 @@ const NestDetailView = ({ onClose }) => {
             <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-8">
                 <button
                     onClick={onClose}
+                    aria-label="Close"
                     className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
                     <X size={24} />
@@ -137,6 +138,7 @@ const NestDetailView = ({ onClose }) => {
                 </div>
                 <button
                     onClick={onClose}
+                    aria-label="Close"
                     className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                 >
                     <X size={24} />
@@ -180,6 +182,7 @@ const NestDetailView = ({ onClose }) => {
                     <button
                         onClick={() => handleTempAdjust(-1)}
                         disabled={thermostatState.mode === 'OFF' || loading}
+                        aria-label="Decrease target temperature"
                         className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                     >
                         <ChevronDown size={28} />
@@ -191,6 +194,7 @@ const NestDetailView = ({ onClose }) => {
                     <button
                         onClick={() => handleTempAdjust(1)}
                         disabled={thermostatState.mode === 'OFF' || loading}
+                        aria-label="Increase target temperature"
                         className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                     >
                         <ChevronUp size={28} />

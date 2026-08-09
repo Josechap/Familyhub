@@ -40,6 +40,7 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
             <div className="mb-3 flex flex-shrink-0 items-center justify-between">
                 <button
                     onClick={onExit}
+                    aria-label="Exit cooking mode"
                     className="touch-target rounded-xl p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                 >
                     <div className="flex items-center gap-1">
@@ -88,6 +89,8 @@ const CookingMode = ({ recipe, currentStep, onNext, onPrev, onGoTo, onExit }) =>
                         <button
                             key={idx}
                             onClick={() => onGoTo(idx)}
+                            aria-label={`Go to step ${idx + 1}`}
+                            aria-current={idx === currentStep ? 'step' : undefined}
                             className={cn(
                                 'touch-target h-2.5 w-2.5 flex-shrink-0 rounded-full transition-all sm:h-3 sm:w-3',
                                 idx === currentStep
@@ -155,10 +158,14 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                                 {recipe.paprikaSource ? 'Paprika sync' : 'Local recipe'}
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={() => onToggleFavorite(recipe.id)} className="module-icon-button">
+                                <button
+                                    onClick={() => onToggleFavorite(recipe.id)}
+                                    aria-label={recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                    className="module-icon-button"
+                                >
                                     <Heart size={20} className={recipe.isFavorite ? 'fill-current text-red-500' : 'text-white/45'} />
                                 </button>
-                                <button onClick={onClose} className="module-icon-button">
+                                <button onClick={onClose} aria-label="Close" className="module-icon-button">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -178,15 +185,15 @@ const RecipeDetail = ({ recipe, onClose, onStartCooking, onToggleFavorite, onPla
                             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{recipe.title}</h2>
                             <div className="mt-4 grid gap-3 sm:grid-cols-3">
                                 <div className="module-metric">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Total time</p>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Total time</p>
                                     <p className="mt-2 text-2xl font-semibold">{totalTime} min</p>
                                 </div>
                                 <div className="module-metric">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Servings</p>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Servings</p>
                                     <p className="mt-2 text-2xl font-semibold">{recipe.servings || '-'}</p>
                                 </div>
                                 <div className="module-metric">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Category</p>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Category</p>
                                     <p className="mt-2 text-lg font-semibold">{recipe.category || 'General'}</p>
                                 </div>
                             </div>
@@ -543,12 +550,12 @@ const Recipes = () => {
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                             <div className="module-metric">
-                                <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Favorites</p>
+                                <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Favorites</p>
                                 <p className="mt-2 text-3xl font-semibold">{favoriteCount}</p>
                                 <p className="mt-1 text-sm text-white/48">Keep recurring go-to meals close.</p>
                             </div>
                             <div className="module-metric">
-                                <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Paprika sync</p>
+                                <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Paprika sync</p>
                                 <p className="mt-2 text-3xl font-semibold">{paprikaCount}</p>
                                 <p className="mt-1 text-sm text-white/48">Imported recipes available to plan.</p>
                             </div>

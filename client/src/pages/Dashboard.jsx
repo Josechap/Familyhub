@@ -207,7 +207,7 @@ const Dashboard = () => {
 
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <div className="module-note">
-                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Today focus</p>
+                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/45">Today focus</p>
                                         <p className="mt-2 text-base font-medium text-white/82">
                                             {upcomingEvents.length > 0
                                                 ? `You have ${upcomingEvents.length} event${upcomingEvents.length === 1 ? '' : 's'} queued.`
@@ -219,7 +219,7 @@ const Dashboard = () => {
                                     </div>
 
                                     <div className="module-note">
-                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Weather</p>
+                                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/45">Weather</p>
                                         {weather ? (
                                             <div className="mt-2 flex items-center gap-3">
                                                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
@@ -229,7 +229,7 @@ const Dashboard = () => {
                                                     <p className="text-xl font-semibold text-white">{weather.temp}°F</p>
                                                     <p className="text-sm text-white/55">{weather.condition}</p>
                                                     {clothing?.main && (
-                                                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/35">
+                                                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
                                                             Wear: {clothing.main}
                                                         </p>
                                                     )}
@@ -270,7 +270,7 @@ const Dashboard = () => {
                                         <div key={metric.label} className="module-metric">
                                             <div className="flex items-start justify-between gap-3">
                                                 <div>
-                                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">{metric.label}</p>
+                                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">{metric.label}</p>
                                                     <p className="mt-3 text-3xl font-semibold tracking-tight">{metric.value}</p>
                                                 </div>
                                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/72">
@@ -392,7 +392,7 @@ const Dashboard = () => {
 
                             <div className="module-note mt-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                                 <div>
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Today focus</p>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Today focus</p>
                                     <p className="mt-1 text-sm text-white/65">
                                         {upcomingEvents.length > 0
                                             ? `First on deck: ${upcomingEvents[0].title}`
@@ -400,7 +400,7 @@ const Dashboard = () => {
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Meals planned</p>
+                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Meals planned</p>
                                     <p className="mt-1 text-sm font-semibold text-white/82">{mealsPlannedCount}/4</p>
                                 </div>
                             </div>
@@ -455,7 +455,7 @@ const Dashboard = () => {
                                                     )}
                                                 </div>
 
-                                                <ChevronRight size={18} className="hidden flex-shrink-0 text-white/35 transition-transform group-hover:translate-x-1 sm:mt-2 sm:block" />
+                                                <ChevronRight size={18} className="hidden flex-shrink-0 text-white/45 transition-transform group-hover:translate-x-1 sm:mt-2 sm:block" />
                                             </div>
                                         </button>
                                     ))
@@ -523,7 +523,7 @@ const Dashboard = () => {
                                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-sky-500/15 text-sky-300">
                                         <ShoppingCart size={20} />
                                     </div>
-                                    <p className="mt-4 text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Shopping pulse</p>
+                                    <p className="mt-4 text-[0.72rem] uppercase tracking-[0.18em] text-white/45">Shopping pulse</p>
                                     <p className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{shopping?.uncheckedCount || 0}</p>
                                     <p className="mt-2 text-sm text-white/55">Unchecked shopping items still open.</p>
                                 </div>

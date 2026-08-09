@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const toneMap = {
@@ -98,7 +99,7 @@ export const PageHeader = ({
                         <div className="grid gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap">
                             {stats.map((stat, index) => (
                                 <div key={stat.label || index} className="module-stat">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.22em] text-white/35">
+                                    <p className="text-[0.68rem] uppercase tracking-[0.22em] text-white/45">
                                         {stat.label}
                                     </p>
                                     <div className="mt-2 flex items-end gap-2">
@@ -129,13 +130,92 @@ export const EmptyState = ({ icon: Icon, title, description, action, className }
     return (
         <div className={cn('module-empty', className)}>
             {Icon && (
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/35">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/45">
                     <Icon size={30} />
                 </div>
             )}
             <h3 className="text-lg font-semibold">{title}</h3>
             {description && <p className="mt-2 max-w-md text-sm text-white/45">{description}</p>}
             {action && <div className="mt-5">{action}</div>}
+        </div>
+    );
+};
+
+// In-app replacement for window.confirm()/prompt(): native dialogs break the
+// visual design and require a physical keyboard to type a confirmation phrase,
+// which is painful on a kiosk touchscreen.
+export const ConfirmModal = ({
+    title,
+    description,
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
+    tone = 'danger',
+    requireText,
+    busy = false,
+    error,
+    onConfirm,
+    onClose,
+}) => {
+    const [inputValue, setInputValue] = useState('');
+    const canConfirm = !busy && (!requireText || inputValue.trim() === requireText);
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            onClick={busy ? undefined : onClose}
+        >
+            <div
+                className="module-modal max-w-md animate-scale-in"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                        <h3 className="text-xl font-semibold">{title}</h3>
+                        {description && <p className="text-sm text-white/60">{description}</p>}
+                    </div>
+                    <button onClick={onClose} disabled={busy} aria-label="Close" className="module-icon-button disabled:opacity-40">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {requireText && (
+                    <div className="mt-5">
+                        <label className="mb-2 block text-sm font-medium text-white/60">
+                            Type "{requireText}" to confirm
+                        </label>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(event) => setInputValue(event.target.value)}
+                            className="module-input"
+                            autoFocus
+                            disabled={busy}
+                        />
+                    </div>
+                )}
+
+                {error && (
+                    <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/20 p-3 text-sm text-red-400">
+                        {error}
+                    </p>
+                )}
+
+                <div className="mt-6 flex gap-3">
+                    <button onClick={onClose} disabled={busy} className="module-action flex-1">
+                        {cancelLabel}
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={!canConfirm}
+                        className={cn(
+                            'module-action flex-1 disabled:cursor-not-allowed disabled:opacity-40',
+                            tone === 'danger' ? 'module-action-danger' : 'module-action-primary'
+                        )}
+                    >
+                        {busy ? 'Working…' : confirmLabel}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

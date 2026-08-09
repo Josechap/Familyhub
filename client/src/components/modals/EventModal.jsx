@@ -60,6 +60,7 @@ const EventModal = ({ event, familyMembers = [], onClose, onAssign }) => {
                     <h2 className="text-xl font-semibold pr-4">{event.title}</h2>
                     <button
                         onClick={onClose}
+                        aria-label="Close"
                         className="module-icon-button"
                     >
                         <X size={20} />

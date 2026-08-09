@@ -102,7 +102,7 @@ const NestCard = ({ onOpenDetail }) => {
                         <ModeIcon size={20} className={modeDisplay.color} />
                     </div>
                     <div>
-                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/35">Home climate</p>
+                        <p className="text-[0.72rem] uppercase tracking-[0.18em] text-white/45">Home climate</p>
                         <p className="mt-1 text-lg font-semibold text-white/85">
                             {thermostatState.mode === 'OFF' ? 'System off' : thermostatState.mode.toLowerCase()}
                         </p>
@@ -125,24 +125,25 @@ const NestCard = ({ onOpenDetail }) => {
             <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
                 <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
-                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Inside</p>
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Inside</p>
                         <p className="mt-2 text-3xl font-semibold">{thermostatState.currentTemp ?? '--'}°</p>
                     </div>
                     <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
-                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Target</p>
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Target</p>
                         <p className="mt-2 text-3xl font-semibold">{displayTargetTemp ?? '--'}°</p>
                     </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
                     <div>
-                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/35">Adjust target</p>
+                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Adjust target</p>
                         <p className="mt-1 text-sm text-white/55">Tap to change by one degree.</p>
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                             onClick={(e) => { e.stopPropagation(); handleTempChange(-1); }}
+                            aria-label="Decrease target temperature"
                             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                             disabled={thermostatState.mode === 'OFF'}
                         >
@@ -150,6 +151,7 @@ const NestCard = ({ onOpenDetail }) => {
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); handleTempChange(1); }}
+                            aria-label="Increase target temperature"
                             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                             disabled={thermostatState.mode === 'OFF'}
                         >

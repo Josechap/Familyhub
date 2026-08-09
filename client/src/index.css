@@ -129,7 +129,9 @@ a,
 }
 
 .page-shell {
-  @apply relative isolate min-h-full overflow-hidden rounded-4xl border border-white/10 p-4 sm:p-5 lg:p-6 backdrop-blur-xl;
+  @apply relative isolate min-h-full overflow-x-hidden overflow-y-auto rounded-4xl border border-white/10 p-4 sm:p-5 lg:p-6 backdrop-blur-xl;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background:
     radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 22%),
     radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.08), transparent 24%),
@@ -453,6 +455,22 @@ body.light .module-input,
 body.light .module-select,
 body.light .module-pill {
   color: #0f172a;
+}
+
+body.light .module-kicker {
+  color: #475569;
+}
+
+body.light .module-inline-chip {
+  color: #0f172a;
+}
+
+body.light .module-badge {
+  color: #475569;
+}
+
+body.light .module-note {
+  color: #334155;
 }
 
 .module-action-primary,

@@ -114,6 +114,7 @@ const Calendar = () => {
                             <button
                                 onClick={() => { setWeekOffset(Math.max(0, weekOffset - 1)); setSelectedDayIndex(0); }}
                                 disabled={weekOffset === 0}
+                                aria-label="Previous week"
                                 className={cn(
                                     'module-icon-button',
                                     weekOffset === 0 && 'cursor-not-allowed opacity-35'
@@ -127,6 +128,7 @@ const Calendar = () => {
                             <button
                                 onClick={() => { setWeekOffset(Math.min(3, weekOffset + 1)); setSelectedDayIndex(0); }}
                                 disabled={weekOffset === 3}
+                                aria-label="Next week"
                                 className={cn(
                                     'module-icon-button',
                                     weekOffset === 3 && 'cursor-not-allowed opacity-35'
