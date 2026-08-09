@@ -21,7 +21,6 @@ import {
     ShoppingCart,
     Sparkles,
     Star,
-    Trophy,
     Utensils,
     Waves,
 } from 'lucide-react';
@@ -390,22 +389,7 @@ const Dashboard = () => {
                                 </button>
                             </div>
 
-                            <div className="module-note mt-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-                                <div>
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Today focus</p>
-                                    <p className="mt-1 text-sm text-white/65">
-                                        {upcomingEvents.length > 0
-                                            ? `First on deck: ${upcomingEvents[0].title}`
-                                            : 'No events are scheduled right now.'}
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">Meals planned</p>
-                                    <p className="mt-1 text-sm font-semibold text-white/82">{mealsPlannedCount}/4</p>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
+                            <div className="mt-4 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
                                 {upcomingEvents.length === 0 ? (
                                     <EmptyState
                                         icon={Calendar}
@@ -463,87 +447,67 @@ const Dashboard = () => {
                             </div>
                         </SurfacePanel>
 
-                        <div className="grid gap-3 lg:grid-cols-[1fr_0.72fr]">
-                            <SurfacePanel>
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="module-kicker">Meal board</p>
-                                        <h2 className="text-2xl font-semibold">Today&apos;s meals</h2>
-                                    </div>
-                                    <button
-                                        onClick={() => navigate('/meals')}
-                                        className="module-action"
-                                    >
-                                        Edit
-                                    </button>
-                                </div>
-
-                                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                                    {mealCards.map((meal) => {
-                                        const mealData = todayMeals?.[meal.key];
-
-                                        return (
-                                            <button
-                                                key={meal.key}
-                                                onClick={() => (
-                                                    mealData
-                                                        ? setSelectedMeal({ meal: mealData, type: meal.key })
-                                                        : navigate('/meals')
-                                                )}
-                                                className={cn(
-                                                    'rounded-3xl border p-4 text-left transition-all',
-                                                    mealData
-                                                        ? `${meal.accent} shadow-[0_14px_30px_rgba(0,0,0,0.16)]`
-                                                        : 'border-white/10 bg-white/5 hover:bg-white/8'
-                                                )}
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">{meal.label}</p>
-                                                        <p className="mt-3 text-2xl">{mealData?.recipeEmoji || meal.emoji}</p>
-                                                        <p className="mt-3 truncate text-base font-semibold text-white">
-                                                            {mealData?.recipeTitle || 'Add meal'}
-                                                        </p>
-                                                        <p className="mt-1 text-sm text-white/52">
-                                                            {mealData ? 'Tap for recipe details' : 'Choose a recipe for this slot'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </SurfacePanel>
-
-                            <button
-                                onClick={() => navigate('/meals')}
-                                className="module-panel flex flex-col justify-between text-left"
-                            >
+                        <SurfacePanel>
+                            <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-sky-500/15 text-sky-300">
-                                        <ShoppingCart size={20} />
-                                    </div>
-                                    <p className="mt-4 text-[0.72rem] uppercase tracking-[0.18em] text-white/45">Shopping pulse</p>
-                                    <p className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">{shopping?.uncheckedCount || 0}</p>
-                                    <p className="mt-2 text-sm text-white/55">Unchecked shopping items still open.</p>
+                                    <p className="module-kicker">Meal board</p>
+                                    <h2 className="text-2xl font-semibold">Today&apos;s meals</h2>
                                 </div>
+                                <button
+                                    onClick={() => navigate('/meals')}
+                                    className="module-action"
+                                >
+                                    Edit
+                                </button>
+                            </div>
 
-                                <p className="mt-6 text-sm text-white/48">
-                                    Open Meals to review generated items and make manual edits.
-                                </p>
-                            </button>
-                        </div>
+                            <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                                {mealCards.map((meal) => {
+                                    const mealData = todayMeals?.[meal.key];
+
+                                    return (
+                                        <button
+                                            key={meal.key}
+                                            onClick={() => (
+                                                mealData
+                                                    ? setSelectedMeal({ meal: mealData, type: meal.key })
+                                                    : navigate('/meals')
+                                            )}
+                                            className={cn(
+                                                'rounded-3xl border p-4 text-left transition-all',
+                                                mealData
+                                                    ? `${meal.accent} shadow-[0_14px_30px_rgba(0,0,0,0.16)]`
+                                                    : 'border-white/10 bg-white/5 hover:bg-white/8'
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-[0.68rem] uppercase tracking-[0.18em] text-white/45">{meal.label}</p>
+                                                    <p className="mt-3 text-2xl">{mealData?.recipeEmoji || meal.emoji}</p>
+                                                    <p className="mt-3 truncate text-base font-semibold text-white">
+                                                        {mealData?.recipeTitle || 'Add meal'}
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-white/52">
+                                                        {mealData ? 'Tap for recipe details' : 'Choose a recipe for this slot'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </SurfacePanel>
                     </div>
 
                     <div className={cn(
                         'grid min-h-0 gap-4',
-                        nestConnected ? 'xl:grid-rows-[auto_auto_minmax(0,1fr)]' : 'xl:grid-rows-[auto_minmax(0,1fr)]'
+                        nestConnected ? 'xl:grid-rows-[auto_minmax(0,1fr)]' : 'xl:grid-rows-[minmax(0,1fr)]'
                     )}>
                         {nestConnected && (
                             <NestCard onOpenDetail={() => setShowNestDetail(true)} />
                         )}
 
-                        <SurfacePanel>
+                        <SurfacePanel className="flex min-h-0 flex-col">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="module-kicker">Music</p>
@@ -584,90 +548,6 @@ const Dashboard = () => {
                                     ))}
                                 </div>
                             )}
-                        </SurfacePanel>
-
-                        <SurfacePanel className="flex min-h-0 flex-col">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="module-kicker">Scoreboard</p>
-                                    <h2 className="text-2xl font-semibold">Weekly standings</h2>
-                                    <p className="mt-1 text-sm text-white/55">
-                                        Points and completions at a glance, without the old visual noise.
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 rounded-full border border-warning/20 bg-warning/10 px-3 py-1.5 text-warning">
-                                    <Trophy size={16} />
-                                    <span className="text-sm font-semibold">Live</span>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 flex-1 space-y-3 overflow-y-auto touch-scroll hide-scrollbar">
-                                {sortedMembers.length === 0 ? (
-                                    <EmptyState
-                                        icon={Trophy}
-                                        title="No standings yet"
-                                        description="Add family members and complete routines to see the board fill in."
-                                    />
-                                ) : (
-                                    sortedMembers.slice(0, 4).map((member, idx) => {
-                                        const weekly = getMemberWeeklyStats(member.id);
-                                        const colorClass = familyColors[member.color] || 'bg-family-blue';
-                                        const isLeader = idx === 0 && weekly.weeklyTasksCompleted > 0;
-                                        const taskProgress = Math.max((weekly.weeklyTasksCompleted / maxWeeklyTasks) * 100, 6);
-
-                                        return (
-                                            <button
-                                                key={member.id}
-                                                onClick={() => navigate('/tasks')}
-                                                className={cn(
-                                                    'module-list-item w-full text-left',
-                                                    isLeader && 'border-warning/25 bg-warning/10'
-                                                )}
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <div className={cn(
-                                                        'relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white',
-                                                        colorClass
-                                                    )}>
-                                                        {member.name[0]}
-                                                        {isLeader && (
-                                                            <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-warning text-white">
-                                                                <Trophy size={11} />
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="truncate font-semibold">{member.name}</p>
-                                                            {idx < 3 && (
-                                                                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-white/45">
-                                                                    #{idx + 1}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                                                            <span className="font-semibold text-emerald-300">{weekly.weeklyTasksCompleted} tasks</span>
-                                                            <span className="inline-flex items-center gap-1 font-semibold text-warning">
-                                                                <Star size={12} className="fill-warning" />
-                                                                {member.points} pts
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
-                                                            <div
-                                                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-violet-400"
-                                                                style={{ width: `${taskProgress}%` }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        );
-                                    })
-                                )}
-                            </div>
                         </SurfacePanel>
                     </div>
                 </div>
