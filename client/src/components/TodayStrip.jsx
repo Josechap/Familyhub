@@ -3,8 +3,8 @@ import { Bell, Shirt, ShoppingCart, ClipboardList, CheckSquare, X } from 'lucide
 import { cn } from '../lib/utils';
 
 const cardClass = {
-    dashboard: 'rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025)),rgba(10,14,22,0.72)] p-4 shadow-[0_16px_34px_rgba(0,0,0,0.22)]',
-    screensaver: 'rounded-3xl border border-white/10 bg-black/45 p-4 backdrop-blur-md',
+    dashboard: 'overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025)),rgba(10,14,22,0.72)] p-4 shadow-[0_16px_34px_rgba(0,0,0,0.22)]',
+    screensaver: 'overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-4 backdrop-blur-md',
 };
 
 const SectionCard = ({ title, icon, variant, accentClass, children, extra = null }) => {
