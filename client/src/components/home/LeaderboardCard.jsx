@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
+import { Star, Trophy } from 'lucide-react';
 import api from '../../lib/api';
 import { cn } from '../../lib/utils';
 import HomeCard from './HomeCard';
@@ -31,31 +31,61 @@ const LeaderboardCard = () => {
     const sortedMembers = [...familyMembers].sort(
         (a, b) => getWeeklyCompletions(b.id) - getWeeklyCompletions(a.id)
     );
-    const leader = sortedMembers[0];
-    const remaining = Math.max(sortedMembers.length - 1, 0);
+    const maxCompletions = Math.max(...sortedMembers.map((member) => getWeeklyCompletions(member.id)), 1);
 
     return (
-        <HomeCard icon={Trophy} kicker="Leaderboard" tone="gold" onClick={() => navigate('/tasks')}>
-            {!leader ? (
+        <HomeCard icon={Trophy} kicker="Leaderboard" tone="gold" align="start" onClick={() => navigate('/tasks')}>
+            {sortedMembers.length === 0 ? (
                 <p className="text-sm text-white/55">Add family members in Settings</p>
             ) : (
-                <>
-                    <div className="flex items-center gap-3">
-                        <div className={cn(
-                            'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white',
-                            familyColors[leader.color] || 'bg-family-blue'
-                        )}>
-                            {leader.name[0]}
-                        </div>
-                        <div className="min-w-0">
-                            <p className="truncate text-lg font-semibold">{leader.name}</p>
-                            <p className="text-sm font-medium text-warning">{leader.points} pts</p>
-                        </div>
-                    </div>
-                    {remaining > 0 && (
-                        <p className="mt-3 text-sm text-white/45">+{remaining} more</p>
-                    )}
-                </>
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto hide-scrollbar">
+                    {sortedMembers.map((member, idx) => {
+                        const completions = getWeeklyCompletions(member.id);
+                        const isLeader = idx === 0 && completions > 0;
+                        const progress = Math.max((completions / maxCompletions) * 100, 6);
+
+                        return (
+                            <div
+                                key={member.id}
+                                className={cn(
+                                    'flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-3 py-2',
+                                    isLeader && 'border-warning/25 bg-warning/10'
+                                )}
+                            >
+                                <div className={cn(
+                                    'relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-semibold text-white',
+                                    familyColors[member.color] || 'bg-family-blue'
+                                )}>
+                                    {member.name[0]}
+                                    {isLeader && (
+                                        <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-white">
+                                            <Trophy size={9} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="truncate text-sm font-semibold">{member.name}</p>
+                                        <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-warning">
+                                            <Star size={10} className="fill-warning" />
+                                            {member.points}
+                                        </span>
+                                    </div>
+                                    <div className="mt-1.5 flex items-center gap-2">
+                                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/8">
+                                            <div
+                                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-violet-400"
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
+                                        <span className="flex-shrink-0 text-[0.68rem] text-white/45">{completions} tasks</span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             )}
         </HomeCard>
     );

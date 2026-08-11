@@ -25,7 +25,7 @@ const toneMap = {
     },
 };
 
-const HomeCard = ({ icon: Icon, kicker, tone = 'sky', badge, onClick, span, children }) => {
+const HomeCard = ({ icon: Icon, kicker, tone = 'sky', badge, onClick, span, align = 'center', children }) => {
     const palette = toneMap[tone] || toneMap.sky;
 
     return (
@@ -60,7 +60,10 @@ const HomeCard = ({ icon: Icon, kicker, tone = 'sky', badge, onClick, span, chil
                     </div>
                 </div>
 
-                <div className="mt-4 flex min-h-0 flex-1 flex-col justify-center">
+                <div className={cn(
+                    'mt-4 flex min-h-0 flex-1 flex-col',
+                    align === 'start' ? 'justify-start' : 'justify-center'
+                )}>
                     {children}
                 </div>
             </div>
