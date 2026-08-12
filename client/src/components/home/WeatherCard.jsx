@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { CloudSun } from 'lucide-react';
 import HomeCard from './HomeCard';
+import CardEmptyState from './CardEmptyState';
 
 const WeatherCard = () => {
     const navigate = useNavigate();
@@ -24,7 +25,13 @@ const WeatherCard = () => {
                     )}
                 </>
             ) : (
-                <p className="text-sm text-white/55">Set up weather in Settings</p>
+                <CardEmptyState
+                    icon={CloudSun}
+                    tone="amber"
+                    title="Weather not set up"
+                    description="Add it in Settings"
+                    compact
+                />
             )}
         </HomeCard>
     );

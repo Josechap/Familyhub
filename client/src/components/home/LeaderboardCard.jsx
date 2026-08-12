@@ -5,6 +5,7 @@ import { Star, Trophy } from 'lucide-react';
 import api from '../../lib/api';
 import { cn } from '../../lib/utils';
 import HomeCard from './HomeCard';
+import CardEmptyState from './CardEmptyState';
 
 const familyColors = {
     'pastel-blue': 'bg-family-blue',
@@ -36,7 +37,12 @@ const LeaderboardCard = () => {
     return (
         <HomeCard icon={Trophy} kicker="Leaderboard" tone="gold" align="start" onClick={() => navigate('/tasks')}>
             {sortedMembers.length === 0 ? (
-                <p className="text-sm text-white/55">Add family members in Settings</p>
+                <CardEmptyState
+                    icon={Trophy}
+                    tone="gold"
+                    title="No family members yet"
+                    description="Add them in Settings"
+                />
             ) : (
                 <div className="min-h-0 flex-1 space-y-2 overflow-y-auto hide-scrollbar">
                     {sortedMembers.map((member, idx) => {

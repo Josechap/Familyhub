@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { Music } from 'lucide-react';
 import HomeCard from './HomeCard';
+import CardEmptyState from './CardEmptyState';
 
 const MusicCard = ({ onOpen }) => {
     const { playerState } = useSelector((state) => state.sonos);
@@ -29,10 +30,13 @@ const MusicCard = ({ onOpen }) => {
                     <p className="mt-1 truncate text-sm text-white/55">{playerState.track.artist || 'Unknown artist'}</p>
                 </>
             ) : (
-                <>
-                    <p className="text-lg font-medium text-white/60">Nothing playing</p>
-                    <p className="mt-1 text-sm text-white/45">Tap to browse</p>
-                </>
+                <CardEmptyState
+                    icon={Music}
+                    tone="violet"
+                    title="Nothing playing"
+                    description="Tap to browse"
+                    compact
+                />
             )}
         </HomeCard>
     );

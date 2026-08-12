@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import HomeCard from './HomeCard';
+import CardEmptyState from './CardEmptyState';
 
 const CalendarCard = () => {
     const navigate = useNavigate();
@@ -18,7 +19,12 @@ const CalendarCard = () => {
             onClick={() => navigate('/calendar')}
         >
             {events.length === 0 ? (
-                <p className="text-lg font-medium text-white/60">Nothing on the calendar</p>
+                <CardEmptyState
+                    icon={CalendarIcon}
+                    tone="sky"
+                    title="Nothing on the calendar"
+                    description="Enjoy the free time"
+                />
             ) : (
                 <div className="space-y-2">
                     {events.map((event, idx) => (
